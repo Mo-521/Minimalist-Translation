@@ -1,5 +1,4 @@
-# Minimalist-Translation
-Minimize use,balance translation and study最小化使用 翻译学习两不误 
+
 # Minimalist Translation
 
 一款 Windows 桌面划词翻译工具，支持悬浮窗翻译、单词查询和英语语法辅助变色。
@@ -35,3 +34,6 @@ Minimalist Translation v0.1.0
 ## 反馈
 
 如果遇到问题，可以在 Issues 中反馈。
+## 预览
+
+![预览图](preview.png)
