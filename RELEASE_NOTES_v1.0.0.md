@@ -1,6 +1,6 @@
-# Minimalist Translation v1.0.0 Release Candidate
+# Minimalist Translation v1.0.0
 
-Minimalist Translation v1.0.0 is a Windows local-first, Source Available translation client. This candidate includes ordinary PDF translation, academic-paper PDF translation and unified user-managed OpenAI-compatible Provider settings.
+Minimalist Translation v1.0.0 is a Windows local-first, Source Available translation client. This release includes ordinary PDF translation, academic-paper PDF translation and unified user-managed OpenAI-compatible Provider settings.
 
 Desktop Float Ball remains experimental and is not included in the v1.0.0 installer or stable support scope. The hosted Proxy is maintained separately and is not required by this client release.
 
@@ -35,4 +35,4 @@ Minimalist Translation is distributed under the [Minimalist Translation Source A
 
 ## Release status
 
-This document describes a Release Candidate, not an already published GitHub Release. A full-history audit found no real credential exposure, and the public repository now uses a clean root history containing only the approved release scope. All Release Candidate gates are closed; the formal `v1.0.0` tag and GitHub Release have not yet been created.
+The formal `v1.0.0` tag and GitHub Release were published on 2026-08-28. A full-history audit found no real credential exposure, and the public repository uses a clean root history containing only the approved release scope. All v1.0.0 release gates are closed.

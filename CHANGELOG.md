@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+暂无。
+
+## [1.0.0] - 2026-08-28
+
 - 完成公开仓库与本地私有研发治理的边界拆分。
 - 将目标公开发布基线统一迁移为 `v1.0.0`。
 - 引入 `Minimalist Translation Source Available Non-Commercial License 1.0`，明确非商业授权、商业使用需书面许可，许可证变更仅以版权方明确书面授权为准。
@@ -23,13 +27,15 @@
 - 升级主客户端与实验性 Desktop 的 Electron/构建依赖、PDF.js、DOCX 与 WebSocket 依赖；两套 npm lockfile 的 `npm audit` 均为 0 个已知漏洞。
 - 建立主客户端 Windows NSIS 打包配置；完成 unpacked 构建启动烟测并生成 `Minimalist-Translation-Setup-1.0.0.exe`。当前安装包尚未进行发布证书签名。
 
-## [1.0.0] - 待发布
-
-### Planned
+### Added
 
 - Windows 本地优先 Electron 客户端。
 - 普通 PDF 与论文 PDF 翻译工作流。
 - 用户自有 OpenAI-compatible Provider 配置。
 - Source Available 非商业许可与一致的贡献边界。
 
-> `v1.0.0` 尚未创建可信的 Git tag 或 GitHub Release；发布日期、目标 commit、发布资产和 SHA-256 将在发布门全部通过后补充。
+### Release
+
+- 创建正式 `v1.0.0` Git tag 与 GitHub Release。
+- 发布未签名 Windows 安装包 `Minimalist-Translation-Setup-1.0.0.exe`，SHA-256：`172BB855628555C4CBA06682C4AF4EA23987027E2BC5781000DD64E20475B9CA`。
+- 发布第三方许可证归档 `Minimalist-Translation-1.0.0-Third-Party-Licenses.zip`，SHA-256：`A731996A644CBE549C66A707107836D1A61361EF50548E3C2F6A9CB432BBD89A`。

@@ -2,7 +2,7 @@
 
 ## v1.0.0 decision
 
-Minimalist Translation v1.0.0 is distributed as an **unsigned Windows Release Candidate**. The current installer has no Authenticode signer or timestamp, the release environment has no available code-signing certificate, and the build configuration does not contain signing credentials.
+Minimalist Translation v1.0.0 is distributed as an **unsigned Windows release**. The installer has no Authenticode signer or timestamp, the release environment has no available code-signing certificate, and the build configuration does not contain signing credentials.
 
 Windows may therefore display “Unknown publisher” or a Microsoft Defender SmartScreen warning. This warning is expected for this release and must not be presented as proof that a downloaded file is authentic.
 

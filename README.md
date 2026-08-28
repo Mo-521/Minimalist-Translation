@@ -2,7 +2,7 @@
 
 Minimalist Translation 是一款面向 Windows 的本地优先、源码可见（Source Available）翻译客户端。用户配置自己的 OpenAI-compatible Provider 后，可使用普通 PDF 与论文 PDF 翻译能力。
 
-本仓库正在整理为 `v1.0.0`。当前阶段以本地客户端为唯一发布主体，不包含官方托管 Proxy、真实凭据、私人论文样本、内部研发治理资料或预构建二进制文件。
+`v1.0.0` 是本项目首个公开发布版本。当前以本地客户端为唯一发布主体，不包含官方托管 Proxy、真实凭据、私人论文样本或内部研发治理资料。
 
 ## 当前能力
 
@@ -80,9 +80,9 @@ npm run pack:win
 
 - 目标仓库：<https://github.com/Mo-521/Minimalist-Translation>
 - 目标版本：`v1.0.0`
-- 当前状态：`v1.0.0` Release Candidate；尚未形成可信的公开 Release。
+- 当前状态：`v1.0.0` 已正式发布；下载与校验信息见 [GitHub Release](https://github.com/Mo-521/Minimalist-Translation/releases/tag/v1.0.0)。
 
-依赖安全、真实启动/翻译、Windows 打包、Tailwind 本地可复现构建、最终二进制许可证归档、代码签名策略和 Git History Reset 已全部通过。主仓库全部 Git 历史未发现真实凭据暴露，因此人工轮换不构成发布门。v1.0.0 的实际二进制为未签名状态，风险提示与校验方法见 [CODE_SIGNING_POLICY.md](CODE_SIGNING_POLICY.md)。当前仓库已达到 v1.0.0 Release Candidate 标准；正式 `v1.0.0` tag 与 GitHub Release 尚未创建。
+依赖安全、真实启动/翻译、Windows 打包、Tailwind 本地可复现构建、最终二进制许可证归档、代码签名策略和 Git History Reset 已全部通过。主仓库全部 Git 历史未发现真实凭据暴露，因此人工轮换不构成发布门。v1.0.0 的实际二进制为未签名状态，风险提示与校验方法见 [CODE_SIGNING_POLICY.md](CODE_SIGNING_POLICY.md)。
 
 ## 许可证
 

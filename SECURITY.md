@@ -4,14 +4,12 @@ Minimalist Translation handles user documents, translated text, and user-supplie
 
 ## Supported versions
 
-Minimalist Translation `v1.0.0` is still in release preparation and no public release is currently supported.
-
-After `v1.0.0` is published, security fixes will target the latest released `1.0.x` version unless a later release policy explicitly replaces this statement. Desktop Float Ball is excluded from the v1.0.0 installer and binary assets and is not covered by a stability commitment. Security issues in retained experimental source remain reportable when they could affect contributors or a future distribution.
+Security fixes target the latest released `1.0.x` version unless a later release policy explicitly replaces this statement. Desktop Float Ball is excluded from the v1.0.0 installer and binary assets and is not covered by a stability commitment. Security issues in retained experimental source remain reportable when they could affect contributors or a future distribution.
 
 | Version | Support status |
 |---|---|
-| `main` / pre-release `v1.0.0` candidate | Security reports accepted; not a stable release |
-| Published latest `1.0.x` | Planned to receive security fixes after release |
+| Published latest `1.0.x` | Security reports accepted; receives security fixes |
+| `main` after the latest release | Security reports accepted; development branch |
 | Older snapshots, generated artifacts, private forks | Not supported |
 | Independent `lingoflow-proxy` repository | Report to that repository; outside this client repository's scope |
 
