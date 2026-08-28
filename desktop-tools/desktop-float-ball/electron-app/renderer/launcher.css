@@ -1,0 +1,249 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --lf-blue-soft: #b7c7eb;
+  --lf-blue: #8798d5;
+  --lf-indigo: #6d79c7;
+  --lf-violet: #8f83d7;
+  --lf-deep: #5966ae;
+  --lf-logo: rgba(255, 255, 255, 0.96);
+  --lf-line-logo: rgba(255, 255, 255, 0.58);
+  --lf-ink: #35405b;
+  --lf-muted: #737d95;
+  --lf-card-line: rgba(191, 202, 232, 0.74);
+  --lf-button-line: rgba(210, 218, 238, 0.88);
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: Inter, "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+  background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.app {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+}
+
+.launcher-icon {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100px;
+  height: 100px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: grab;
+  -webkit-app-region: no-drag;
+  outline: none;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.1) 25%, transparent 46%),
+    linear-gradient(145deg, var(--lf-blue-soft) 0%, var(--lf-blue) 42%, var(--lf-indigo) 70%, var(--lf-violet) 100%);
+  box-shadow:
+    0 10px 22px -18px rgba(50, 62, 108, 0.44),
+    0 0 0 1px rgba(255, 255, 255, 0.24) inset;
+  filter: none;
+  transition: box-shadow 0.16s ease, filter 0.16s ease;
+}
+
+.app.menu-open .launcher-icon {
+  top: 6px;
+}
+
+.app.menu-left .launcher-icon {
+  left: auto;
+  right: 0;
+}
+
+.app.state-snap-left .launcher-icon {
+  left: -50px;
+  right: auto;
+}
+
+.app.state-snap-right .launcher-icon {
+  left: auto;
+  right: -50px;
+}
+
+.app.dragging .launcher-icon {
+  cursor: grabbing;
+}
+
+.launcher-icon:hover,
+.app.menu-open .launcher-icon {
+  transform: none;
+  box-shadow:
+    0 12px 24px -18px rgba(50, 62, 108, 0.48),
+    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+}
+
+.launcher-icon:active {
+  transform: none;
+}
+
+.launcher-icon:focus-visible {
+  box-shadow:
+    0 0 0 3px rgba(109, 121, 199, 0.28),
+    0 10px 22px -18px rgba(50, 62, 108, 0.44);
+}
+
+.brand-core {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.link-line {
+  fill: none;
+  stroke: var(--lf-line-logo);
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.glyph-word,
+.glyph-m,
+.glyph-t {
+  fill: var(--lf-logo);
+  dominant-baseline: alphabetic;
+}
+
+.glyph-word {
+  font-family: "Microsoft YaHei", SimHei, sans-serif;
+  font-size: 33px;
+  font-weight: 760;
+}
+
+.glyph-m {
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  font-size: 25px;
+  font-weight: 760;
+  letter-spacing: -1.2px;
+}
+
+.glyph-t {
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 760;
+  letter-spacing: -0.4px;
+}
+
+.launcher-menu {
+  position: absolute;
+  top: 10px;
+  left: 112px;
+  width: 160px;
+  min-height: 88px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 22px 40px;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--lf-card-line);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.44), transparent 34%),
+    linear-gradient(145deg, rgba(238, 243, 255, 0.96) 0%, rgba(217, 225, 249, 0.94) 48%, rgba(226, 220, 248, 0.94) 100%);
+  box-shadow: 0 14px 28px -22px rgba(44, 52, 86, 0.36);
+  opacity: 0;
+  pointer-events: none;
+  transform: none;
+  transform-origin: left center;
+  transition: opacity 0.16s ease;
+}
+
+.app.menu-left .launcher-menu {
+  left: auto;
+  right: 112px;
+  transform: none;
+  transform-origin: right center;
+}
+
+.app.menu-open .launcher-menu {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+
+.menu-status {
+  grid-column: 1 / -1;
+  min-width: 0;
+  color: var(--lf-muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.menu-status.running {
+  color: var(--lf-deep);
+}
+
+.menu-status.error {
+  color: #b53c55;
+  font-size: 11px;
+}
+
+.menu-action {
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid var(--lf-button-line);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--lf-ink);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 730;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+
+.menu-action:hover {
+  background: #ffffff;
+  color: var(--lf-deep);
+  border-color: rgba(174, 187, 229, 0.9);
+}
+
+.menu-action:active {
+  transform: none;
+}
+
+.menu-action:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.menu-action:focus-visible {
+  outline: 2px solid rgba(109, 121, 199, 0.32);
+  outline-offset: 2px;
+}
+
+.app.state-snap-left .launcher-menu,
+.app.state-snap-right .launcher-menu {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .launcher-icon,
+  .launcher-menu,
+  .menu-action {
+    transition: none;
+  }
+}

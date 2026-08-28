@@ -1,0 +1,6 @@
+pynput
+keyboard
+pyperclip
+websockets
+deep-translator
+openai

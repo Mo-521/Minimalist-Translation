@@ -1,0 +1,57 @@
+# Dependencies
+**/node_modules/
+**/.venv/
+**/venv/
+
+# Build and packaging outputs
+**/dist/
+**/build/
+**/out/
+**/*.exe
+**/*.dll
+
+# Runtime caches, logs, and generated diagnostics
+/.cache/
+/.temp/
+/tmp/
+/release-evidence/
+/lingoflow-client/tmp/
+/lingoflow-client/.tmp/
+**/__pycache__/
+**/*.pyc
+**/*.log
+**/*.tmp
+**/coverage/
+**/.nyc_output/
+**/*.segmentReports.json
+**/*.pipelineDebug.json
+
+# Local runtime configuration and state
+/config/lingoflow.json
+/config/*.local.json
+**/.env
+**/.env.local
+**/.env.*.local
+!**/.env.example
+
+# Local agent, editor, and OS state
+**/.claude/settings.local.json
+/.claude/
+/.governance/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+/how fd22a40d082042a58a42408ca975354
+
+# Private keys and certificates
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/*.crt
+**/*.cer
+
+# PDF samples and rendered images are intentionally not ignored globally.
+# Keep private inputs and generated outputs inside the path-scoped temp/build
+# directories above so README assets and redistributable fixtures can be tracked.

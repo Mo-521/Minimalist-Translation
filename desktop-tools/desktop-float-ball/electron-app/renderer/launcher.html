@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Minimalist Translation Launcher</title>
+  <link rel="stylesheet" href="./launcher.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <button class="launcher-icon" id="launcher-icon" type="button" aria-label="Minimalist Translation">
+      <svg class="brand-core" viewBox="0 0 100 100" role="img" aria-hidden="true">
+        <path class="link-line" d="M46 31 H62 Q68 31 68 37 V51"/>
+        <path class="link-line" d="M51 72 H38 Q32 72 32 66 V54"/>
+        <text class="glyph-word" x="25" y="49">文</text>
+        <text class="glyph-m" x="57" y="70">M</text>
+        <text class="glyph-t" x="75" y="73">t</text>
+      </svg>
+    </button>
+
+    <section class="launcher-menu" id="launcher-menu" aria-label="launcher menu">
+      <div class="menu-status" id="status-label">未运行</div>
+      <button id="toggle-btn" class="menu-action primary" type="button">开始</button>
+      <button id="quit-btn" class="menu-action secondary" type="button">退出</button>
+    </section>
+  </div>
+
+  <script src="./launcher.js"></script>
+</body>
+</html>

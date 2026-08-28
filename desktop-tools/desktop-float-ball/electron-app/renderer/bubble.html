@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bubble</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@700;800&display=swap"
+    />
+    <link rel="stylesheet" href="./bubble.css" />
+    <script>
+      (function () {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("debug_rect") === "1") {
+          document.documentElement.classList.add("debug-rect-mode");
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="app shell">
+      <div id="floatingWindow" class="floating-window bubble">
+        <div class="title-bar" aria-hidden="true"></div>
+        <button id="wordBackBtn" class="word-top-back-btn" type="button" aria-label="返回原文" title="返回原文"></button>
+        <button id="toggleViewBtn" class="toggle-view-btn" type="button" aria-label="查看原文"></button>
+        <button id="closeBtn" class="close-btn" type="button" aria-label="关闭">×</button>
+        <div class="content content-wrap">
+          <div id="content" class="content-body">等待内容...</div>
+        </div>
+      </div>
+      <div class="debug-rect" aria-hidden="true"></div>
+    </div>
+    <script>
+      if (!document.documentElement.classList.contains("debug-rect-mode")) {
+        const script = document.createElement("script");
+        script.src = "./bubble.js";
+        document.body.appendChild(script);
+      }
+    </script>
+  </body>
+</html>

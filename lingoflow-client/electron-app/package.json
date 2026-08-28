@@ -1,0 +1,56 @@
+{
+  "name": "lingoflow-electron",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local-first Electron client for desktop and PDF translation",
+  "main": "main.js",
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i tailwind.input.css -o tailwind.css --minify",
+    "start": "npm run build:css && electron .",
+    "test:pdf": "node --test ../tests/pdf/unit/*.test.js",
+    "pack:win": "npm run build:css && electron-builder --win nsis",
+    "pack:win-dir": "npm run build:css && electron-builder --win dir"
+  },
+  "devDependencies": {
+    "@tailwindcss/container-queries": "0.1.1",
+    "@tailwindcss/forms": "0.5.10",
+    "electron": "44.0.0",
+    "electron-builder": "26.15.3",
+    "tailwindcss": "3.4.17"
+  },
+  "dependencies": {
+    "@pdf-lib/fontkit": "^1.1.1",
+    "docx": "9.7.1",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "4.10.38"
+  },
+  "build": {
+    "appId": "com.minimalisttranslation.client",
+    "productName": "Minimalist Translation",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.html",
+      "main.js",
+      "renderer.js",
+      "styles.css",
+      "tailwind.css",
+      "paper-layout-authority.js",
+      "pdf-pipeline-diagnostics.js",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "Minimalist-Translation-Setup-${version}.${ext}"
+    }
+  }
+}

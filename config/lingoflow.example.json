@@ -1,0 +1,17 @@
+{
+  "serverBaseUrl": "",
+  "betaToken": "",
+  "targetLanguage": "zh",
+  "provider": {
+    "id": "provider-default",
+    "name": "Local Provider",
+    "type": "openai_compatible",
+    "preset": "custom",
+    "baseUrl": "",
+    "apiKey": "",
+    "model": ""
+  },
+  "testUsers": [],
+  "providerProfiles": [],
+  "activeProviderId": "provider-default"
+}

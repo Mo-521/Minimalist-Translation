@@ -1,0 +1,291 @@
+﻿<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LingoFlow</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Manrope & Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&amp;display=swap" rel="stylesheet"/>
+<link href="tailwind.css" rel="stylesheet"/>
+<link href="styles.css" rel="stylesheet"/>
+</head>
+<body class="main-bg-gradient font-body text-on-surface min-h-screen overflow-hidden">
+<!-- Main Application Window (Now the top-level container) -->
+<div class="window-frame glass-container w-full h-screen rounded-none flex flex-col overflow-hidden relative">
+<!-- Title Bar / Top Bar -->
+<header class="electron-titlebar-drag w-full flex justify-between items-center px-4 py-2">
+<div class="flex items-center gap-6">
+<!-- App Icon Placeholder -->
+<span class="app-logo-wordmark text-xl text-[#5668d8]">Minimalist Translation</span>
+</div>
+<!-- Window Controls -->
+<div class="electron-titlebar-nodrag flex items-center gap-4">
+<div class="flex items-center gap-2">
+<button type="button" id="btnMinimize" class="p-1.5 text-[#5668d8] hover:bg-white/20 transition-all duration-300 rounded-full">
+<span class="material-symbols-outlined text-[1.2rem]" data-icon="minimize">minimize</span>
+</button>
+<button type="button" id="btnMaximize" class="p-1.5 text-[#5668d8] hover:bg-white/20 transition-all duration-300 rounded-full">
+<span class="material-symbols-outlined text-[1.2rem]" data-icon="check_box_outline_blank">check_box_outline_blank</span>
+</button>
+<button type="button" id="btnClose" class="p-1.5 text-[#5668d8] hover:bg-white/20 transition-all duration-300 rounded-full">
+<span class="material-symbols-outlined text-[1.2rem]" data-icon="close">close</span>
+</button>
+</div>
+</div>
+</header>
+<div class="flex flex-grow min-h-0 overflow-hidden">
+<!-- Sidebar: Icon-only navigation -->
+<aside class="w-24 sidebar-gradient border-r border-white/20 flex flex-col items-center py-8 gap-y-6">
+<nav class="flex flex-col gap-6">
+<!-- Desktop Translation Icon -->
+<a class="sidebar-nav-item" href="#" data-page="desktop" aria-label="桌面翻译" title="桌面翻译">
+<span class="material-symbols-outlined" data-icon="desktop_windows">desktop_windows</span>
+</a>
+<!-- PDF Translation Icon -->
+<a class="sidebar-nav-item active" href="#" data-page="pdf" aria-current="page" aria-label="PDF 翻译" title="PDF 翻译">
+<span class="material-symbols-outlined" data-icon="picture_as_pdf">picture_as_pdf</span>
+</a>
+<!-- Settings Icon -->
+<a class="sidebar-nav-item" href="#" data-page="settings" aria-label="设置" title="设置">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-grow min-h-0 px-8 pt-4 pb-6 overflow-auto flex flex-col">
+<div id="app-pages-root" class="w-full flex-1 min-h-0 flex flex-col">
+<section id="page-desktop" class="app-page translation-page">
+<div class="w-full flex-1 min-h-0 flex flex-col">
+  <div class="translate-workspace w-full flex-1 min-h-0 flex flex-col relative max-w-7xl">
+    <div class="translate-glow translate-glow-left pointer-events-none"></div>
+    <div class="translate-glow translate-glow-right pointer-events-none"></div>
+    <div class="desktop-translate-module glass-panel relative overflow-visible">
+      <div class="desktop-module-head">
+        <div>
+          <h2 class="desktop-module-title">桌面翻译</h2>
+        </div>
+        <span id="desktopFeatureStatus" class="desktop-module-status" data-state="idle">未启动</span>
+      </div>
+      <div class="desktop-module-actions">
+        <button id="btnLaunchDesktopTranslate" type="button" class="desktop-launch-btn">
+          <span class="material-symbols-outlined text-lg">desktop_windows</span>
+          <span>启动桌面翻译</span>
+        </button>
+        <button id="btnShowDesktopLauncher" type="button" class="desktop-launch-btn hidden">
+          <span class="material-symbols-outlined text-lg">near_me</span>
+          <span>显示悬浮球</span>
+        </button>
+        <div class="relative translate-lang-control">
+          <button id="targetLangBtn" type="button" class="desktop-language-btn">
+            <span class="material-symbols-outlined text-base">language</span>
+            <span id="targetLangLabel" class="font-semibold">英语</span>
+            <span class="material-symbols-outlined text-base">expand_more</span>
+          </button>
+          <div id="targetLangMenu" class="translate-lang-menu hidden"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+<section id="page-pdf" class="app-page translation-page active">
+<div class="w-full flex-1 min-h-0 flex flex-col">
+  <div class="translate-workspace w-full flex-1 min-h-0 flex flex-col relative max-w-7xl">
+    <div class="translate-glow translate-glow-left pointer-events-none"></div>
+    <div class="translate-glow translate-glow-right pointer-events-none"></div>
+    <div id="pdfEntryView" class="pdf-entry-view glass-panel relative">
+      <div class="pdf-entry-head"><div><h2>PDF 翻译</h2><p>选择适合文档的翻译方式。</p></div></div>
+      <div class="pdf-entry-modes" aria-label="PDF 翻译模式">
+        <button type="button" class="pdf-entry-mode" data-pdf-mode="simple_pdf">
+          <span class="pdf-entry-mode-icon material-symbols-outlined" aria-hidden="true">description</span>
+          <span class="pdf-entry-mode-copy"><strong>普通翻译</strong><small>适合单栏文档、合同与说明书，优先完整翻译正文。</small></span>
+          <span class="material-symbols-outlined pdf-entry-mode-arrow" aria-hidden="true">arrow_forward</span>
+        </button>
+        <button type="button" class="pdf-entry-mode" data-pdf-mode="paper_pdf">
+          <span class="pdf-entry-mode-icon material-symbols-outlined" aria-hidden="true">article</span>
+          <span class="pdf-entry-mode-copy"><strong>论文翻译</strong><small>适合双栏论文与期刊文献，保留图片、公式和 References。</small></span>
+          <span class="material-symbols-outlined pdf-entry-mode-arrow" aria-hidden="true">arrow_forward</span>
+        </button>
+      </div>
+      <section class="pdf-recent-section" aria-labelledby="pdfRecentTitle">
+        <div class="pdf-recent-head"><h3 id="pdfRecentTitle">最近工作</h3><span>最多三条</span></div>
+        <div id="pdfRecentList" class="pdf-recent-list"></div>
+      </section>
+    </div>
+
+    <div id="pdfWorkView" class="pdf-translate-module pdf-linear-workspace glass-panel relative hidden" aria-hidden="true">
+      <div class="pdf-work-head">
+        <button id="btnBackPdfModes" type="button" class="pdf-work-back"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span><span>返回</span></button>
+        <div><h2 id="pdfWorkTitle" class="pdf-module-title">PDF 翻译</h2><p id="pdfWorkSubtitle">按步骤完成翻译与导出。</p></div>
+        <span id="pdfWorkflowStatus" class="pdf-module-status" data-state="idle">待选择</span>
+      </div>
+
+      <ol class="pdf-linear-steps" aria-label="PDF 翻译进度">
+        <li class="pdf-flow-step is-active" data-step="select"><span>1</span><strong>选择</strong></li>
+        <li class="pdf-flow-step" data-step="extract"><span>2</span><strong>提取</strong></li>
+        <li class="pdf-flow-step" data-step="translate"><span>3</span><strong>翻译</strong></li>
+        <li class="pdf-flow-step" data-step="complete"><span>4</span><strong>完成</strong></li>
+        <li class="pdf-flow-step" data-step="export"><span>5</span><strong>导出</strong></li>
+      </ol>
+
+      <section class="pdf-work-stage pdf-file-stage" data-work-stage="file">
+        <label class="pdf-drop-zone" for="pdfFileInput">
+          <input id="pdfFileInput" type="file" accept="application/pdf,.pdf" hidden>
+          <span class="pdf-drop-icon material-symbols-outlined">upload_file</span>
+          <span class="pdf-drop-main" id="pdfFileName">选择 PDF 文件</span>
+          <span class="pdf-drop-sub" id="pdfFileMeta">选择文件后自动提取文字。</span>
+        </label>
+        <div class="pdf-language-row" aria-label="PDF 翻译语言">
+          <label class="pdf-language-field"><span>源语言</span><select id="pdfSourceLangSelect"><option value="auto">自动检测</option><option value="en">英语</option><option value="zh-CN">中文</option><option value="ja">日语</option><option value="ko">韩语</option><option value="fr">法语</option><option value="de">德语</option><option value="es">西班牙语</option></select></label>
+          <label class="pdf-language-field"><span>目标语言</span><select id="pdfTargetLangSelect"><option value="zh-CN">中文</option><option value="en">英语</option><option value="ja">日语</option><option value="ko">韩语</option><option value="fr">法语</option><option value="de">德语</option><option value="es">西班牙语</option></select></label>
+        </div>
+      </section>
+
+      <section class="pdf-work-stage pdf-preview-panel" data-work-stage="extract">
+        <div class="pdf-preview-head"><span>提取结果</span><div class="pdf-preview-tools"><button id="btnPdfRawMode" type="button" class="pdf-preview-mode is-active">原始提取</button><button id="btnPdfSegmentMode" type="button" class="pdf-preview-mode">段落模式</button><span id="pdfExtractStats">尚未提取</span></div></div>
+        <div id="pdfExtractPreview" class="pdf-extract-preview">选择 PDF 后，这里会显示提取出的文字预览。</div>
+      </section>
+
+      <section id="pdfTranslationStage" class="pdf-work-stage pdf-translation-stage" data-work-stage="translate">
+        <div class="pdf-progress-copy"><strong id="pdfProgressTitle">准备翻译</strong><span id="pdfProgressSummary">完成提取后即可开始。</span></div>
+        <div class="pdf-progress-track" role="progressbar" aria-label="翻译进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="pdfProgressBar"></span></div>
+        <div class="pdf-stage-actions">
+          <button id="btnPreparePdfTranslation" type="button" class="pdf-primary-btn" disabled><span class="material-symbols-outlined text-base">play_arrow</span><span>开始翻译</span></button>
+          <button id="btnPausePdfTranslation" type="button" class="pdf-secondary-action" disabled><span class="material-symbols-outlined" aria-hidden="true">pause</span><span>暂停</span></button>
+          <button id="btnClearPdfFile" type="button" class="pdf-secondary-action" disabled><span class="material-symbols-outlined" aria-hidden="true">close</span><span>取消</span></button>
+        </div>
+      </section>
+
+      <section id="pdfCompleteStage" class="pdf-work-stage pdf-complete-stage" data-work-stage="complete" hidden>
+        <div><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><h3>翻译完成</h3><p>译文已准备好，可以导出 PDF。</p></div>
+        <div class="pdf-complete-actions">
+          <button id="btnExportPdfTranslation" type="button" class="pdf-primary-btn pdf-export-primary" data-step="export" disabled><span class="material-symbols-outlined">ios_share</span><span>导出结果</span></button>
+          <button id="btnOpenPdfOutput" type="button" class="pdf-secondary-action" disabled><span class="material-symbols-outlined">open_in_new</span><span>打开文件</span></button>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+</section>
+<section id="page-settings" class="app-page">
+  <div class="settings-workspace w-full flex-1 min-h-0 flex flex-col">
+    <section class="glass-panel settings-provider-card provider-settings-final">
+      <div class="settings-provider-head">
+        <div>
+          <h2>Provider 设置</h2>
+          <p>管理本机模型服务配置，PDF 与桌面翻译共同使用当前连接。</p>
+        </div>
+        <span id="providerReadyBadge" class="provider-status-badge" data-state="disconnected">未连接</span>
+      </div>
+      <div id="providerProfileList" class="provider-profile-list provider-profile-list-main" aria-live="polite"></div>
+      <button id="btnNewProviderProfile" type="button" class="provider-new-action">
+        <span class="material-symbols-outlined" aria-hidden="true">add</span>
+        <span>新建配置</span>
+      </button>
+      <div id="providerFeedback" class="provider-feedback provider-page-feedback" role="status" aria-live="polite" data-state="idle">选择配置即可切换当前 Provider。</div>
+    </section>
+    <dialog id="providerConfigDialog" class="provider-config-dialog" aria-labelledby="providerConfigDialogTitle">
+      <form id="providerSettingsForm" class="provider-settings-form provider-dialog-form" autocomplete="off">
+        <div class="provider-dialog-head">
+          <div><h3 id="providerConfigDialogTitle">新建配置</h3><p>配置只保存在本机。</p></div>
+          <button id="btnCloseProviderDialog" type="button" class="provider-dialog-close" aria-label="关闭配置窗口">
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
+          </button>
+        </div>
+        <input id="providerProfileId" type="hidden">
+        <label class="provider-field">
+          <span>名称</span>
+          <input id="providerProfileName" type="text" placeholder="例如：我的 DeepSeek" spellcheck="false" required>
+        </label>
+        <label class="provider-field">
+          <span>Provider</span>
+          <select id="providerPreset" required>
+            <option value="deepseek">DeepSeek</option><option value="openai">OpenAI</option><option value="openrouter">OpenRouter</option><option value="ollama">Ollama</option><option value="custom">Custom</option>
+          </select>
+        </label>
+        <label class="provider-field">
+          <span>API Key</span>
+          <span class="provider-secret-row">
+            <input id="providerApiKey" type="password" placeholder="输入 API Key；留空可继续使用已保存密钥" spellcheck="false">
+            <button id="btnToggleProviderKey" type="button" class="provider-key-toggle" aria-pressed="false">显示</button>
+          </span>
+          <small id="providerApiKeyHint">密钥只保存在本机。</small>
+        </label>
+        <details id="providerAdvancedSettings" class="provider-advanced-settings provider-advanced-polish">
+          <summary><span>高级选项</span><span class="material-symbols-outlined provider-disclosure-arrow" aria-hidden="true">expand_more</span></summary>
+          <div class="provider-advanced-content">
+            <div class="provider-advanced-inner">
+              <label class="provider-field"><span>Base URL</span><input id="providerBaseUrl" type="url" placeholder="https://api.example.com/v1" spellcheck="false" required></label>
+              <label class="provider-field"><span>Model</span><input id="providerModel" type="text" placeholder="模型名称" spellcheck="false" required></label>
+            </div>
+          </div>
+        </details>
+        <div id="providerDialogFeedback" class="provider-feedback provider-dialog-feedback hidden" role="status" aria-live="polite" data-state="idle"></div>
+        <div class="provider-dialog-actions">
+          <button id="btnCancelProviderDialog" type="button" class="provider-secondary-action">取消</button>
+          <button id="btnSaveProvider" type="submit" class="provider-primary-action" disabled>保存</button>
+        </div>
+      </form>
+    </dialog>
+  </div>
+</section>
+</div>
+</main>
+</div>
+</div>
+<div id="pdfSegmentModal" class="pdf-segment-modal hidden" aria-hidden="true">
+  <div class="pdf-segment-dialog" role="dialog" aria-modal="true" aria-labelledby="pdfSegmentModalTitle">
+    <div class="pdf-segment-dialog-head">
+      <div>
+        <h3 id="pdfSegmentModalTitle">段落详情</h3>
+        <p id="pdfSegmentModalMeta">page - · single · pending</p>
+      </div>
+      <button id="btnClosePdfSegmentModal" type="button" class="pdf-segment-dialog-close">
+        <span class="material-symbols-outlined" data-icon="close">close</span>
+      </button>
+    </div>
+    <div class="pdf-segment-dialog-section">
+      <div class="pdf-segment-dialog-label">原文</div>
+      <div id="pdfSegmentModalText" class="pdf-segment-dialog-text"></div>
+    </div>
+    <div class="pdf-segment-dialog-section">
+      <div class="pdf-segment-dialog-label">译文</div>
+      <div id="pdfSegmentModalTranslatedText" class="pdf-segment-dialog-text pdf-segment-dialog-translated">未翻译</div>
+    </div>
+    <div class="pdf-segment-dialog-actions">
+      <button id="btnCopyPdfSource" type="button" class="pdf-dialog-action-btn">复制原文</button>
+      <button id="btnCopyPdfTranslation" type="button" class="pdf-dialog-action-btn">复制译文</button>
+    </div>
+  </div>
+</div>
+<div id="pdfExportModal" class="pdf-export-modal hidden" aria-hidden="true">
+  <div class="pdf-export-dialog" role="dialog" aria-modal="true" aria-labelledby="pdfExportModalTitle">
+    <div class="pdf-export-head">
+      <div>
+        <h3 id="pdfExportModalTitle">选择导出格式</h3>
+        <p id="pdfExportModalMeta">只导出已翻译完成的译文段落。</p>
+      </div>
+      <button id="btnClosePdfExportModal" type="button" class="pdf-export-close">
+        <span class="material-symbols-outlined" data-icon="close">close</span>
+      </button>
+    </div>
+    <div id="pdfExportModalWarning" class="pdf-export-warning hidden">当前还有未翻译或失败段落，将仅导出已翻译内容。</div>
+    <div class="pdf-export-options">
+      <button id="btnExportPdfOnly" type="button" class="pdf-export-option">
+        <span class="material-symbols-outlined">picture_as_pdf</span>
+        <span>导出 PDF</span>
+      </button>
+      <button id="btnExportPdfDebugFail" type="button" class="pdf-export-option">
+        <span class="material-symbols-outlined">bug_report</span>
+        <span>导出调试失败样本</span>
+      </button>
+    </div>
+    <button id="btnCancelPdfExport" type="button" class="pdf-export-cancel">取消</button>
+  </div>
+</div>
+<script src="renderer.js"></script>
+</body></html>
+

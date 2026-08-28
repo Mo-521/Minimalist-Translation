@@ -1,0 +1,380 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  background: transparent;
+}
+
+.shell {
+  width: 100%;
+  height: 100%;
+}
+
+.app {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.debug-rect {
+  display: none;
+}
+
+.floating-window,
+.bubble {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 24px 32px;
+  padding-top: 30px;
+  background: #f3f3f3;
+  border: 1px solid #e5e5e5;
+  border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.title-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  -webkit-app-region: drag;
+  app-region: drag;
+  cursor: grab;
+}
+
+.title-bar:active {
+  cursor: grabbing;
+}
+
+.close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: #e5e5e5;
+  color: #737373;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.toggle-view-btn {
+  position: absolute;
+  top: 10px;
+  right: 42px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: #8a8a8a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.word-top-back-btn {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #000000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.word-top-back-btn svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.word-top-back-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.toggle-view-btn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.toggle-view-btn:hover {
+  color: #525252;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.close-btn:hover {
+  background: #d4d4d4;
+}
+
+.content,
+.content-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.content-body {
+  margin: 0;
+  max-width: 100%;
+  color: #000000;
+  font-size: 14px;
+  line-height: 1.6;
+  user-select: text;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(163, 163, 163, 0.6) transparent;
+}
+
+.content-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content-body::-webkit-scrollbar-thumb {
+  background: rgba(163, 163, 163, 0.6);
+  border-radius: 999px;
+}
+
+.source-word {
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.18s ease, text-decoration-color 0.18s ease;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+}
+
+.source-word:hover {
+  background: rgba(0, 0, 0, 0.05);
+  text-decoration-color: rgba(0, 0, 0, 0.28);
+}
+
+.grammar-subject,
+.grammar-verb,
+.grammar-object {
+  color: #000000;
+  border-radius: 6px;
+  padding: 0 2px;
+  transition: filter 0.18s ease;
+}
+
+.grammar-subject {
+  background: rgba(96, 165, 250, 0.18);
+}
+
+.grammar-verb {
+  background: rgba(251, 146, 60, 0.18);
+}
+
+.grammar-object {
+  background: rgba(74, 222, 128, 0.16);
+}
+
+.grammar-subject:hover,
+.grammar-verb:hover,
+.grammar-object:hover {
+  filter: brightness(0.96);
+}
+
+.word-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+}
+
+.word-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.word-main-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.word-sub-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.word-pronunciation-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.word-accent-btn {
+  border: none;
+  background: transparent;
+  color: #1f1f1f;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 1px 6px;
+  height: 19px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: background 0.18s ease;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.word-accent-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.word-accent-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  color: #1f1f1f;
+  line-height: 1;
+}
+
+.word-accent-btn svg {
+  width: 12px;
+  height: 12px;
+  display: block;
+  color: #1f1f1f;
+}
+
+.word-loading {
+  color: #8a8a8a;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.word-head-text {
+  color: #000000;
+  font-size: 19px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  flex: 1 1 100%;
+}
+
+.word-phonetic {
+  color: #000000;
+  font-size: 13px;
+  white-space: normal;
+  line-height: 1.35;
+}
+
+.word-definitions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.word-definition {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: #000000;
+}
+
+.word-pos {
+  color: #000000;
+  font-weight: 600;
+  min-width: 34px;
+  flex-shrink: 0;
+}
+
+.word-context {
+  color: #000000;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+html.debug-rect-mode .bubble {
+  display: none;
+}
+
+html.debug-rect-mode,
+html.debug-rect-mode body,
+html.debug-rect-mode .app,
+html.debug-rect-mode .shell {
+  background: transparent;
+}
+
+html.debug-rect-mode .debug-rect {
+  display: block;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border: 2px solid rgba(0, 0, 0, 0.9);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.62) inset,
+    0 0 8px rgba(0, 0, 0, 0.28);
+  background: transparent;
+  pointer-events: none;
+}
