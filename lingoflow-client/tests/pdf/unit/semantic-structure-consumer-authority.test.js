@@ -173,7 +173,9 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.match(rendererSource, /bindSemanticStructureConsumerSegments\(\s*normalizedSegments/);
   assert.match(rendererSource, /stage:\s*"renderer\.extraction"/);
   assert.match(rendererSource, /semanticStructureArtifact:\s*state\.semanticStructureArtifact/);
-  assert.match(rendererSource, /semanticConsumerAuthorityRequired:\s*true/);
+  assert.doesNotMatch(mainSource, /semanticConsumerAuthorityRequired/);
+  assert.doesNotMatch(rendererSource, /semanticConsumerAuthorityRequired/);
+  assert.doesNotMatch(mainSource, /legacy_compatibility/);
   assert.match(rendererSource, /semanticStructureConsumerReports:\s*state\.semanticStructureConsumerReports\.slice\(\)/);
   assert.match(rendererSource, /if \(segment\.semanticPolicy\) return segment\.semanticPolicy\.translationDisposition === "translate"/);
   assert.match(rendererSource, /SEMANTIC_CONSUMER_FALLBACK_RECLASSIFICATION/);

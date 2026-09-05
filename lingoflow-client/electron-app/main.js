@@ -13995,11 +13995,10 @@ async function simpleExportDocumentFlowPdf(payload, pipelineConfig, diagnosticRu
     inputKind: extractionSummary.inputKind || "text_pdf",
     overlongBlockSplitCount: Number(extractionSummary.overlongBlockSplitCount || 0),
   });
-  summary.semanticConsumerAuthority = payload && payload.semanticConsumerAuthorityRequired ? "semantic_structure_artifact" : "legacy_compatibility";
+  summary.semanticConsumerAuthority = "semantic_structure_artifact";
   summary.semanticStructureArtifactId = String(payload && payload.semanticStructureArtifact && payload.semanticStructureArtifact.artifactId || "");
-  summary.semanticConsumerValidationStatus = payload && payload.semanticConsumerAuthorityRequired
-    ? ((payload.semanticStructureConsumerValidation || []).length > 0 && payload.semanticStructureConsumerValidation.every((report) => report && report.status === "match") ? "match" : "failed")
-    : "not_applicable";
+  summary.semanticConsumerValidationStatus = (payload.semanticStructureConsumerValidation || []).length > 0 &&
+    payload.semanticStructureConsumerValidation.every((report) => report && report.status === "match") ? "match" : "failed";
   summary.semanticConsumerValidationStages = (payload && payload.semanticStructureConsumerValidation || []).map((report) => String(report && report.stage || "")).filter(Boolean);
   const segmentReports = blocks.map((block) => simpleMakeCleanReportBlock(block, writtenById.has(block.id)));
   segmentReports.forEach((report) => diagnosticRuntime.registerArtifact({
@@ -18924,14 +18923,12 @@ function simpleBuildReport(blocks, summary) {
 }
 async function exportTranslatedPdf(payload) {
   const pipelineConfig = validatePdfTranslationMode(payload);
-  if (payload && payload.semanticConsumerAuthorityRequired) {
-    const boundConsumerPayload = bindSemanticStructureConsumerPayload(payload, {
-      stage: "main.exportTranslatedPdf",
-      mode: pipelineConfig.mode,
-    });
-    payload = boundConsumerPayload.payload;
-    payload.semanticStructureConsumerValidation = boundConsumerPayload.reports;
-  }
+  const boundConsumerPayload = bindSemanticStructureConsumerPayload(payload, {
+    stage: "main.exportTranslatedPdf",
+    mode: pipelineConfig.mode,
+  });
+  payload = boundConsumerPayload.payload;
+  payload.semanticStructureConsumerValidation = boundConsumerPayload.reports;
   const isPaperExport = isPaperPdfConfig(pipelineConfig);
   const diagnosticRuntime = createPdfDiagnosticRuntime({
     sourcePath: String(payload && payload.filePath || ''),
@@ -19175,25 +19172,23 @@ async function exportTranslatedPdf(payload) {
       exportInputSegments = exportInputSegments.filter((segment) => !fullyDuplicateSourceLineSegmentIds.has(String(segment && segment.id || '')));
     }
   }
-  if (payload && payload.semanticConsumerAuthorityRequired) {
-    const reboundAllSegments = bindSemanticStructureConsumerSegments(
-      allSegments,
-      payload.semanticStructureArtifact,
-      { stage: "main.postNormalization.allSegments", mode: pipelineConfig.mode }
-    );
-    const reboundExportSegments = bindSemanticStructureConsumerSegments(
-      exportInputSegments,
-      payload.semanticStructureArtifact,
-      { stage: "main.postNormalization.exportSegments", mode: pipelineConfig.mode, allowSubset: true }
-    );
-    allSegments = reboundAllSegments.segments;
-    exportInputSegments = reboundExportSegments.segments;
-    payload.semanticStructureConsumerValidation = [
-      ...(payload.semanticStructureConsumerValidation || []),
-      reboundAllSegments.report,
-      reboundExportSegments.report,
-    ];
-  }
+  const reboundAllSegments = bindSemanticStructureConsumerSegments(
+    allSegments,
+    payload.semanticStructureArtifact,
+    { stage: "main.postNormalization.allSegments", mode: pipelineConfig.mode }
+  );
+  const reboundExportSegments = bindSemanticStructureConsumerSegments(
+    exportInputSegments,
+    payload.semanticStructureArtifact,
+    { stage: "main.postNormalization.exportSegments", mode: pipelineConfig.mode, allowSubset: true }
+  );
+  allSegments = reboundAllSegments.segments;
+  exportInputSegments = reboundExportSegments.segments;
+  payload.semanticStructureConsumerValidation = [
+    ...(payload.semanticStructureConsumerValidation || []),
+    reboundAllSegments.report,
+    reboundExportSegments.report,
+  ];
   const segmentReports = allSegments.map((segment) => {
     const rawType = String(segment && segment.type || "body");
     const pureFormulaSegment = isPureFormulaSegment(segment, pipelineConfig);
@@ -23166,11 +23161,10 @@ async function exportTranslatedPdf(payload) {
   const _maskAppliedWriteNotAppliedOwnerAwareReports = _maskAppliedWriteNotAppliedLegacyReports.filter((r) => !_isCaptionGroupOwnerAwareCoveredForCompleteness(r));
   const exportSummary = {
     pdfTranslationMode: pipelineConfig.mode,
-    semanticConsumerAuthority: payload && payload.semanticConsumerAuthorityRequired ? "semantic_structure_artifact" : "legacy_compatibility",
+    semanticConsumerAuthority: "semantic_structure_artifact",
     semanticStructureArtifactId: String(payload && payload.semanticStructureArtifact && payload.semanticStructureArtifact.artifactId || ""),
-    semanticConsumerValidationStatus: payload && payload.semanticConsumerAuthorityRequired
-      ? ((payload.semanticStructureConsumerValidation || []).length > 0 && payload.semanticStructureConsumerValidation.every((report) => report && report.status === "match") ? "match" : "failed")
-      : "not_applicable",
+    semanticConsumerValidationStatus: (payload.semanticStructureConsumerValidation || []).length > 0 &&
+      payload.semanticStructureConsumerValidation.every((report) => report && report.status === "match") ? "match" : "failed",
     semanticConsumerValidationStages: (payload && payload.semanticStructureConsumerValidation || []).map((report) => String(report && report.stage || "")).filter(Boolean),
     modeLockedByUser,
     pipelineLabel: pipelineConfig.label,
@@ -24341,9 +24335,7 @@ function registerWindowChromeIpc() {
   ipcMain.handle("pdf:export-translated-txt", (_event, payload) => exportTranslatedTxt(payload));
   ipcMain.handle("pdf:export-translated-docx", (_event, payload) => exportTranslatedDocx(payload));
   ipcMain.handle("pdf:export-translated-pdf", (_event, payload) => exportTranslatedPdf(payload));
-  const bindDiagnosticConsumerPayload = (payload, stage) => payload && payload.semanticConsumerAuthorityRequired
-    ? bindSemanticStructureConsumerPayload(payload, { stage, mode: payload.pdfTranslationMode }).payload
-    : payload;
+  const bindDiagnosticConsumerPayload = (payload, stage) => bindSemanticStructureConsumerPayload(payload, { stage, mode: payload.pdfTranslationMode }).payload;
   ipcMain.handle("pdf:export-debug-bbox", (_event, payload) => exportPdfDebugBbox(bindDiagnosticConsumerPayload(payload, "main.debugBbox")));
   ipcMain.handle("pdf:export-mask-test", (_event, payload) => exportPdfMaskTest(bindDiagnosticConsumerPayload(payload, "main.maskTest")));
   ipcMain.handle("pdf:export-debug-linebox", (_event, payload) => exportPdfDebugLineBox(bindDiagnosticConsumerPayload(payload, "main.debugLineBox")));

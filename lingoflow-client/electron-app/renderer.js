@@ -1984,7 +1984,6 @@ function isPdfOverlayCandidate(segment) {
      pipelineDebug: state.pdfExtract && state.pdfExtract.pipelineDebug ? state.pdfExtract.pipelineDebug : null,
      semanticStructureArtifact: state.semanticStructureArtifact,
      semanticStructureConsumerReports: state.semanticStructureConsumerReports.slice(),
-     semanticConsumerAuthorityRequired: true,
      exportStrategy: isSimple ? "document_flow" : "overlay",
      simpleBlocks: isSimple ? getSimplePdfTranslatedEntries().map(function (entry) {
        return serializeSimplePdfSegment(entry.segment);
@@ -2033,7 +2032,6 @@ function isPdfOverlayCandidate(segment) {
       allSegments: diagnosticSegments.map(function (segment) { return Object.assign({}, segment); }),
       semanticStructureArtifact: state.semanticStructureArtifact,
       semanticStructureConsumerReports: state.semanticStructureConsumerReports.slice(),
-      semanticConsumerAuthorityRequired: true,
     }, getPdfTranslationModePayload());
   }
 
