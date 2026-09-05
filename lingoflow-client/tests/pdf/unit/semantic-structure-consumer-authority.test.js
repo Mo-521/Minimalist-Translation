@@ -176,6 +176,7 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.doesNotMatch(mainSource, /semanticConsumerAuthorityRequired/);
   assert.doesNotMatch(rendererSource, /semanticConsumerAuthorityRequired/);
   assert.doesNotMatch(mainSource, /legacy_compatibility/);
+  assert.doesNotMatch(mainSource, /const projectedType = simpleNormalizeBlockType\(/);
   assert.match(rendererSource, /semanticStructureConsumerReports:\s*state\.semanticStructureConsumerReports\.slice\(\)/);
   assert.match(rendererSource, /function requireSemanticTranslationDisposition\(segment, consumerName\)/);
   assert.match(rendererSource, /SEMANTIC_CONSUMER_POLICY_REQUIRED/);

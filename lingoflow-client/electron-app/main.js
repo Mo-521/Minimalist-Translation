@@ -13223,8 +13223,12 @@ function simpleNormalizeBlocksForExport(rawBlocks) {
   return blocks.map((block, index) => {
     const translatedText = cleanPdfText(block && block.translatedText);
     const sourceText = cleanPdfText(block && (block.sourceText || block.textPreview || block.text));
-    const projectedType = simpleNormalizeBlockType(block && block.type || "body");
-    const type = assertSemanticConsumerTypeProjection(block, projectedType, "simple_export_normalization");
+    const type = String(block && (block.semanticType || block.type) || "");
+    if (!type) {
+      const error = new Error("Canonical semantic type is required before simple PDF export normalization");
+      error.code = "SEMANTIC_CONSUMER_TYPE_REQUIRED";
+      throw error;
+    }
     return {
       id: String(block && block.id || `simple-${index + 1}`),
       type,
