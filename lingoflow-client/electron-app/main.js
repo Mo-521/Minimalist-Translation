@@ -11190,13 +11190,13 @@ function isPaperCaptionReclassifiedAsBodyInReconstruction(segment) {
 }
 
 function resolvePaperParagraphFlowType(segment, pipelineConfig) {
-  const rawType = String(segment && segment.type || "body");
-  if (!isPaperPdfConfig(pipelineConfig)) return rawType;
-  const strictPureEquationBlock = isStrictPureEquationBlock(segment, pipelineConfig);
-  const projectedType = strictPureEquationBlock && PDF_EXPORT_TRANSLATABLE_TYPES.has(rawType)
-    ? "formula"
-    : (rawType === "formula" && !strictPureEquationBlock ? "body" : rawType);
-  return assertSemanticConsumerTypeProjection(segment, projectedType, "paragraph_flow");
+  const canonicalType = String(segment && (segment.semanticType || segment.type) || "");
+  if (!canonicalType) {
+    const error = new Error("Canonical semantic type is required before paragraph flow");
+    error.code = "SEMANTIC_CONSUMER_TYPE_REQUIRED";
+    throw error;
+  }
+  return canonicalType;
 }
 
 function buildPaperParagraphRuns(allSegments, pageBodyFontStats, pipelineConfig = null) {

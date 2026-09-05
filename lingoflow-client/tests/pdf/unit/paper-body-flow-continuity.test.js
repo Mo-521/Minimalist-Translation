@@ -20,31 +20,24 @@ function extractFunction(source, name) {
   throw new Error(`Unable to extract ${name}`);
 }
 
-function loadResolver(strictPredicate) {
+function loadResolver() {
   const context = vm.createContext({
     String,
-    PDF_EXPORT_TRANSLATABLE_TYPES: new Set(['body', 'abstract']),
-    isPaperPdfConfig: (config) => Boolean(config && config.mode === 'paper_pdf'),
-    isStrictPureEquationBlock: strictPredicate,
-    assertSemanticConsumerTypeProjection: (_segment, projectedType) => projectedType,
   });
   vm.runInContext(extractFunction(mainSource, 'resolvePaperParagraphFlowType'), context);
   return context.resolvePaperParagraphFlowType;
 }
 
-test('strict equation blocks use the same protected type before paragraph flow grouping', () => {
-  const resolveType = loadResolver((segment) => Boolean(segment.strictEquation));
-  assert.equal(resolveType({ type: 'body', strictEquation: true }, { mode: 'paper_pdf' }), 'formula');
+test('paragraph flow consumes the frozen type without formula reclassification', () => {
+  const resolveType = loadResolver();
+  assert.equal(resolveType({ type: 'body', strictEquation: true }, { mode: 'paper_pdf' }), 'body');
   assert.equal(resolveType({ type: 'body', strictEquation: false }, { mode: 'paper_pdf' }), 'body');
-});
-
-test('non-strict formula-like prose stays eligible for body flow', () => {
-  const resolveType = loadResolver(() => false);
-  assert.equal(resolveType({ type: 'formula' }, { mode: 'paper_pdf' }), 'body');
+  assert.equal(resolveType({ type: 'formula', strictEquation: false }, { mode: 'paper_pdf' }), 'formula');
+  assert.throws(() => resolveType({}, { mode: 'paper_pdf' }), (error) => error && error.code === 'SEMANTIC_CONSUMER_TYPE_REQUIRED');
 });
 
 test('ordinary PDF flow types are unchanged', () => {
-  const resolveType = loadResolver(() => true);
+  const resolveType = loadResolver();
   assert.equal(resolveType({ type: 'body' }, { mode: 'simple_pdf' }), 'body');
   assert.equal(resolveType({ type: 'formula' }, { mode: 'simple_pdf' }), 'formula');
 });
