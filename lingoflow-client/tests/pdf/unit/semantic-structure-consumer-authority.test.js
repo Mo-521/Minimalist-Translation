@@ -2,15 +2,21 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const {
   produceSemanticStructureArtifact,
 } = require("../../../electron-app/semantic-structure-authority");
 const {
   validateAndRefreezeArtifact,
   compareConsumerCarrierSegments,
+  assertSemanticConsumerTypeProjection,
   bindSemanticStructureConsumerSegments,
   bindSemanticStructureConsumerPayload,
 } = require("../../../electron-app/semantic-structure-consumer-authority");
+const paperLayoutAuthority = require("../../../electron-app/paper-layout-authority");
+
+const root = path.resolve(__dirname, "../../..");
 
 function fixture() {
   const segments = [
@@ -95,6 +101,20 @@ test("artifact tampering and missing artifact fail before consumer execution", (
   assert.throws(() => validateAndRefreezeArtifact(null, "missing"), { code: "SEMANTIC_ARTIFACT_REQUIRED" });
 });
 
+test("post-freeze flow or export reclassification fails instead of repairing canonical type", () => {
+  const segment = {
+    id: "seg-1",
+    type: "body",
+    semanticType: "body",
+    semanticStructureArtifactId: "semantic-structure-sha256:test",
+  };
+  assert.equal(assertSemanticConsumerTypeProjection(segment, "body", "layout"), "body");
+  assert.throws(() => assertSemanticConsumerTypeProjection(segment, "formula", "flow"), {
+    code: "SEMANTIC_CONSUMER_RECLASSIFICATION",
+  });
+  assert.equal(segment.type, "body");
+});
+
 test("payload binding requires an exact allSegments carrier and allows ordered export subsets", () => {
   const { segments, artifact } = fixture();
   const payload = {
@@ -109,4 +129,53 @@ test("payload binding requires an exact allSegments carrier and allows ordered e
   assert.throws(() => bindSemanticStructureConsumerPayload({ semanticStructureArtifact: artifact, segments: [] }, { stage: "invalid" }), {
     code: "SEMANTIC_CONSUMER_ALL_SEGMENTS_REQUIRED",
   });
+});
+
+test("layout produces the same decision from a legacy carrier and its artifact-backed consumer", () => {
+  const { segments, artifact } = fixture();
+  const legacy = { ...segments[1], translatedText: "消费者正文", lineBoxes: [{ fontSize: 10 }] };
+  const canonical = { ...legacy };
+  bindSemanticStructureConsumerSegments([canonical], artifact, {
+    stage: "layout",
+    mode: "paper_pdf",
+    allowSubset: true,
+  });
+  const input = {
+    lineMasks: [{}, {}],
+    averageFontSize: 10,
+    targetLanguage: "zh",
+    pageBodyMedianFontSize: 10,
+    visualEqualZhFontSizeScale: { scale: { body: 8.5, fallback: 8.5 } },
+    text: legacy.translatedText,
+    fontStats: { sourceFontSizeRatioToPageBody: 1, sourceBoldLike: false },
+  };
+  const legacyDecision = paperLayoutAuthority.resolvePaperLayoutAuthority({ ...input, segment: legacy });
+  const canonicalDecision = paperLayoutAuthority.resolvePaperLayoutAuthority({ ...input, segment: canonical });
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(canonicalDecision)),
+    JSON.parse(JSON.stringify(legacyDecision))
+  );
+  assert.deepEqual(
+    canonicalDecision.metricsForFontSize(8.5, legacy.translatedText),
+    legacyDecision.metricsForFontSize(8.5, legacy.translatedText)
+  );
+});
+
+test("runtime transport requires the artifact at renderer, translation-plan, diagnostics and export boundaries", () => {
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const rendererSource = fs.readFileSync(path.join(root, "electron-app/renderer.js"), "utf8");
+
+  assert.match(mainSource, /semanticStructureArtifact\s*=\s*structured\.semanticStructureArtifact/);
+  assert.match(mainSource, /semanticStructureArtifact,\s*\r?\n\s*semanticStructureShadowValidation/);
+  assert.match(mainSource, /stage:\s*"main\.exportTranslatedPdf"/);
+  assert.match(mainSource, /stage:\s*"main\.paragraphIdentityTranslationPlan"/);
+  assert.match(mainSource, /bindDiagnosticConsumerPayload\(payload,\s*"main\.debugBbox"\)/);
+
+  assert.match(rendererSource, /bindSemanticStructureConsumerSegments\(\s*normalizedSegments/);
+  assert.match(rendererSource, /stage:\s*"renderer\.extraction"/);
+  assert.match(rendererSource, /semanticStructureArtifact:\s*state\.semanticStructureArtifact/);
+  assert.match(rendererSource, /semanticConsumerAuthorityRequired:\s*true/);
+  assert.match(rendererSource, /semanticStructureConsumerReports:\s*state\.semanticStructureConsumerReports\.slice\(\)/);
+  assert.match(rendererSource, /if \(segment\.semanticPolicy\) return segment\.semanticPolicy\.translationDisposition === "translate"/);
+  assert.match(rendererSource, /SEMANTIC_CONSUMER_FALLBACK_RECLASSIFICATION/);
 });

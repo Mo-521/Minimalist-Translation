@@ -26,6 +26,7 @@ function loadResolver(strictPredicate) {
     PDF_EXPORT_TRANSLATABLE_TYPES: new Set(['body', 'abstract']),
     isPaperPdfConfig: (config) => Boolean(config && config.mode === 'paper_pdf'),
     isStrictPureEquationBlock: strictPredicate,
+    assertSemanticConsumerTypeProjection: (_segment, projectedType) => projectedType,
   });
   vm.runInContext(extractFunction(mainSource, 'resolvePaperParagraphFlowType'), context);
   return context.resolvePaperParagraphFlowType;

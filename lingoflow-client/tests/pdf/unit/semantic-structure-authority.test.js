@@ -139,15 +139,13 @@ test("shadow comparison reports boundary drift with a stable unexplained reason"
   assert.equal(comparison.differences[0].explanationCode, "canonical_segment_missing");
 });
 
-test("main extraction convergence attaches shadow outputs without switching consumer modules", () => {
+test("main extraction convergence preserves legacy segment references while attaching shadow outputs", () => {
   const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
-  const rendererSource = fs.readFileSync(path.join(root, "electron-app/renderer.js"), "utf8");
   const packageJson = JSON.parse(fs.readFileSync(path.join(root, "electron-app/package.json"), "utf8"));
   assert.match(mainSource, /runSemanticStructureShadowValidation\(legacyResult,/);
   assert.match(mainSource, /semanticStructureArtifact:\s*semanticStructureShadow\.artifact/);
   assert.match(mainSource, /semanticStructureShadowValidation:\s*semanticStructureShadow\.comparison/);
   assert.match(mainSource, /\.\.\.legacyResult/);
-  assert.doesNotMatch(rendererSource, /semanticStructureArtifact|semanticStructureShadowValidation/);
   assert.ok(packageJson.build.files.includes("semantic-structure-authority.js"));
 
   const start = mainSource.indexOf("function runPdfExtractionPipeline(");

@@ -48,6 +48,21 @@ function consumerError(code, message, details = {}) {
   return error;
 }
 
+function assertSemanticConsumerTypeProjection(segment, projectedType, stage = "consumer_projection") {
+  const canonicalType = String(segment && segment.semanticType || segment && segment.type || "");
+  const projected = String(projectedType || "");
+  if (segment && segment.semanticStructureArtifactId && canonicalType !== projected) {
+    throw consumerError("SEMANTIC_CONSUMER_RECLASSIFICATION", `Post-freeze semantic reclassification at ${stage}: ${canonicalType} -> ${projected}`, {
+      stage,
+      segmentId: String(segment.id || segment.segmentId || ""),
+      artifactId: String(segment.semanticStructureArtifactId || ""),
+      canonicalType,
+      projectedType: projected,
+    });
+  }
+  return segment && segment.semanticStructureArtifactId ? canonicalType : projected;
+}
+
 function artifactHashBody(artifact) {
   return {
     schemaVersion: artifact.schemaVersion,
@@ -158,6 +173,9 @@ function compareConsumerCarrierSegments(inputSegments, artifact, options = {}) {
     if (String(canonical.sourceOwnership.ownerSegmentId || "") !== segmentId) {
       differences.push(makeDifference("ownership", segmentId, segmentId, canonical.sourceOwnership.ownerSegmentId, "consumer_owner_segment_drift"));
     }
+    if (Number(segment.pageNumber || 0) !== Number(canonical.pageNumber || 0)) {
+      differences.push(makeDifference("ownership", segmentId, canonical.pageNumber, Number(segment.pageNumber || 0), "consumer_page_ownership_drift"));
+    }
     if (Array.isArray(segment.sourcePageRange) && stableStringify(segment.sourcePageRange.map(Number)) !== stableStringify(canonical.sourceOwnership.sourcePageRange)) {
       differences.push(makeDifference("ownership", segmentId, canonical.sourceOwnership.sourcePageRange, segment.sourcePageRange, "consumer_source_page_range_drift"));
     }
@@ -263,6 +281,7 @@ module.exports = {
   CONSUMER_REPORT_SCHEMA_VERSION,
   validateAndRefreezeArtifact,
   compareConsumerCarrierSegments,
+  assertSemanticConsumerTypeProjection,
   bindSemanticStructureConsumerSegments,
   bindSemanticStructureConsumerPayload,
 };
