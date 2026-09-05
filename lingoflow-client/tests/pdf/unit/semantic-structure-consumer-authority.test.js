@@ -168,7 +168,6 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.match(mainSource, /semanticStructureArtifact\s*=\s*structured\.semanticStructureArtifact/);
   assert.match(mainSource, /semanticStructureArtifact,\s*\r?\n\s*semanticStructureShadowValidation/);
   assert.match(mainSource, /stage:\s*"main\.exportTranslatedPdf"/);
-  assert.match(mainSource, /stage:\s*"main\.paragraphIdentityTranslationPlan"/);
   assert.match(mainSource, /bindDiagnosticConsumerPayload\(payload,\s*"main\.debugBbox"\)/);
 
   assert.match(rendererSource, /bindSemanticStructureConsumerSegments\(\s*normalizedSegments/);

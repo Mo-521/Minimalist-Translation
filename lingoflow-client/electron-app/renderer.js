@@ -1,5 +1,8 @@
 (function () {
   console.log("[LINGOFLOW][REAL RENDERER LOADED]", new Date().toISOString());
+  var semanticStructureConsumerAuthority = typeof require === "function"
+    ? require("./semantic-structure-consumer-authority")
+    : null;
 
   var DEFAULT_SERVER_BASE_URL = "https://lingoproxy-255344-7-1429669493.sh.run.tcloudbase.com";
   var DEFAULT_BETA_TOKEN = "lf_beta_test_token";
@@ -41,6 +44,7 @@ function getPdfOverlayPreserveTypesByMode(mode) {
 
 function isPdfOverlayCandidateForMode(segment, mode) {
   if (!segment) return false;
+  if (segment.semanticPolicy) return segment.semanticPolicy.translationDisposition === "translate";
   var type = String(segment.type || "body");
   var preserveTypes = getPdfOverlayPreserveTypesByMode(mode);
   var allowedTypes = getPdfOverlayAllowedTypesByMode(mode);
@@ -59,6 +63,7 @@ function isPdfOverlayCandidateForMode(segment, mode) {
 
 function isPaperPreserveSegmentForMode(segment, mode) {
   if (!segment) return false;
+  if (segment.semanticPolicy) return segment.semanticPolicy.translationDisposition === "preserve";
   var type = String(segment.type || "body");
   var preserveTypes = getPdfOverlayPreserveTypesByMode(mode);
   if (preserveTypes[type]) return true;
@@ -128,6 +133,7 @@ function isPaperPreserveSegmentForMode(segment, mode) {
   
 function isPaperOverlayCandidateStrict(segment) {
   if (!segment) return false;
+  if (segment.semanticPolicy) return segment.semanticPolicy.translationDisposition === "translate";
   var type = String(segment.type || "body");
   if (PAPER_PDF_OVERLAY_PRESERVE_TYPES[type]) return false;
   return Boolean(PAPER_PDF_OVERLAY_ALLOWED_TYPES[type]);
@@ -135,6 +141,7 @@ function isPaperOverlayCandidateStrict(segment) {
 
 function isPaperPreserveSegmentStrict(segment) {
   if (!segment) return false;
+  if (segment.semanticPolicy) return segment.semanticPolicy.translationDisposition === "preserve";
   return Boolean(PAPER_PDF_OVERLAY_PRESERVE_TYPES[String(segment.type || "body")]);
 }
 
@@ -174,6 +181,7 @@ function normalizeSimplePdfSegmentType(type) {
 }
 function isSimplePdfTranslatableSegment(segment) {
   if (!segment) return false;
+  if (segment.semanticPolicy) return segment.semanticPolicy.translationDisposition === "translate";
   var type = normalizeSimplePdfSegmentType(String(segment.type || "body"));
   if (type === "title" || type === "body" || type === "paragraph") return true;
   return false;
@@ -346,6 +354,8 @@ function isPdfOverlayCandidate(segment) {
     lastPdfOutputPath: "",
     extractedText: "",
     segments: [],
+    semanticStructureArtifact: null,
+    semanticStructureConsumerReports: [],
     translatedSegments: [],
     previewText: "",
     outputText: "",
@@ -1882,6 +1892,9 @@ function isPdfOverlayCandidate(segment) {
     function serializeSimplePdfSegment(segment) {
       return assertSerializedSimplePdfSegmentClean({
         id: segment.id,
+        segmentIdentity: segment.segmentIdentity && typeof segment.segmentIdentity === "object"
+          ? JSON.parse(JSON.stringify(segment.segmentIdentity))
+          : null,
         pageNumber: segment.pageNumber,
         type: normalizeSimplePdfSegmentType(segment.type || "body"),
         sourceText: String(segment.sourceText || ""),
@@ -1969,6 +1982,9 @@ function isPdfOverlayCandidate(segment) {
      partialRegressionMode: Boolean(state.pdfPartialRegressionMode),
      partialTranslateRatio: Number(state.pdfPartialTranslateRatio || 0),
      pipelineDebug: state.pdfExtract && state.pdfExtract.pipelineDebug ? state.pdfExtract.pipelineDebug : null,
+     semanticStructureArtifact: state.semanticStructureArtifact,
+     semanticStructureConsumerReports: state.semanticStructureConsumerReports.slice(),
+     semanticConsumerAuthorityRequired: true,
      exportStrategy: isSimple ? "document_flow" : "overlay",
      simpleBlocks: isSimple ? getSimplePdfTranslatedEntries().map(function (entry) {
        return serializeSimplePdfSegment(entry.segment);
@@ -1991,21 +2007,33 @@ function isPdfOverlayCandidate(segment) {
  }
 
   function buildPdfDiagnosticPayload() {
+    var diagnosticSegments = state.segments.map(function (segment) {
+      return {
+        id: segment.id,
+        segmentIdentity: segment.segmentIdentity && typeof segment.segmentIdentity === "object"
+          ? JSON.parse(JSON.stringify(segment.segmentIdentity))
+          : null,
+        pageNumber: segment.pageNumber,
+        type: segment.type,
+        sourceText: String(segment.sourceText || ""),
+        sourcePageRange: Array.isArray(segment.sourcePageRange) ? segment.sourcePageRange : [segment.firstLinePageNumber || segment.pageNumber || 0, segment.lastLinePageNumber || segment.pageNumber || 0],
+        sourceLineRange: Array.isArray(segment.sourceLineRange) ? segment.sourceLineRange : [],
+        bbox: segment.bbox,
+        lines: Array.isArray(segment.lines) ? segment.lines : [],
+        lineBoxes: Array.isArray(segment.lineBoxes) ? segment.lineBoxes : [],
+        status: segment.status,
+        pdfTranslationMode: state.pdfTranslationMode,
+        translatedText: String(segment.translatedText || "").trim(),
+      };
+    });
     return Object.assign({
       fileName: state.pdfExtract && state.pdfExtract.fileName ? state.pdfExtract.fileName : state.selectedFile && state.selectedFile.fileName ? state.selectedFile.fileName : "pdf.pdf",
       filePath: state.pdfExtract && state.pdfExtract.filePath ? state.pdfExtract.filePath : "",
-      segments: state.segments.map(function (segment) {
-        return {
-          id: segment.id,
-          pageNumber: segment.pageNumber,
-          bbox: segment.bbox,
-          lines: Array.isArray(segment.lines) ? segment.lines : [],
-          lineBoxes: Array.isArray(segment.lineBoxes) ? segment.lineBoxes : [],
-          status: segment.status,
-          pdfTranslationMode: state.pdfTranslationMode,
-          translatedText: String(segment.translatedText || "").trim(),
-        };
-      }),
+      segments: diagnosticSegments,
+      allSegments: diagnosticSegments.map(function (segment) { return Object.assign({}, segment); }),
+      semanticStructureArtifact: state.semanticStructureArtifact,
+      semanticStructureConsumerReports: state.semanticStructureConsumerReports.slice(),
+      semanticConsumerAuthorityRequired: true,
     }, getPdfTranslationModePayload());
   }
 
@@ -2731,6 +2759,8 @@ function resetPdfDocumentState(fileId) {
     state.pdfExtract = null;
     state.extractedText = "";
     state.segments = [];
+    state.semanticStructureArtifact = null;
+    state.semanticStructureConsumerReports = [];
     state.translatedSegments = [];
     state.previewText = "";
     state.outputText = "";
@@ -2798,6 +2828,9 @@ function resetPdfDocumentState(fileId) {
         return rawSegments.map(function (segment, index) {
           return {
             id: segment.id || "simple-" + (index + 1),
+            segmentIdentity: segment.segmentIdentity && typeof segment.segmentIdentity === "object"
+              ? JSON.parse(JSON.stringify(segment.segmentIdentity))
+              : null,
             pageNumber: Number(segment.pageNumber || segment.firstLinePageNumber || 0),
             type: normalizeSimplePdfSegmentType(segment.type || "body"),
             sourceText: String(segment.sourceText || ""),
@@ -2806,6 +2839,8 @@ function resetPdfDocumentState(fileId) {
             status: segment.status || "pending",
             firstLinePageNumber: segment.firstLinePageNumber || segment.pageNumber || 0,
             lastLinePageNumber: segment.lastLinePageNumber || segment.pageNumber || 0,
+            sourcePageRange: Array.isArray(segment.sourcePageRange) ? segment.sourcePageRange.slice() : [segment.firstLinePageNumber || segment.pageNumber || 0, segment.lastLinePageNumber || segment.pageNumber || 0],
+            sourceLineRange: Array.isArray(segment.sourceLineRange) ? segment.sourceLineRange.slice() : [],
             crossedPageBoundary: Boolean(segment.crossedPageBoundary),
             mergeReason: segment.mergeReason || "",
             error: segment.error || "",
@@ -3802,7 +3837,18 @@ function resetPdfDocumentState(fileId) {
         state.rawLines = Array.isArray(result.rawLines) ? result.rawLines : [];
         state.rawTextByPage = Array.isArray(result.rawTextByPage) ? result.rawTextByPage : [];
         state.paragraphs = Array.isArray(result.paragraphs) ? result.paragraphs : [];
-        state.segments = normalizePdfSegments(result);
+        var normalizedSegments = normalizePdfSegments(result);
+        if (!semanticStructureConsumerAuthority) {
+          throw new Error("Semantic Structure Consumer Authority is unavailable");
+        }
+        var rendererConsumerBinding = semanticStructureConsumerAuthority.bindSemanticStructureConsumerSegments(
+          normalizedSegments,
+          result.semanticStructureArtifact,
+          { stage: "renderer.extraction", mode: state.pdfTranslationMode }
+        );
+        state.semanticStructureArtifact = rendererConsumerBinding.artifact;
+        state.semanticStructureConsumerReports = [rendererConsumerBinding.report];
+        state.segments = rendererConsumerBinding.segments;
         logPdfCompleteness(result, state.segments);
         debugPdfLog("[pdf] extracted file=", result.fileName, "chars=", state.extractedText.length, "items=", state.textItems.length, "segments=", state.segments.length, "preview=", state.extractedText.slice(0, 500));
         setPdfWorkflowState("extracted", result);
@@ -4107,6 +4153,11 @@ function resetPdfDocumentState(fileId) {
     }
     if (!state.extractedText) return false;
     if (!state.segments.length) {
+      if (state.semanticStructureArtifact) {
+        var semanticFallbackError = new Error("Canonical semantic consumers cannot synthesize fallback segments after freeze");
+        semanticFallbackError.code = "SEMANTIC_CONSUMER_FALLBACK_RECLASSIFICATION";
+        throw semanticFallbackError;
+      }
       state.segments = String(state.extractedText || "").split(/\n\s*\n/).map(function (paragraph, index) {
         return {
           id: "simple-fallback-" + (index + 1),

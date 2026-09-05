@@ -10,6 +10,12 @@ const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
 const fontkit = require("@pdf-lib/fontkit");
 const { createPdfDiagnosticRuntime, findingsFromAudit } = require("./pdf-pipeline-diagnostics");
 const paperLayoutAuthority = require("./paper-layout-authority");
+const { runSemanticStructureShadowValidation } = require("./semantic-structure-authority");
+const {
+  bindSemanticStructureConsumerPayload,
+  bindSemanticStructureConsumerSegments,
+  assertSemanticConsumerTypeProjection,
+} = require("./semantic-structure-consumer-authority");
 
 console.log("[LINGOFLOW][REAL MAIN LOADED]", __filename);
 console.log("[LINGOFLOW][CWD]", process.cwd());
@@ -6170,13 +6176,23 @@ function buildStructuredPdfText(pageItemsByPage, pipelineConfig, imageGeometryBy
 }
 
 function runPdfExtractionPipeline(pageItemsByPage, config, imageGeometryByPage = new Map()) {
+  let legacyResult;
   if (config && config.mode === "simple_pdf") {
-    return runSimplePdfSimplifiedCore(pageItemsByPage, config);
+    legacyResult = runSimplePdfSimplifiedCore(pageItemsByPage, config);
+  } else if (config && (config.mode === "paper_pdf" || config.mode === "legacy_simple_pdf")) {
+    legacyResult = buildStructuredPdfText(pageItemsByPage, config, imageGeometryByPage);
+  } else {
+    throw new Error("Unsupported PDF mode");
   }
-  if (config && (config.mode === "paper_pdf" || config.mode === "legacy_simple_pdf")) {
-    return buildStructuredPdfText(pageItemsByPage, config, imageGeometryByPage);
-  }
-  throw new Error("Unsupported PDF mode");
+  const semanticStructureShadow = runSemanticStructureShadowValidation(legacyResult, {
+    mode: config.mode,
+    inputStage: "runPdfExtractionPipeline.legacy_result",
+  });
+  return {
+    ...legacyResult,
+    semanticStructureArtifact: semanticStructureShadow.artifact,
+    semanticStructureShadowValidation: semanticStructureShadow.comparison,
+  };
 }
 
 async function extractPdfTextWithPdfJs(buffer, pipelineConfig) {
@@ -6234,6 +6250,8 @@ async function extractPdfTextWithPdfJs(buffer, pipelineConfig) {
     ? structured.paperSegments
     : (isPaperPdfConfig(pipelineConfig) ? segments : []);
   const pipelineDebug = structured.pipelineDebug || { pages: [] };
+  const semanticStructureArtifact = structured.semanticStructureArtifact || null;
+  const semanticStructureShadowValidation = structured.semanticStructureShadowValidation || null;
   const text = structured.text || normalizeExtractedPdfText(pageTexts.join("\n\n"));
   const simpleMode = isSimplePdfV2Config(pipelineConfig);
   return {
@@ -6247,6 +6265,8 @@ async function extractPdfTextWithPdfJs(buffer, pipelineConfig) {
     simpleBlocks,
     paperSegments,
     pipelineDebug,
+    semanticStructureArtifact,
+    semanticStructureShadowValidation,
     pdfTranslationMode: pipelineConfig && pipelineConfig.mode || "",
     pipelineLabel: pipelineConfig && pipelineConfig.label || "",
     pipelineConfigSummary: summarizePdfPipelineConfig(pipelineConfig || {}),
@@ -11245,6 +11265,9 @@ function makePaperLayoutWritePlanItem(input) {
   return {
     segmentId: String(segment.id || ""),
     type: String(segment.type || "body"),
+    semanticDecisionId: String(segment.semanticDecisionId || ""),
+    semanticStructureArtifactId: String(segment.semanticStructureArtifactId || ""),
+    semanticSourceOwnership: segment.semanticSourceOwnership || null,
     pageNumber: Number(segment.pageNumber || 0),
     pageIndex: Number(segment.pageIndex || Math.max(0, Number(segment.pageNumber || 1) - 1)),
     columnKey: String(segment.column || "single"),
@@ -11483,9 +11506,10 @@ function resolvePaperParagraphFlowType(segment, pipelineConfig) {
   const rawType = String(segment && segment.type || "body");
   if (!isPaperPdfConfig(pipelineConfig)) return rawType;
   const strictPureEquationBlock = isStrictPureEquationBlock(segment, pipelineConfig);
-  if (strictPureEquationBlock && PDF_EXPORT_TRANSLATABLE_TYPES.has(rawType)) return "formula";
-  if (rawType === "formula" && !strictPureEquationBlock) return "body";
-  return rawType;
+  const projectedType = strictPureEquationBlock && PDF_EXPORT_TRANSLATABLE_TYPES.has(rawType)
+    ? "formula"
+    : (rawType === "formula" && !strictPureEquationBlock ? "body" : rawType);
+  return assertSemanticConsumerTypeProjection(segment, projectedType, "paragraph_flow");
 }
 
 function buildPaperParagraphRuns(allSegments, pageBodyFontStats, pipelineConfig = null) {
@@ -11744,6 +11768,7 @@ function buildPaperParagraphRuns(allSegments, pageBodyFontStats, pipelineConfig 
     const column = String(segment.column || "single");
     // Reclassify caption-tagged segments that are actually inline body references
     const captionReclassified = isPaperCaptionReclassifiedAsBodyInReconstruction(segment);
+    if (captionReclassified) assertSemanticConsumerTypeProjection(segment, "body", "paragraph_caption_reclassification");
     if (captionReclassified) captionReclassifiedIds.push(String(segment.id || ""));
     if (hasFinalizedCaptionOwnershipAuthority(segment)) captionAuthorityPreservedIds.push(String(segment.id || ""));
     const normalizedFlowType = resolvePaperParagraphFlowType(segment, pipelineConfig);
@@ -13513,10 +13538,14 @@ function simpleNormalizeBlocksForExport(rawBlocks) {
   return blocks.map((block, index) => {
     const translatedText = cleanPdfText(block && block.translatedText);
     const sourceText = cleanPdfText(block && (block.sourceText || block.textPreview || block.text));
-    const type = simpleNormalizeBlockType(block && block.type || "body");
+    const projectedType = simpleNormalizeBlockType(block && block.type || "body");
+    const type = assertSemanticConsumerTypeProjection(block, projectedType, "simple_export_normalization");
     return {
       id: String(block && block.id || `simple-${index + 1}`),
       type,
+      semanticDecisionId: String(block && block.semanticDecisionId || ""),
+      semanticStructureArtifactId: String(block && block.semanticStructureArtifactId || ""),
+      semanticSourceOwnership: block && block.semanticSourceOwnership || null,
       sourceText,
       translatedText,
       outputOrder: Number(block && block.outputOrder || index + 1),
@@ -13537,6 +13566,9 @@ function simpleMakeCleanReportBlock(block, written) {
   return {
     id: block.id,
     type: block.type,
+    semanticDecisionId: String(block.semanticDecisionId || ""),
+    semanticStructureArtifactId: String(block.semanticStructureArtifactId || ""),
+    semanticSourceOwnership: block.semanticSourceOwnership || null,
     status: block.status,
     sourceTextPreview: makePreviewText(block.sourceText || ""),
     translatedPreview: makePreviewText(block.translatedText || ""),
@@ -14278,6 +14310,12 @@ async function simpleExportDocumentFlowPdf(payload, pipelineConfig, diagnosticRu
     inputKind: extractionSummary.inputKind || "text_pdf",
     overlongBlockSplitCount: Number(extractionSummary.overlongBlockSplitCount || 0),
   });
+  summary.semanticConsumerAuthority = payload && payload.semanticConsumerAuthorityRequired ? "semantic_structure_artifact" : "legacy_compatibility";
+  summary.semanticStructureArtifactId = String(payload && payload.semanticStructureArtifact && payload.semanticStructureArtifact.artifactId || "");
+  summary.semanticConsumerValidationStatus = payload && payload.semanticConsumerAuthorityRequired
+    ? ((payload.semanticStructureConsumerValidation || []).length > 0 && payload.semanticStructureConsumerValidation.every((report) => report && report.status === "match") ? "match" : "failed")
+    : "not_applicable";
+  summary.semanticConsumerValidationStages = (payload && payload.semanticStructureConsumerValidation || []).map((report) => String(report && report.stage || "")).filter(Boolean);
   const segmentReports = blocks.map((block) => simpleMakeCleanReportBlock(block, writtenById.has(block.id)));
   segmentReports.forEach((report) => diagnosticRuntime.registerArtifact({
     artifactType: 'segment-report', artifactId: String(report.id || ''), producerStage: 'export_audit',
@@ -14337,7 +14375,8 @@ function getPdfExportSkipReason(segment, pipelineConfig) {
     return getPdfExportSkipReasonForMode(segment, mode, pipelineConfig);
   }
   const rawType = String(segment.type || "body");
-  const type = rawType === "formula" && !isStrictPureEquationBlock(segment, pipelineConfig) ? "body" : rawType;
+  const projectedType = rawType === "formula" && !isStrictPureEquationBlock(segment, pipelineConfig) ? "body" : rawType;
+  const type = assertSemanticConsumerTypeProjection(segment, projectedType, "export_skip_reason");
   if (segment.partialRegressionNotTranslated) return "partial_regression_not_translated";
   const invalidTranslationReason = getInvalidTranslationSkipReason(segment);
   if (invalidTranslationReason) return invalidTranslationReason;
@@ -18784,6 +18823,7 @@ function drawSingleZhToEnDocumentFlow(sortedSegments, pages, font, targetLanguag
 
 function simpleIsTranslatableBlock(block) {
   if (!block) return false;
+  if (block.semanticPolicy) return block.semanticPolicy.translationDisposition === "translate";
   var type = String(block.type || "body");
   if (type === "title" || type === "body" || type === "paragraph") return true;
   if (type === "header" || type === "footer" || type === "pageNumber" || type === "noise" || type === "watermark" || type === "margin") return false;
@@ -19199,6 +19239,14 @@ function simpleBuildReport(blocks, summary) {
 }
 async function exportTranslatedPdf(payload) {
   const pipelineConfig = validatePdfTranslationMode(payload);
+  if (payload && payload.semanticConsumerAuthorityRequired) {
+    const boundConsumerPayload = bindSemanticStructureConsumerPayload(payload, {
+      stage: "main.exportTranslatedPdf",
+      mode: pipelineConfig.mode,
+    });
+    payload = boundConsumerPayload.payload;
+    payload.semanticStructureConsumerValidation = boundConsumerPayload.reports;
+  }
   const isPaperExport = isPaperPdfConfig(pipelineConfig);
   const diagnosticRuntime = createPdfDiagnosticRuntime({
     sourcePath: String(payload && payload.filePath || ''),
@@ -19442,13 +19490,33 @@ async function exportTranslatedPdf(payload) {
       exportInputSegments = exportInputSegments.filter((segment) => !fullyDuplicateSourceLineSegmentIds.has(String(segment && segment.id || '')));
     }
   }
+  if (payload && payload.semanticConsumerAuthorityRequired) {
+    const reboundAllSegments = bindSemanticStructureConsumerSegments(
+      allSegments,
+      payload.semanticStructureArtifact,
+      { stage: "main.postNormalization.allSegments", mode: pipelineConfig.mode }
+    );
+    const reboundExportSegments = bindSemanticStructureConsumerSegments(
+      exportInputSegments,
+      payload.semanticStructureArtifact,
+      { stage: "main.postNormalization.exportSegments", mode: pipelineConfig.mode, allowSubset: true }
+    );
+    allSegments = reboundAllSegments.segments;
+    exportInputSegments = reboundExportSegments.segments;
+    payload.semanticStructureConsumerValidation = [
+      ...(payload.semanticStructureConsumerValidation || []),
+      reboundAllSegments.report,
+      reboundExportSegments.report,
+    ];
+  }
   const segmentReports = allSegments.map((segment) => {
     const rawType = String(segment && segment.type || "body");
     const pureFormulaSegment = isPureFormulaSegment(segment, pipelineConfig);
     const strictPureEquationBlock = isStrictPureEquationBlock(segment, pipelineConfig);
-    const type = strictPureEquationBlock && PDF_EXPORT_TRANSLATABLE_TYPES.has(rawType)
+    const projectedType = strictPureEquationBlock && PDF_EXPORT_TRANSLATABLE_TYPES.has(rawType)
       ? "formula"
       : (rawType === "formula" && !strictPureEquationBlock ? "body" : rawType);
+    const type = assertSemanticConsumerTypeProjection(segment, projectedType, "export_report");
     const preserveOriginal = PDF_EXPORT_PRESERVE_TYPES.has(type) || strictPureEquationBlock;
     const reportStatus = preserveOriginal ? "preserved" : String(segment && segment.status || "");
     const formulaGroups = getFormulaSegmentLineGroups(segment, pipelineConfig);
@@ -19465,6 +19533,9 @@ async function exportTranslatedPdf(payload) {
       pageIndex: Math.max(0, Number(segment && segment.pageNumber || 0) - 1),
       pageNumber: Number(segment && segment.pageNumber || 0),
       type,
+      semanticDecisionId: String(segment && segment.semanticDecisionId || ""),
+      semanticStructureArtifactId: String(segment && segment.semanticStructureArtifactId || ""),
+      semanticSourceOwnership: segment && segment.semanticSourceOwnership || null,
       layoutType: String(segment && segment.layoutType || ""),
       column: String(segment && segment.column || "single"),
       zoneType: String(segment && segment.zoneType || ""),
@@ -23410,6 +23481,12 @@ async function exportTranslatedPdf(payload) {
   const _maskAppliedWriteNotAppliedOwnerAwareReports = _maskAppliedWriteNotAppliedLegacyReports.filter((r) => !_isCaptionGroupOwnerAwareCoveredForCompleteness(r));
   const exportSummary = {
     pdfTranslationMode: pipelineConfig.mode,
+    semanticConsumerAuthority: payload && payload.semanticConsumerAuthorityRequired ? "semantic_structure_artifact" : "legacy_compatibility",
+    semanticStructureArtifactId: String(payload && payload.semanticStructureArtifact && payload.semanticStructureArtifact.artifactId || ""),
+    semanticConsumerValidationStatus: payload && payload.semanticConsumerAuthorityRequired
+      ? ((payload.semanticStructureConsumerValidation || []).length > 0 && payload.semanticStructureConsumerValidation.every((report) => report && report.status === "match") ? "match" : "failed")
+      : "not_applicable",
+    semanticConsumerValidationStages: (payload && payload.semanticStructureConsumerValidation || []).map((report) => String(report && report.stage || "")).filter(Boolean),
     modeLockedByUser,
     pipelineLabel: pipelineConfig.label,
     pipelineBranch: isSimpleExport ? "simple_document_flow" : "paper_overlay_flow",
@@ -24579,11 +24656,14 @@ function registerWindowChromeIpc() {
   ipcMain.handle("pdf:export-translated-txt", (_event, payload) => exportTranslatedTxt(payload));
   ipcMain.handle("pdf:export-translated-docx", (_event, payload) => exportTranslatedDocx(payload));
   ipcMain.handle("pdf:export-translated-pdf", (_event, payload) => exportTranslatedPdf(payload));
-  ipcMain.handle("pdf:export-debug-bbox", (_event, payload) => exportPdfDebugBbox(payload));
-  ipcMain.handle("pdf:export-mask-test", (_event, payload) => exportPdfMaskTest(payload));
-  ipcMain.handle("pdf:export-debug-linebox", (_event, payload) => exportPdfDebugLineBox(payload));
-  ipcMain.handle("pdf:export-debug-mask-area", (_event, payload) => exportPdfDebugMaskArea(payload));
-  ipcMain.handle("pdf:export-mask-linebox-test", (_event, payload) => exportPdfMaskLineBoxTest(payload));
+  const bindDiagnosticConsumerPayload = (payload, stage) => payload && payload.semanticConsumerAuthorityRequired
+    ? bindSemanticStructureConsumerPayload(payload, { stage, mode: payload.pdfTranslationMode }).payload
+    : payload;
+  ipcMain.handle("pdf:export-debug-bbox", (_event, payload) => exportPdfDebugBbox(bindDiagnosticConsumerPayload(payload, "main.debugBbox")));
+  ipcMain.handle("pdf:export-mask-test", (_event, payload) => exportPdfMaskTest(bindDiagnosticConsumerPayload(payload, "main.maskTest")));
+  ipcMain.handle("pdf:export-debug-linebox", (_event, payload) => exportPdfDebugLineBox(bindDiagnosticConsumerPayload(payload, "main.debugLineBox")));
+  ipcMain.handle("pdf:export-debug-mask-area", (_event, payload) => exportPdfDebugMaskArea(bindDiagnosticConsumerPayload(payload, "main.debugMaskArea")));
+  ipcMain.handle("pdf:export-mask-linebox-test", (_event, payload) => exportPdfMaskLineBoxTest(bindDiagnosticConsumerPayload(payload, "main.maskLineBoxTest")));
 }
 
 function createWindow() {

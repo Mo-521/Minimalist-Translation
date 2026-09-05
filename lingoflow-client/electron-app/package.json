@@ -39,6 +39,8 @@
       "tailwind.css",
       "paper-layout-authority.js",
       "pdf-pipeline-diagnostics.js",
+      "semantic-structure-authority.js",
+      "semantic-structure-consumer-authority.js",
       "package.json",
       "node_modules/**/*"
     ],
