@@ -87,7 +87,6 @@ test('source merge entry points are guarded and rejected merges preserve incomin
   const simpleCrossPageFlow = extractFunction(mainSource, 'mergeSimpleCrossPageParagraphs');
   const inlineMerge = extractFunction(mainSource, 'mergeInlineFigureReferenceCaptionIntoBody');
   const paragraphMerge = extractFunction(mainSource, 'splitAndMergeParagraphs');
-  const paragraphPostProcess = extractFunction(mainSource, 'postProcessPdfParagraphs');
 
   assert.match(genericMerge, /finalizePaperSourceMergeContract\(base, incoming\)/);
   assert.match(genericMerge, /status !== 'ok'\) return null/);
@@ -98,7 +97,8 @@ test('source merge entry points are guarded and rejected merges preserve incomin
   assert.match(simpleCrossPageFlow, /if \(mergeSegments\(/);
   assert.match(inlineMerge, /finalizePaperSourceMergeContract\(body, caption\)/);
   assert.match(paragraphMerge, /finalizePaperSourceMergeContract\(previous, paragraph\)/);
-  assert.match(paragraphPostProcess, /finalizePaperSourceMergeContract\(abstractBuffer, paragraph\)/);
+  assert.doesNotMatch(mainSource, /function postProcessPdfParagraphs\(/);
+  assert.doesNotMatch(mainSource, /function splitPageOneTopMatter\(/);
 });
 
 test('caption continuation recovery checks finalized page authority before consuming a member', () => {

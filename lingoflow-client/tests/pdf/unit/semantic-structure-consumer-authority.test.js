@@ -178,3 +178,23 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.match(rendererSource, /if \(segment\.semanticPolicy\) return segment\.semanticPolicy\.translationDisposition === "translate"/);
   assert.match(rendererSource, /SEMANTIC_CONSUMER_FALLBACK_RECLASSIFICATION/);
 });
+
+test("unreachable legacy structure producers and registry aliases stay retired", () => {
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+
+  [
+    "makeParagraphFromLines",
+    "splitPageOneTopMatter",
+    "postProcessPdfParagraphs",
+    "simpleBuildCleanBlock",
+    "simpleExtractSimplePdfLines",
+    "simpleRemoveSimpleHeadersFooters",
+    "simpleBuildBlock",
+    "simpleBuildSimpleDocumentParagraphs",
+    "simpleMergeSimpleCrossPageParagraphsSafely",
+    "simpleBuildSimplePdfV2DebugReport",
+    "runSimplePdfPipeline",
+  ].forEach((name) => assert.doesNotMatch(mainSource, new RegExp(`function ${name}\\(`)));
+  assert.doesNotMatch(mainSource, /const PAPER_PDF_EXPORT_ALLOWED_TYPES\s*=/);
+  assert.doesNotMatch(mainSource, /const PAPER_PDF_EXPORT_PRESERVE_TYPES\s*=/);
+});
