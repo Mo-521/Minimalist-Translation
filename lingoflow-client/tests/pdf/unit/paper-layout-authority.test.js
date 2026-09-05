@@ -81,6 +81,19 @@ test('caption authority preserves fixed size and bounded own-region padding beha
   assert.deepEqual(resolved.padding.candidates, [2, 1.5, 1]);
 });
 
+test('write kind consumes canonical semantic type and never guesses from text', () => {
+  assert.equal(authority.resolveWriteKind({ type: 'body', sourceText: 'Abstract', translatedText: '摘要' }, [{}]), 'body');
+  assert.equal(authority.resolveWriteKind({ semanticType: 'keywords', type: 'body', sourceText: 'Body prose' }, [{}]), 'keywords');
+  assert.throws(
+    () => authority.resolveWriteKind({ sourceText: 'Abstract', translatedText: '摘要' }, [{}]),
+    (error) => error && error.code === 'LAYOUT_SEMANTIC_TYPE_REQUIRED'
+  );
+  assert.throws(
+    () => authority.resolveWriteKind({ type: 'formula', sourceText: 'x = 1' }, [{}]),
+    (error) => error && error.code === 'LAYOUT_SEMANTIC_TYPE_NOT_WRITABLE'
+  );
+});
+
 test('authority decisions are input-driven and do not contain sample identities', () => {
   const source = require('node:fs').readFileSync(path.join(root, 'electron-app/paper-layout-authority.js'), 'utf8');
   assert.doesNotMatch(source, /seg-\d+|论文样本|pageNumber\s*===|fileName/);

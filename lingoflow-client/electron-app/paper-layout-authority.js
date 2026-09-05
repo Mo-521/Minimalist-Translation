@@ -180,21 +180,22 @@ function resolveLineHeight(fontSize, segmentType, text = "", visualRole = "", is
 }
 
 function resolveWriteKind(segment, lineMasks = [], cleanTextFn = null) {
-  if (segment && segment.type === "caption") return "caption";
-  if (segment && segment.type === "heading") return "heading";
-  if (segment && segment.type === "title") return "title";
-  if (segment && (segment.type === "abstract" || segment.type === "abstract-title")) return "abstract";
-  if (segment && segment.type === "keywords") return "keywords";
-  if (segment && ["correspondence", "funding", "receivedDate", "affiliation"].includes(String(segment.type || ""))) return "metadata";
-  const clean = typeof cleanTextFn === "function" ? cleanTextFn : (value) => String(value || "").replace(/\s+/g, " ").trim();
-  const sourceText = clean(segment && segment.sourceText);
-  const translatedText = clean(segment && segment.translatedText);
-  const firstSourceLine = sourceText.split(/\n+/)[0] || "";
-  const firstTranslatedLine = translatedText.split(/\n+/)[0] || "";
-  if (/^(abstract|摘要)\b/i.test(firstSourceLine) || /^摘要/.test(firstTranslatedLine)) return "abstract";
-  if (/^(keywords|key words|关键词)\b/i.test(firstSourceLine) || /^关键词/.test(firstTranslatedLine)) return "keywords";
-  if ((lineMasks || []).length <= 2 && sourceText.length <= 220 && translatedText.length <= 180) return "title";
-  return "body";
+  const semanticType = String(segment && (segment.semanticType || segment.type) || "");
+  if (!semanticType) {
+    const error = new Error("Canonical semantic type is required before resolving layout write kind");
+    error.code = "LAYOUT_SEMANTIC_TYPE_REQUIRED";
+    throw error;
+  }
+  if (semanticType === "caption") return "caption";
+  if (semanticType === "heading") return "heading";
+  if (semanticType === "title") return "title";
+  if (semanticType === "abstract" || semanticType === "abstract-title") return "abstract";
+  if (semanticType === "keywords") return "keywords";
+  if (["correspondence", "funding", "receivedDate", "affiliation"].includes(semanticType)) return "metadata";
+  if (semanticType === "body") return "body";
+  const error = new Error(`Semantic type ${semanticType} is not writable by paper layout authority`);
+  error.code = "LAYOUT_SEMANTIC_TYPE_NOT_WRITABLE";
+  throw error;
 }
 
 function resolveWriteStyle(kind, averageFontSize, strategy) {
