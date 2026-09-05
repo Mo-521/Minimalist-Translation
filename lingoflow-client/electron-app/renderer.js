@@ -102,10 +102,6 @@ function getPaperExportCompletenessStrict() {
 
 
 
-function normalizeSimplePdfSegmentType(type) {
-  var normTypes = { "abstract": "body", "abstract-title": "body", "keywords": "body", "heading": "body", "caption": "body", "affiliation": "body", "correspondence": "body", "receivedDate": "body", "funding": "body", "reference": "body", "formula": "body", "imageText": "body", "author": "body" };
-  return normTypes[type] || type;
-}
 function isSimplePdfTranslatableSegment(segment) {
   if (!segment) return false;
   return requireSemanticTranslationDisposition(segment, "isSimplePdfTranslatableSegment") === "translate";
@@ -1816,7 +1812,7 @@ function isPdfOverlayCandidate(segment) {
           ? JSON.parse(JSON.stringify(segment.segmentIdentity))
           : null,
         pageNumber: segment.pageNumber,
-        type: normalizeSimplePdfSegmentType(segment.type || "body"),
+        type: segment.type,
         sourceText: String(segment.sourceText || ""),
         targetLanguage: state.pdfTargetLang,
         sourcePageRange: Array.isArray(segment.sourcePageRange) ? segment.sourcePageRange : [segment.firstLinePageNumber || segment.pageNumber || 0, segment.lastLinePageNumber || segment.pageNumber || 0],
@@ -1837,7 +1833,7 @@ function isPdfOverlayCandidate(segment) {
           ? JSON.parse(JSON.stringify(segment.segmentIdentity))
           : null,
         pageNumber: segment.pageNumber,
-        type: segment.type || "body",
+        type: segment.type,
         bbox: segment.bbox,
         sourceText: String(segment.sourceText || ""),
         column: segment.column || "single",
@@ -2702,43 +2698,6 @@ function resetPdfDocumentState(fileId) {
     ].join(":");
   }
 
-  function splitPdfTextIntoSegments(text) {
-    var normalized = String(text || "").replace(/\r/g, "\n").trim();
-    if (!normalized) return [];
-    var paragraphs = normalized.split(/\n\s*\n/).map(function (item) {
-      return item.replace(/\s+/g, " ").trim();
-    }).filter(Boolean);
-    var source = paragraphs.length ? paragraphs : normalized.split(/\n+/).map(function (item) {
-      return item.replace(/\s+/g, " ").trim();
-    }).filter(Boolean);
-    var chunks = [];
-    var current = "";
-    source.forEach(function (paragraph) {
-      if (!current) {
-        current = paragraph;
-        return;
-      }
-      if ((current + "\n\n" + paragraph).length <= 1800) {
-        current += "\n\n" + paragraph;
-      } else {
-        chunks.push(current);
-        current = paragraph;
-      }
-    });
-    if (current) chunks.push(current);
-    return chunks.map(function (chunk, index) {
-      return {
-        id: "fallback-" + (index + 1),
-        pageNumber: 0,
-        column: "single",
-        sourceText: chunk,
-        translatedText: "",
-        bbox: { x: 0, y: 0, width: 0, height: 0 },
-        status: "pending",
-      };
-    });
-  }
-
   function normalizePdfSegments(result) {
     var rawSegments = result && Array.isArray(result.segments) ? result.segments : [];
     if (state.pdfTranslationMode === "simple_pdf") {
@@ -2750,7 +2709,7 @@ function resetPdfDocumentState(fileId) {
               ? JSON.parse(JSON.stringify(segment.segmentIdentity))
               : null,
             pageNumber: Number(segment.pageNumber || segment.firstLinePageNumber || 0),
-            type: normalizeSimplePdfSegmentType(segment.type || "body"),
+            type: segment.type,
             sourceText: String(segment.sourceText || ""),
             previewText: segment.previewText || makeSegmentPreview(segment.sourceText || ""),
             translatedText: String(segment.translatedText || ""),
@@ -2765,26 +2724,16 @@ function resetPdfDocumentState(fileId) {
           };
         }).filter(function (segment) { return segment.sourceText.trim(); });
       }
-      return String(result && result.text || "").split(/\n\s*\n/).map(function (paragraph, index) {
-        return {
-          id: "simple-fallback-" + (index + 1),
-          pageNumber: 0,
-          type: index === 0 ? "title" : "body",
-          sourceText: String(paragraph || "").trim(),
-          previewText: makeSegmentPreview(paragraph || ""),
-          translatedText: "",
-          status: "pending",
-          firstLinePageNumber: 0,
-          lastLinePageNumber: 0,
-          crossedPageBoundary: false,
-          mergeReason: "",
-          error: "",
-        };
-      }).filter(function (segment) { return segment.sourceText; });
+      if (String(result && result.text || "").trim()) {
+        var missingSimpleSegmentsError = new Error("Canonical simple PDF segments are required after semantic freeze");
+        missingSimpleSegmentsError.code = "SEMANTIC_CONSUMER_SEGMENTS_REQUIRED";
+        throw missingSimpleSegmentsError;
+      }
+      return [];
     }
     if (rawSegments.length) {
       return rawSegments.map(function (segment, index) {
-        var normalizedType = segment.type || "body";
+        var normalizedType = segment.type;
         var normalizedStatus = segment.status || "pending";
         return {
           id: segment.id || "seg-" + (index + 1),
@@ -2835,7 +2784,12 @@ function resetPdfDocumentState(fileId) {
         };
       }).filter(function (segment) { return segment.sourceText.trim(); });
     }
-    return splitPdfTextIntoSegments(result && result.text ? result.text : "");
+    if (String(result && result.text || "").trim()) {
+      var missingPaperSegmentsError = new Error("Canonical paper PDF segments are required after semantic freeze");
+      missingPaperSegmentsError.code = "SEMANTIC_CONSUMER_SEGMENTS_REQUIRED";
+      throw missingPaperSegmentsError;
+    }
+    return [];
   }
 
   function segmentSourceTotal(segments) {
@@ -3443,7 +3397,9 @@ function resetPdfDocumentState(fileId) {
     }
     if (!state.extractedText) return false;
     if (!state.segments.length) {
-      state.segments = splitPdfTextIntoSegments(state.extractedText);
+      var missingPaperSegmentsError = new Error("Canonical paper PDF segments are required before translation");
+      missingPaperSegmentsError.code = "SEMANTIC_CONSUMER_SEGMENTS_REQUIRED";
+      throw missingPaperSegmentsError;
     }
     if (!state.segments.length) return false;
 
@@ -3844,18 +3800,6 @@ function resetPdfDocumentState(fileId) {
         if (!state.extractedText) return;
         debugPdfLog("[pdf] translate text first500=", state.extractedText.slice(0, 500));
         startPdfSegmentTranslation();
-        return;
-        if (!state.extractedText) return;
-        debugPdfLog("[pdf] prepare text first500=", state.extractedText.slice(0, 500));
-        if (!state.segments.length) {
-          state.segments = splitPdfTextIntoSegments(state.extractedText);
-        }
-        state.translatedSegments = [];
-        state.outputText = "";
-        debugPdfLog("[pdf] prepared segments=", state.segments.length, "firstSegment=", (state.segments[0] && state.segments[0].sourceText ? state.segments[0].sourceText : "").slice(0, 500));
-        setPdfWorkflowState("prepared", state.pdfExtract);
-        setPdfPreviewMode("segments");
-        prepareBtn.title = "已完成分块准备。下一步将接入分块翻译。";
       });
     }
 
@@ -4077,27 +4021,9 @@ function resetPdfDocumentState(fileId) {
     }
     if (!state.extractedText) return false;
     if (!state.segments.length) {
-      if (state.semanticStructureArtifact) {
-        var semanticFallbackError = new Error("Canonical semantic consumers cannot synthesize fallback segments after freeze");
-        semanticFallbackError.code = "SEMANTIC_CONSUMER_FALLBACK_RECLASSIFICATION";
-        throw semanticFallbackError;
-      }
-      state.segments = String(state.extractedText || "").split(/\n\s*\n/).map(function (paragraph, index) {
-        return {
-          id: "simple-fallback-" + (index + 1),
-          pageNumber: 0,
-          type: index === 0 ? "title" : "body",
-          sourceText: String(paragraph || "").trim(),
-          previewText: makeSegmentPreview(paragraph || ""),
-          translatedText: "",
-          status: "pending",
-          firstLinePageNumber: 0,
-          lastLinePageNumber: 0,
-          crossedPageBoundary: false,
-          mergeReason: "",
-          error: "",
-        };
-      }).filter(function (segment) { return segment.sourceText; });
+      var missingSimpleSegmentsError = new Error("Canonical simple PDF segments are required before translation");
+      missingSimpleSegmentsError.code = "SEMANTIC_CONSUMER_SEGMENTS_REQUIRED";
+      throw missingSimpleSegmentsError;
     }
     if (!state.segments.length) return false;
     var translatable = getSimplePdfTranslatableEntries();

@@ -188,7 +188,11 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.doesNotMatch(rendererSource, /PAPER_PDF_OVERLAY_PRESERVE_TYPES/);
   assert.doesNotMatch(rendererSource, /PDF_OVERLAY_ALLOWED_TYPES/);
   assert.doesNotMatch(rendererSource, /PDF_OVERLAY_PRESERVE_TYPES/);
-  assert.match(rendererSource, /SEMANTIC_CONSUMER_FALLBACK_RECLASSIFICATION/);
+  assert.match(rendererSource, /SEMANTIC_CONSUMER_SEGMENTS_REQUIRED/);
+  assert.doesNotMatch(rendererSource, /function normalizeSimplePdfSegmentType\(/);
+  assert.doesNotMatch(rendererSource, /simple-fallback-/);
+  assert.doesNotMatch(rendererSource, /function splitPdfTextIntoSegments\(/);
+  assert.doesNotMatch(rendererSource, /type:\s*segment\.type\s*\|\|\s*"body"/);
 });
 
 test("unreachable legacy structure producers and registry aliases stay retired", () => {
