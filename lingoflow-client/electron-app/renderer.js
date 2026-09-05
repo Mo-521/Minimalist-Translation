@@ -23,89 +23,20 @@
   }
 
 
-function getPdfOverlayAllowedTypesByMode(mode) {
-  if (mode === "simple_pdf") return { title: true, body: true };
-  return {
-    title: true, author: true, affiliation: true, correspondence: true,
-    receivedDate: true, funding: true, abstract: true, "abstract-title": true,
-    keywords: true, heading: true, body: true, caption: true,
-  };
-}
-
-function getPdfOverlayPreserveTypesByMode(mode) {
-  if (mode === "simple_pdf") return {
-    header: true, footer: true, pageNumber: true, noise: true, watermark: true, margin: true,
-  };
-  return {
-    author: true, reference: true, formula: true, imageText: true, margin: true,
-    footer: true, header: true, watermark: true, licenseText: true, pageNumber: true, noise: true,
-  };
-}
-
-function isPdfOverlayCandidateForMode(segment, mode) {
-  if (!segment) return false;
-  if (segment.semanticPolicy) return segment.semanticPolicy.translationDisposition === "translate";
-  var type = String(segment.type || "body");
-  var preserveTypes = getPdfOverlayPreserveTypesByMode(mode);
-  var allowedTypes = getPdfOverlayAllowedTypesByMode(mode);
-  if (preserveTypes[type]) return false;
-  if (allowedTypes[type]) return true;
-  if (mode === "simple_pdf") {
-    var paperOnly = ["author", "reference", "formula", "imageText", "abstract", "abstract-title", "keywords", "affiliation", "correspondence", "receivedDate", "funding", "heading", "caption"];
-    if (paperOnly.indexOf(type) >= 0) {
-      if (type === "author") return false;
-      return true;
-    }
-    return false;
+function requireSemanticTranslationDisposition(segment, consumerName) {
+  if (!segment || !segment.semanticPolicy || typeof segment.semanticPolicy !== "object") {
+    var missingPolicyError = new Error("Semantic policy is required by " + consumerName);
+    missingPolicyError.code = "SEMANTIC_CONSUMER_POLICY_REQUIRED";
+    throw missingPolicyError;
   }
-  return false;
-}
-
-function isPaperPreserveSegmentForMode(segment, mode) {
-  if (!segment) return false;
-  if (segment.semanticPolicy) return segment.semanticPolicy.translationDisposition === "preserve";
-  var type = String(segment.type || "body");
-  var preserveTypes = getPdfOverlayPreserveTypesByMode(mode);
-  if (preserveTypes[type]) return true;
-  if (mode === "simple_pdf") {
-    var paperOnly = ["author", "reference", "formula", "imageText", "licenseText"];
-    if (paperOnly.indexOf(type) >= 0) return false;
+  var disposition = String(segment.semanticPolicy.translationDisposition || "");
+  if (["translate", "preserve", "blocked"].indexOf(disposition) < 0) {
+    var invalidPolicyError = new Error("Unsupported semantic translation disposition at " + consumerName + ": " + (disposition || "<empty>"));
+    invalidPolicyError.code = "SEMANTIC_CONSUMER_POLICY_INVALID";
+    throw invalidPolicyError;
   }
-  return false;
+  return disposition;
 }
-
-  var PAPER_PDF_OVERLAY_ALLOWED_TYPES = {
-    title: true,
-    author: true,
-    affiliation: true,
-    correspondence: true,
-    receivedDate: true,
-    funding: true,
-    abstract: true,
-    "abstract-title": true,
-    keywords: true,
-    heading: true,
-    body: true,
-    caption: true,
-  };
-
-  var PAPER_PDF_OVERLAY_PRESERVE_TYPES = {
-    author: true,
-    reference: true,
-    formula: true,
-    imageText: true,
-    margin: true,
-    footer: true,
-    header: true,
-    watermark: true,
-    licenseText: true,
-    pageNumber: true,
-    noise: true,
-  };
-
-  // Deprecated aliases, paper/legacy only. Do not use in simple_pdf main path.
-  var PDF_OVERLAY_ALLOWED_TYPES = PAPER_PDF_OVERLAY_ALLOWED_TYPES;
-  var PDF_OVERLAY_PRESERVE_TYPES = PAPER_PDF_OVERLAY_PRESERVE_TYPES;
 
   var PDF_TRANSLATION_MODE_DEFS = {
     simple_pdf: {
@@ -133,16 +64,12 @@ function isPaperPreserveSegmentForMode(segment, mode) {
   
 function isPaperOverlayCandidateStrict(segment) {
   if (!segment) return false;
-  if (segment.semanticPolicy) return segment.semanticPolicy.translationDisposition === "translate";
-  var type = String(segment.type || "body");
-  if (PAPER_PDF_OVERLAY_PRESERVE_TYPES[type]) return false;
-  return Boolean(PAPER_PDF_OVERLAY_ALLOWED_TYPES[type]);
+  return requireSemanticTranslationDisposition(segment, "isPaperOverlayCandidateStrict") === "translate";
 }
 
 function isPaperPreserveSegmentStrict(segment) {
   if (!segment) return false;
-  if (segment.semanticPolicy) return segment.semanticPolicy.translationDisposition === "preserve";
-  return Boolean(PAPER_PDF_OVERLAY_PRESERVE_TYPES[String(segment.type || "body")]);
+  return requireSemanticTranslationDisposition(segment, "isPaperPreserveSegmentStrict") === "preserve";
 }
 
 function getPaperOverlaySegmentEntriesStrict() {
@@ -181,10 +108,7 @@ function normalizeSimplePdfSegmentType(type) {
 }
 function isSimplePdfTranslatableSegment(segment) {
   if (!segment) return false;
-  if (segment.semanticPolicy) return segment.semanticPolicy.translationDisposition === "translate";
-  var type = normalizeSimplePdfSegmentType(String(segment.type || "body"));
-  if (type === "title" || type === "body" || type === "paragraph") return true;
-  return false;
+  return requireSemanticTranslationDisposition(segment, "isSimplePdfTranslatableSegment") === "translate";
 }
 function getSimplePdfTranslatableEntries() {
   return state.segments.map(function(s,i){return{segment:s,index:i};}).filter(function(e){return isSimplePdfTranslatableSegment(e.segment);});
@@ -272,9 +196,7 @@ function isPdfOverlayCandidate(segment) {
       warnSimplePdfDeprecatedPaperWrapper("isPdfOverlayCandidate");
       return isSimplePdfTranslatableSegment(segment);
     }
-    return state.pdfTranslationMode === "paper_pdf"
-      ? isPaperOverlayCandidateStrict(segment)
-      : isPdfOverlayCandidateForMode(segment, state.pdfTranslationMode || "");
+    return state.pdfTranslationMode === "paper_pdf" ? isPaperOverlayCandidateStrict(segment) : false;
   }
 
   function isPaperPreserveSegment(segment) {
@@ -286,9 +208,7 @@ function isPdfOverlayCandidate(segment) {
       warnSimplePdfDeprecatedPaperWrapper("isPaperPreserveSegment");
       return false;
     }
-    return state.pdfTranslationMode === "paper_pdf"
-      ? isPaperPreserveSegmentStrict(segment)
-      : isPaperPreserveSegmentForMode(segment, state.pdfTranslationMode || "");
+    return state.pdfTranslationMode === "paper_pdf" ? isPaperPreserveSegmentStrict(segment) : false;
   }
 
   function getPreserveReasonLabel(segment) {
@@ -2866,7 +2786,6 @@ function resetPdfDocumentState(fileId) {
       return rawSegments.map(function (segment, index) {
         var normalizedType = segment.type || "body";
         var normalizedStatus = segment.status || "pending";
-        if (PDF_OVERLAY_PRESERVE_TYPES[String(normalizedType)]) normalizedStatus = "preserved";
         return {
           id: segment.id || "seg-" + (index + 1),
           segmentIdentity: segment.segmentIdentity && typeof segment.segmentIdentity === "object"
@@ -3847,6 +3766,13 @@ function resetPdfDocumentState(fileId) {
         state.semanticStructureArtifact = rendererConsumerBinding.artifact;
         state.semanticStructureConsumerReports = [rendererConsumerBinding.report];
         state.segments = rendererConsumerBinding.segments;
+        if (state.pdfTranslationMode === "paper_pdf") {
+          state.segments.forEach(function (segment) {
+            if (requireSemanticTranslationDisposition(segment, "renderer.extraction.status") === "preserve") {
+              segment.status = "preserved";
+            }
+          });
+        }
         logPdfCompleteness(result, state.segments);
         debugPdfLog("[pdf] extracted file=", result.fileName, "chars=", state.extractedText.length, "items=", state.textItems.length, "segments=", state.segments.length, "preview=", state.extractedText.slice(0, 500));
         setPdfWorkflowState("extracted", result);

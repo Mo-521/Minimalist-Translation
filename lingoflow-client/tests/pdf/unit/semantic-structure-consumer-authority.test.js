@@ -177,7 +177,17 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.doesNotMatch(rendererSource, /semanticConsumerAuthorityRequired/);
   assert.doesNotMatch(mainSource, /legacy_compatibility/);
   assert.match(rendererSource, /semanticStructureConsumerReports:\s*state\.semanticStructureConsumerReports\.slice\(\)/);
-  assert.match(rendererSource, /if \(segment\.semanticPolicy\) return segment\.semanticPolicy\.translationDisposition === "translate"/);
+  assert.match(rendererSource, /function requireSemanticTranslationDisposition\(segment, consumerName\)/);
+  assert.match(rendererSource, /SEMANTIC_CONSUMER_POLICY_REQUIRED/);
+  assert.match(rendererSource, /requireSemanticTranslationDisposition\(segment, "isPaperOverlayCandidateStrict"\) === "translate"/);
+  assert.match(rendererSource, /requireSemanticTranslationDisposition\(segment, "isPaperPreserveSegmentStrict"\) === "preserve"/);
+  assert.match(rendererSource, /requireSemanticTranslationDisposition\(segment, "isSimplePdfTranslatableSegment"\) === "translate"/);
+  assert.doesNotMatch(rendererSource, /getPdfOverlayAllowedTypesByMode/);
+  assert.doesNotMatch(rendererSource, /getPdfOverlayPreserveTypesByMode/);
+  assert.doesNotMatch(rendererSource, /PAPER_PDF_OVERLAY_ALLOWED_TYPES/);
+  assert.doesNotMatch(rendererSource, /PAPER_PDF_OVERLAY_PRESERVE_TYPES/);
+  assert.doesNotMatch(rendererSource, /PDF_OVERLAY_ALLOWED_TYPES/);
+  assert.doesNotMatch(rendererSource, /PDF_OVERLAY_PRESERVE_TYPES/);
   assert.match(rendererSource, /SEMANTIC_CONSUMER_FALLBACK_RECLASSIFICATION/);
 });
 
