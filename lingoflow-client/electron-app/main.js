@@ -13366,40 +13366,6 @@ function applyResolvedSourcePageToPaperSegment(segment) {
   };
 }
 
-function normalizePaperPageBoundaryColumnFlowSegments(segments) {
-  const source = Array.isArray(segments) ? segments : [];
-  const pageStats = new Map();
-  source.forEach((segment) => {
-    if (!segment || !segment.bbox) return;
-    const pageNumber = Number(segment.pageNumber || 0);
-    if (!pageNumber) return;
-    if (!pageStats.has(pageNumber)) pageStats.set(pageNumber, { maxRight: 0, hasLeft: false, hasRight: false });
-    const stats = pageStats.get(pageNumber);
-    stats.maxRight = Math.max(stats.maxRight, Number(segment.bbox.x || 0) + Number(segment.bbox.width || 0));
-    if (String(segment.column || '') === 'left') stats.hasLeft = true;
-    if (String(segment.column || '') === 'right') stats.hasRight = true;
-  });
-  return source.map((segment) => {
-    if (!segment || !segment.bbox || String(segment.type || '') !== 'abstract' || String(segment.column || '') !== 'single') return segment;
-    const pageNumber = Number(segment.pageNumber || 0);
-    const stats = pageStats.get(pageNumber);
-    if (!stats || !(stats.hasLeft && stats.hasRight) || !(stats.maxRight > 0)) return segment;
-    const bboxWidth = Number(segment.bbox.width || 0);
-    if (!(bboxWidth > 0) || bboxWidth > stats.maxRight * 0.58) return segment;
-    const centerX = Number(segment.bbox.x || 0) + bboxWidth / 2;
-    const inferredColumn = centerX < stats.maxRight / 2 ? 'left' : 'right';
-    return {
-      ...segment,
-      type: 'body',
-      column: inferredColumn,
-      pageBoundaryFlowOriginalType: 'abstract',
-      pageBoundaryFlowOriginalColumn: 'single',
-      pageBoundaryFlowNormalized: true,
-      classificationReason: `${String(segment.classificationReason || 'abstract')}_page_boundary_column_geometry`,
-    };
-  });
-}
-
 function getPaperSourceLineOwnershipKey(lineBox, fallbackPageNumber) {
   const pageNumber = Number(lineBox && lineBox.pageNumber || fallbackPageNumber || 0);
   const x = Math.round(Number(lineBox && lineBox.x || 0) * 10) / 10;
@@ -19177,8 +19143,6 @@ async function exportTranslatedPdf(payload) {
   if (isPaperExport) {
     allSegments = allSegments.map(applyResolvedSourcePageToPaperSegment);
     exportInputSegments = exportInputSegments.map(applyResolvedSourcePageToPaperSegment);
-    allSegments = normalizePaperPageBoundaryColumnFlowSegments(allSegments);
-    exportInputSegments = normalizePaperPageBoundaryColumnFlowSegments(exportInputSegments);
     const fullyDuplicateSourceLineSegmentIds = findPaperFullyDuplicateSourceLineSegmentIds(allSegments);
     if (fullyDuplicateSourceLineSegmentIds.size > 0) {
       allSegments = allSegments.filter((segment) => !fullyDuplicateSourceLineSegmentIds.has(String(segment && segment.id || '')));

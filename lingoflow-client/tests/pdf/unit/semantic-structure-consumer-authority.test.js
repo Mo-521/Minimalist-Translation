@@ -178,6 +178,8 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.doesNotMatch(mainSource, /legacy_compatibility/);
   assert.doesNotMatch(mainSource, /const projectedType = simpleNormalizeBlockType\(/);
   assert.doesNotMatch(mainSource, /const projectedType\s*=/);
+  assert.doesNotMatch(mainSource, /function normalizePaperPageBoundaryColumnFlowSegments\(/);
+  assert.doesNotMatch(mainSource, /pageBoundaryFlowNormalized/);
   assert.match(mainSource, /assertSemanticConsumerTypeProjection\(segment, rawType, "export_report"\)/);
   assert.match(rendererSource, /semanticStructureConsumerReports:\s*state\.semanticStructureConsumerReports\.slice\(\)/);
   assert.match(rendererSource, /function requireSemanticTranslationDisposition\(segment, consumerName\)/);
