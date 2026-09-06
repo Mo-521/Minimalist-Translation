@@ -171,8 +171,42 @@ function classifyPaperLineEvidence(evidence = {}) {
   return "body";
 }
 
+function classifyPaperSegmentNoiseEvidence(evidence = {}) {
+  if (evidence.narrowTallMargin) return "margin";
+  if (evidence.footerOrWatermarkText) return evidence.downloadedOrWileyText ? "watermark" : "licenseText";
+  return "";
+}
+
+function applyPaperSegmentNoiseClassification(segments, evidenceByIndex) {
+  const candidates = Array.isArray(segments) ? segments : [];
+  const evidence = Array.isArray(evidenceByIndex) ? evidenceByIndex : [];
+  if (evidence.length !== candidates.length) {
+    throw structureError("SEMANTIC_PAPER_SEGMENT_EVIDENCE_COUNT_MISMATCH", "Paper segment noise evidence must align with every candidate", {
+      segmentCount: candidates.length,
+      evidenceCount: evidence.length,
+    });
+  }
+  return candidates.map((segment, index) => {
+    const itemEvidence = evidence[index];
+    if (!itemEvidence || Number(itemEvidence.segmentIndex) !== index) {
+      throw structureError("SEMANTIC_PAPER_SEGMENT_EVIDENCE_ORDER_MISMATCH", "Paper segment noise evidence order does not match candidates", {
+        index,
+        evidenceIndex: itemEvidence && itemEvidence.segmentIndex,
+      });
+    }
+    const currentType = normalizeCanonicalType(segment && (segment.semanticType || segment.type)).semanticType;
+    if (currentType !== "body") return segment;
+    const semanticType = classifyPaperSegmentNoiseEvidence(itemEvidence);
+    return semanticType
+      ? { ...segment, type: semanticType, classificationReason: `${semanticType}_segment_geometry` }
+      : segment;
+  });
+}
+
 const semanticStructureProducerStages = Object.freeze({
   classifyPaperLineEvidence,
+  classifyPaperSegmentNoiseEvidence,
+  applyPaperSegmentNoiseClassification,
 });
 
 function deriveDisposition(mode, semanticType) {

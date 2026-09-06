@@ -3111,23 +3111,18 @@ function applyTitleZoneClassification(segments) {
   return output;
 }
 
-function getSegmentNoiseType(segment) {
-  if (!segment || segment.type !== "body") return "";
+function getSegmentNoiseEvidence(segment, segmentIndex) {
   const text = normalizeExtractedPdfText(segment.sourceText || "");
   const bbox = segment.bbox || {};
   const width = Number(bbox.width || 0);
   const height = Number(bbox.height || 0);
   const wordCount = (text.match(/[A-Za-z]{2,}/g) || []).length;
-  if (width > 0 && height > 0 && width < 50 && height > 100 && wordCount <= 8) return "margin";
-  if (isPdfFooterOrWatermarkText(text)) return /Downloaded|Wiley/i.test(text) ? "watermark" : "licenseText";
-  return "";
-}
-
-function applySegmentNoiseTyping(segments) {
-  return (segments || []).map((segment) => {
-    const noiseType = getSegmentNoiseType(segment);
-    return noiseType ? { ...segment, type: noiseType, classificationReason: `${noiseType}_segment_geometry` } : segment;
-  });
+  return {
+    segmentIndex,
+    narrowTallMargin: width > 0 && height > 0 && width < 50 && height > 100 && wordCount <= 8,
+    footerOrWatermarkText: isPdfFooterOrWatermarkText(text),
+    downloadedOrWileyText: /Downloaded|Wiley/i.test(text),
+  };
 }
 
 function mergeSegments(base, incoming, type, column) {
@@ -5013,7 +5008,10 @@ function postProcessPdfSegments(segments, pipelineConfig) {
   }
   paperSegments = applyImageRegionSegmentationConstraints(paperSegments, pipelineConfig);
   paperSegments = applyOversizedPaperBodySplits(paperSegments, pipelineConfig);
-  paperSegments = applySegmentNoiseTyping(paperSegments);
+  paperSegments = semanticStructureProducerStages.applyPaperSegmentNoiseClassification(
+    paperSegments,
+    paperSegments.map(getSegmentNoiseEvidence),
+  );
   if (pipelineConfig && pipelineConfig.enableReferencePreserve) {
     paperSegments = applyReferenceTypingAndOrdering(paperSegments);
     paperSegments = applyReferenceMode(paperSegments, pipelineConfig);

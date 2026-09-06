@@ -128,6 +128,31 @@ test("paper line semantic precedence is owned by Structure Authority", () => {
   assert.doesNotMatch(mainSource, /function getPdfNoiseLineType|function getTopMatterLineType/);
 });
 
+test("paper segment noise reclassification is written only by Structure Authority", () => {
+  const stages = authority.semanticStructureProducerStages;
+  const candidates = [
+    { id: "body-margin", type: "body", sourceText: "side mark" },
+    { id: "body-watermark", type: "body", sourceText: "Downloaded from Wiley" },
+    { id: "body-license", type: "body", sourceText: "Creative Commons" },
+    { id: "heading", type: "heading", sourceText: "Downloaded from Wiley" },
+  ];
+  const result = stages.applyPaperSegmentNoiseClassification(candidates, [
+    { segmentIndex: 0, narrowTallMargin: true, footerOrWatermarkText: false, downloadedOrWileyText: false },
+    { segmentIndex: 1, narrowTallMargin: false, footerOrWatermarkText: true, downloadedOrWileyText: true },
+    { segmentIndex: 2, narrowTallMargin: false, footerOrWatermarkText: true, downloadedOrWileyText: false },
+    { segmentIndex: 3, narrowTallMargin: false, footerOrWatermarkText: true, downloadedOrWileyText: true },
+  ]);
+  assert.deepEqual(result.map((segment) => segment.type), ["margin", "watermark", "licenseText", "heading"]);
+  assert.equal(candidates[0].type, "body");
+  assert.throws(
+    () => stages.applyPaperSegmentNoiseClassification(candidates, []),
+    (error) => error && error.code === "SEMANTIC_PAPER_SEGMENT_EVIDENCE_COUNT_MISMATCH",
+  );
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  assert.match(mainSource, /semanticStructureProducerStages\.applyPaperSegmentNoiseClassification\(/);
+  assert.doesNotMatch(mainSource, /function getSegmentNoiseType|function applySegmentNoiseTyping/);
+});
+
 test("retired legacy simple mode is rejected instead of aliasing canonical simple authority", () => {
   assert.throws(
     () => authority.produceSemanticStructureArtifact({ mode: "legacy_simple_pdf", segments: [] }),
