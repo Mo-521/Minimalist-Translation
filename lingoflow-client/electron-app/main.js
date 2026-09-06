@@ -12823,32 +12823,6 @@ const PDF_EXPORT_PRESERVE_TYPES = new Set([
   "journalMetadata",
 ]);
 
-const SIMPLE_PDF_EXPORT_ALLOWED_TYPES = new Set(["title", "body"]);
-const SIMPLE_PDF_EXPORT_PRESERVE_TYPES = new Set(["header", "footer", "pageNumber", "noise", "watermark", "margin"]);
-
-
-
-function getPdfExportAllowedTypesForMode(mode) {
-  if (mode === "simple_pdf") {
-    return new Set(["title", "body"]);
-  }
-  return new Set([
-    "title", "author", "affiliation", "correspondence", "receivedDate",
-    "funding", "abstract", "abstract-title", "keywords", "heading", "body", "caption",
-  ]);
-}
-
-function getPdfExportPreserveTypesForMode(mode) {
-  if (mode === "simple_pdf") {
-    return new Set(["header", "footer", "pageNumber", "noise"]);
-  }
-  return new Set([
-    "author", "reference", "formula", "imageText", "header",
-    "watermark", "licenseText", "margin", "footer", "pageNumber", "noise",
-  ]);
-}
-
-
 function hasStandardFormulaToken(text) {
   const value = String(text || "");
   return /(Lbol|kbol|LEdd|lambda\s*Edd|Edd|MBH|M_BH|LX|L_X|Gamma|M_sun|\[O\s*III\]|log\s*\(|10\^|x\s*10|erg\s*s|keV|cm-?\s*2)/i.test(value) ||
@@ -14022,6 +13996,14 @@ function getInvalidTranslationSkipReason(segment) {
 }
 
 
+function requirePdfExportSemanticDisposition(segment, consumerName) {
+  const disposition = String(segment && segment.semanticPolicy && segment.semanticPolicy.translationDisposition || "");
+  if (disposition === "translate" || disposition === "preserve" || disposition === "blocked") return disposition;
+  const error = new Error(`Canonical semantic policy is required before ${String(consumerName || "PDF export")}`);
+  error.code = "SEMANTIC_CONSUMER_POLICY_REQUIRED";
+  throw error;
+}
+
 function getPdfExportSkipReason(segment, pipelineConfig) {
   if (!segment) return "invalid_segment";
   const mode = String(pipelineConfig && pipelineConfig.mode || "");
@@ -14035,16 +14017,17 @@ function getPdfExportSkipReason(segment, pipelineConfig) {
     throw error;
   }
   const type = assertSemanticConsumerTypeProjection(segment, rawType, "export_skip_reason");
+  const semanticDisposition = requirePdfExportSemanticDisposition(segment, "export_skip_reason");
   if (segment.partialRegressionNotTranslated) return "partial_regression_not_translated";
   const invalidTranslationReason = getInvalidTranslationSkipReason(segment);
   if (invalidTranslationReason) return invalidTranslationReason;
-  if (PDF_EXPORT_PRESERVE_TYPES.has(type)) {
+  if (semanticDisposition === "preserve") {
     if (type === "reference") return "reference_preserve_original";
     if (type === "formula") return "formula_equation_block_preserve";
     if (type === "header") return "header_preserve_original";
     return type + "_preserve_original";
   }
-  if (!PDF_EXPORT_ALLOWED_TYPES.has(type)) return "unsupported_type";
+  if (semanticDisposition === "blocked") return "unsupported_type";
   if (segment._crossPageDuplicateFragment) return "cross_page_duplicate_fragment";
   if (isFormulaProtectedSegment(segment, pipelineConfig)) return "formula_equation_block_preserve";
   if (segment.status !== "done") return "status_" + (segment.status || "missing");
@@ -14064,25 +14047,24 @@ function getPdfExportSkipReasonForMode(segment, mode, pipelineConfig) {
     throw error;
   }
   const type = assertSemanticConsumerTypeProjection(segment, rawType, "mode_export_skip_reason");
+  const semanticDisposition = requirePdfExportSemanticDisposition(segment, "mode_export_skip_reason");
   if (segment.partialRegressionNotTranslated) return "partial_regression_not_translated";
   const invalidTranslationReason = getInvalidTranslationSkipReason(segment);
   if (invalidTranslationReason) return invalidTranslationReason;
-  const allowedSet = getPdfExportAllowedTypesForMode(mode);
-  const preserveSet = getPdfExportPreserveTypesForMode(mode);
   if (mode === "simple_pdf") {
-    if (preserveSet.has(type)) return "header_preserve_original";
-    if (!allowedSet.has(type)) return "simple_unexpected_type";
+    if (semanticDisposition === "preserve") return "header_preserve_original";
+    if (semanticDisposition === "blocked") return "simple_unexpected_type";
     if (segment.status !== "done") return "status_" + (segment.status || "missing");
     if (!cleanPdfText(segment.translatedText)) return "empty_translated_text";
     return "";
   }
-  if (preserveSet.has(type)) {
+  if (semanticDisposition === "preserve") {
     if (type === "reference") return "reference_preserve_original";
     if (type === "formula") return "formula_equation_block_preserve";
     if (type === "header") return "header_preserve_original";
     return type + "_preserve_original";
   }
-  if (!allowedSet.has(type)) return "unsupported_type";
+  if (semanticDisposition === "blocked") return "unsupported_type";
   if (isFormulaProtectedSegment(segment, pipelineConfig)) return "formula_equation_block_preserve";
   if (segment.status !== "done") return "status_" + (segment.status || "missing");
   if (!cleanPdfText(segment.translatedText)) return "empty_translated_text";
