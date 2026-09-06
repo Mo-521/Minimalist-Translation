@@ -24,6 +24,21 @@ const SIMPLE_STRUCTURE_ROLE_TYPES = Object.freeze({
   simple_title: "title",
   simple_paragraph: "body",
 });
+const PAPER_LINE_NOISE_ROLE_TYPES = Object.freeze({
+  paper_watermark_line: "watermark",
+  paper_license_line: "licenseText",
+  paper_footer_marker_line: "footer",
+  paper_page_number_line: "pageNumber",
+  paper_header_line: "header",
+  paper_footer_line: "footer",
+  paper_margin_line: "margin",
+});
+const PAPER_LINE_TOP_MATTER_ROLE_TYPES = Object.freeze({
+  paper_funding_line: "funding",
+  paper_keywords_line: "keywords",
+  paper_correspondence_line: "correspondence",
+  paper_received_date_line: "receivedDate",
+});
 
 const PAPER_TRANSLATE_TYPES = new Set([
   "title", "affiliation", "correspondence", "receivedDate", "funding", "abstract-title",
@@ -132,6 +147,33 @@ function resolveCandidateSemanticType(segment, mode) {
     structureRole,
   };
 }
+
+function resolvePaperLineRole(role, roleTypes, field) {
+  const value = String(role || "").trim();
+  if (!value) return "";
+  const semanticType = roleTypes[value];
+  if (!semanticType) {
+    throw structureError("SEMANTIC_PAPER_LINE_ROLE_UNKNOWN", `Unknown Paper line ${field}: ${value}`, { field, role: value });
+  }
+  return semanticType;
+}
+
+function classifyPaperLineEvidence(evidence = {}) {
+  const noiseType = resolvePaperLineRole(evidence.noiseRole, PAPER_LINE_NOISE_ROLE_TYPES, "noiseRole");
+  if (noiseType) return noiseType;
+  const topMatterType = resolvePaperLineRole(evidence.topMatterRole, PAPER_LINE_TOP_MATTER_ROLE_TYPES, "topMatterRole");
+  if (topMatterType) return topMatterType;
+  if (evidence.chineseTitleCandidate) return "title";
+  if (evidence.abstractLabel) return "abstract";
+  if (evidence.keywordsLabel) return "keywords";
+  if (evidence.numberedHeading || evidence.referencesHeading || evidence.sectionHeading) return "heading";
+  if (evidence.captionStart) return "caption";
+  return "body";
+}
+
+const semanticStructureProducerStages = Object.freeze({
+  classifyPaperLineEvidence,
+});
 
 function deriveDisposition(mode, semanticType) {
   const translateTypes = mode === "simple_pdf" ? SIMPLE_TRANSLATE_TYPES : PAPER_TRANSLATE_TYPES;
@@ -382,6 +424,7 @@ module.exports = {
   INGRESS_TYPE_ALIASES,
   deepFreeze,
   normalizeCanonicalType,
+  semanticStructureProducerStages,
   produceSemanticStructureArtifact,
   compareCandidateSemanticStructure,
 };

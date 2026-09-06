@@ -10,7 +10,7 @@ const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
 const fontkit = require("@pdf-lib/fontkit");
 const { createPdfDiagnosticRuntime, findingsFromAudit } = require("./pdf-pipeline-diagnostics");
 const paperLayoutAuthority = require("./paper-layout-authority");
-const { produceSemanticStructureArtifact, compareCandidateSemanticStructure } = require("./semantic-structure-authority");
+const { produceSemanticStructureArtifact, compareCandidateSemanticStructure, semanticStructureProducerStages } = require("./semantic-structure-authority");
 const {
   bindSemanticStructureConsumerPayload,
   bindSemanticStructureConsumerSegments,
@@ -1084,19 +1084,17 @@ function detectPageLayout(pageLineBoxes, pageWidth, pageHeight) {
 
 function getPdfLineType(line) {
   const text = normalizeExtractedPdfText(line && line.text || "");
-  const noiseType = getPdfNoiseLineType(line);
-  if (noiseType) return noiseType;
-  const topMatterType = getTopMatterLineType(line);
-  if (topMatterType) return topMatterType;
-  if (isLikelyChineseTitleLine(line)) return "title";
-  if (/^ABSTRACT$/i.test(text)) return "abstract";
-  if (/^Keywords:/i.test(text) || /^Key words:/i.test(text)) return "keywords";
-  if (/^\d+\.\s+[A-Z][A-Z\s]+$/.test(text)) return "heading";
-  if (/^\d{1,2}\.\d{1,2}\.\s+[A-Z]/.test(text)) return "heading";
-  if (isReferencesHeadingText(text)) return "heading";
-  if (isSectionHeadingText(text)) return "heading";
-  if (isTrueCaptionStart(text, { allowNoRegion: true })) return "caption";
-  return "body";
+  return semanticStructureProducerStages.classifyPaperLineEvidence({
+    noiseRole: getPdfNoiseLineRole(line),
+    topMatterRole: getTopMatterLineRole(line),
+    chineseTitleCandidate: isLikelyChineseTitleLine(line),
+    abstractLabel: /^ABSTRACT$/i.test(text),
+    keywordsLabel: /^Keywords:/i.test(text) || /^Key words:/i.test(text),
+    numberedHeading: /^\d+\.\s+[A-Z][A-Z\s]+$/.test(text) || /^\d{1,2}\.\d{1,2}\.\s+[A-Z]/.test(text),
+    referencesHeading: isReferencesHeadingText(text),
+    sectionHeading: isSectionHeadingText(text),
+    captionStart: isTrueCaptionStart(text, { allowNoRegion: true }),
+  });
 }
 
 function isLikelyChineseTitleLine(line) {
@@ -1199,7 +1197,7 @@ function isPdfFooterOrWatermarkText(text) {
     /\b(open access article|Creative Commons License|properly cited|all use, distribution and reproduction|Downloaded from https?:\/\/onlinelibrary\.wiley\.com)\b/i.test(value);
 }
 
-function getPdfNoiseLineType(line) {
+function getPdfNoiseLineRole(line) {
   const text = normalizeExtractedPdfText(line && line.text || "");
   if (!text) return "";
   const bbox = line && line.bbox || {};
@@ -1211,27 +1209,27 @@ function getPdfNoiseLineType(line) {
   const width = Number(bbox.width || 0);
   const height = Number(bbox.height || 0);
   const wordCount = (text.match(/[A-Za-z]{2,}/g) || []).length;
-  if (/Downloaded from https?:\/\/onlinelibrary\.wiley\.com/i.test(text) || /Wiley Online Library/i.test(text)) return "watermark";
-  if (/Creative Commons|open access article|properly cited|all use, distribution and reproduction|©|Copyright/i.test(text)) return "licenseText";
-  if (/^Ratio,?\s*2025$/i.test(text)) return "footer";
-  if (/^\d+$/.test(text) && pageHeight > 0 && (y < pageHeight * 0.06 || y > pageHeight * 0.92)) return "pageNumber";
+  if (/Downloaded from https?:\/\/onlinelibrary\.wiley\.com/i.test(text) || /Wiley Online Library/i.test(text)) return "paper_watermark_line";
+  if (/Creative Commons|open access article|properly cited|all use, distribution and reproduction|©|Copyright/i.test(text)) return "paper_license_line";
+  if (/^Ratio,?\s*2025$/i.test(text)) return "paper_footer_marker_line";
+  if (/^\d+$/.test(text) && pageHeight > 0 && (y < pageHeight * 0.06 || y > pageHeight * 0.92)) return "paper_page_number_line";
   if (pageHeight > 0 && (y < pageHeight * 0.045 || y > pageHeight * 0.94) && (
     /^Ratio\b/i.test(text) ||
     /journal|doi|license|downloaded|wiley|online library/i.test(text) ||
     (text.length <= 28 && wordCount <= 3)
-  )) return y < pageHeight * 0.12 ? "header" : "footer";
-  if (width > 0 && height > 0 && width < 50 && height > 100 && wordCount <= 6) return "margin";
-  if (pageWidth > 0 && (x > pageWidth * 0.95 || x + width > pageWidth * 1.03) && text.length < 120) return "margin";
+  )) return y < pageHeight * 0.12 ? "paper_header_line" : "paper_footer_line";
+  if (width > 0 && height > 0 && width < 50 && height > 100 && wordCount <= 6) return "paper_margin_line";
+  if (pageWidth > 0 && (x > pageWidth * 0.95 || x + width > pageWidth * 1.03) && text.length < 120) return "paper_margin_line";
   return "";
 }
 
-function getTopMatterLineType(line) {
+function getTopMatterLineRole(line) {
   const text = normalizeExtractedPdfText(line && line.text || "");
   if (!text) return "";
-  if (/^Funding\s*:/i.test(text)) return "funding";
-  if (/^Keywords?\s*:/i.test(text) || /^Key words?\s*:/i.test(text)) return "keywords";
-  if (/^(Correspondence|Corresponding author)\s*:/i.test(text) || /\bE-?mail\s*:/i.test(text)) return "correspondence";
-  if (/^(Received|Revised|Accepted|Published)\b/i.test(text)) return "receivedDate";
+  if (/^Funding\s*:/i.test(text)) return "paper_funding_line";
+  if (/^Keywords?\s*:/i.test(text) || /^Key words?\s*:/i.test(text)) return "paper_keywords_line";
+  if (/^(Correspondence|Corresponding author)\s*:/i.test(text) || /\bE-?mail\s*:/i.test(text)) return "paper_correspondence_line";
+  if (/^(Received|Revised|Accepted|Published)\b/i.test(text)) return "paper_received_date_line";
   return "";
 }
 

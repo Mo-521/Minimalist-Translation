@@ -109,6 +109,25 @@ test("simple structure roles are classified only by the canonical producer", () 
   );
 });
 
+test("paper line semantic precedence is owned by Structure Authority", () => {
+  const classify = authority.semanticStructureProducerStages.classifyPaperLineEvidence;
+  assert.equal(classify({ noiseRole: "paper_watermark_line", chineseTitleCandidate: true }), "watermark");
+  assert.equal(classify({ topMatterRole: "paper_funding_line", abstractLabel: true }), "funding");
+  assert.equal(classify({ chineseTitleCandidate: true, captionStart: true }), "title");
+  assert.equal(classify({ abstractLabel: true, keywordsLabel: true }), "abstract");
+  assert.equal(classify({ keywordsLabel: true, numberedHeading: true }), "keywords");
+  assert.equal(classify({ referencesHeading: true, captionStart: true }), "heading");
+  assert.equal(classify({ captionStart: true }), "caption");
+  assert.equal(classify({}), "body");
+  assert.throws(
+    () => classify({ noiseRole: "paper_unknown_line" }),
+    (error) => error && error.code === "SEMANTIC_PAPER_LINE_ROLE_UNKNOWN",
+  );
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  assert.match(mainSource, /semanticStructureProducerStages\.classifyPaperLineEvidence\(\{/);
+  assert.doesNotMatch(mainSource, /function getPdfNoiseLineType|function getTopMatterLineType/);
+});
+
 test("retired legacy simple mode is rejected instead of aliasing canonical simple authority", () => {
   assert.throws(
     () => authority.produceSemanticStructureArtifact({ mode: "legacy_simple_pdf", segments: [] }),
