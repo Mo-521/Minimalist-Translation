@@ -164,6 +164,7 @@ test("layout produces the same decision from a legacy carrier and its artifact-b
 test("runtime transport requires the artifact at renderer, translation-plan, diagnostics and export boundaries", () => {
   const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
   const rendererSource = fs.readFileSync(path.join(root, "electron-app/renderer.js"), "utf8");
+  const auditSource = fs.readFileSync(path.join(root, "tools/audit-translated-pdf.js"), "utf8");
 
   assert.match(mainSource, /semanticStructureArtifact\s*=\s*structured\.semanticStructureArtifact/);
   assert.match(mainSource, /semanticStructureArtifact,\s*\r?\n\s*semanticStructureShadowValidation/);
@@ -182,6 +183,8 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.doesNotMatch(mainSource, /pageBoundaryFlowNormalized/);
   assert.doesNotMatch(mainSource, /const SIMPLE_PDF_EXPORT_(?:ALLOWED|PRESERVE)_TYPES\s*=/);
   assert.doesNotMatch(mainSource, /const PDF_EXPORT_(?:ALLOWED|TRANSLATABLE|PRESERVE)_TYPES\s*=/);
+  assert.doesNotMatch(auditSource, /const (?:ALLOWED_WRITE|PRESERVE)_TYPES\s*=/);
+  assert.match(auditSource, /semanticTranslationDisposition \|\| report\.semanticPolicy/);
   assert.doesNotMatch(mainSource, /function getPdfExport(?:Allowed|Preserve)TypesForMode\(/);
   assert.match(mainSource, /requirePdfExportSemanticDisposition\(segment, "export_skip_reason"\)/);
   assert.match(mainSource, /semanticTranslationDisposition = requirePdfExportSemanticDisposition\(segment, "export_report"\)/);

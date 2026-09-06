@@ -5,29 +5,6 @@ const path = require("path");
 
 const pdfjsLib = require("../electron-app/node_modules/pdfjs-dist/legacy/build/pdf.js");
 
-const ALLOWED_WRITE_TYPES = new Set([
-  "title",
-  "author",
-  "affiliation",
-  "abstract",
-  "keywords",
-  "heading",
-  "body",
-  "caption",
-  "abstract-title",
-]);
-
-const PRESERVE_TYPES = new Set([
-  "reference",
-  "formula",
-  "imageText",
-  "pageNumber",
-  "footer",
-  "margin",
-  "noise",
-  "header",
-]);
-
 const FORMULA_TOKENS = [
   "Lbol",
   "kbol",
@@ -204,17 +181,22 @@ function buildNeighborMap(reports) {
 }
 
 function expectedActionFor(report) {
-  const type = String(report.type || "body");
-  if (PRESERVE_TYPES.has(type)) return "preserve_original";
+  const disposition = String(report && (report.semanticTranslationDisposition || report.semanticPolicy && report.semanticPolicy.translationDisposition) || "");
+  if (disposition !== "translate" && disposition !== "preserve" && disposition !== "blocked") {
+    const error = new Error(`Canonical semantic disposition is required for audit report ${String(report && report.id || "<unknown>")}`);
+    error.code = "SEMANTIC_CONSUMER_POLICY_REQUIRED";
+    throw error;
+  }
+  if (disposition === "preserve") return "preserve_original";
   if (
-    ALLOWED_WRITE_TYPES.has(type) &&
+    disposition === "translate" &&
     report.status === "done" &&
     report.hasTranslatedText &&
     !report.skipReason
   ) {
     return "mask_and_write";
   }
-  if (ALLOWED_WRITE_TYPES.has(type)) return "not_ready_or_skipped";
+  if (disposition === "translate") return "not_ready_or_skipped";
   return "unknown";
 }
 
