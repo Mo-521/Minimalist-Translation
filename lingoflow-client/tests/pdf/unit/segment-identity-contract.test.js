@@ -70,7 +70,7 @@ test('post-finalization image constraint is the only identity-aware split call',
 
 test('final image-region split repairs dangling source words before identity materialization', () => {
   const fnStart = mainSource.indexOf('function applyImageRegionSegmentationConstraints(');
-  const fnEnd = mainSource.indexOf('function auditPaperImageTextPreserveRisk', fnStart);
+  const fnEnd = mainSource.indexOf('function getPaperImageTextDemotionEvidence', fnStart);
   assert.ok(fnStart >= 0 && fnEnd > fnStart);
   const block = mainSource.slice(fnStart, fnEnd);
   const repairAt = block.indexOf('applyPaperSourceTextRepairs(output, config)');

@@ -3960,38 +3960,11 @@ function applyImageRegionSegmentationConstraints(segments, config, options) {
   return sourceFinalizedOutput.map(materializeFinalIdentity);
 }
 
-function auditPaperImageTextPreserveRisk(segments, options = {}) {
-  const demote = options.demote !== false;
-  const risks = [];
-  const output = (segments || []).map((segment) => {
-    if (!segment || String(segment.type || "") !== "imageText") return segment;
-    const text = normalizeExtractedPdfText(segment.sourceText || segment.text || "");
-    const reason = getImageTextBodyLikeRiskReason(text);
-    if (!reason) return segment;
-    risks.push({
-      segmentId: String(segment.id || ""),
-      pageNumber: Number(segment.pageNumber || 0),
-      type: "imageText",
-      reason,
-      textPreview: text.slice(0, 120),
-    });
-    if (!demote) return segment;
-    return {
-      ...segment,
-      type: "body",
-      status: "pending",
-      skipReason: "",
-      preserveReasonLabel: "",
-      classificationReason: "image_text_body_like_demoted_to_body",
-      imageTextDemotedToBody: true,
-      imageTextDemoteReason: reason,
-      translatedText: segment.translatedText || "",
-      zoneType: segment.zoneType === "imageZone" ? "" : segment.zoneType,
-    };
-  });
+function getPaperImageTextDemotionEvidence(segment, segmentIndex) {
+  const text = normalizeExtractedPdfText(segment && (segment.sourceText || segment.text) || "");
   return {
-    segments: output,
-    risks,
+    segmentIndex,
+    bodyLikeReason: getImageTextBodyLikeRiskReason(text),
   };
 }
 
@@ -5027,7 +5000,10 @@ function postProcessPdfSegments(segments, pipelineConfig) {
   }));
   cleaned = repairPaperSegmentColumnsByBbox(cleaned, pipelineConfig);
   cleaned = applyPaperSourceTextRepairs(cleaned, pipelineConfig);
-  cleaned = auditPaperImageTextPreserveRisk(cleaned, { demote: true }).segments;
+  cleaned = semanticStructureProducerStages.applyPaperImageTextDemotionClassification(
+    cleaned,
+    cleaned.map(getPaperImageTextDemotionEvidence),
+  );
 
   return cleaned.map((segment, index) => {
     const id = `seg-${index + 1}`;
@@ -5277,7 +5253,10 @@ function buildStructuredPdfText(pageItemsByPage, pipelineConfig, imageGeometryBy
   const pretranslationRawLinesByPage = {};
   if (isPaperPdfConfig(pipelineConfig)) {
     segments = suppressDuplicateCaptionSegments(segments, pipelineConfig);
-    segments = auditPaperImageTextPreserveRisk(segments, { demote: true }).segments;
+    segments = semanticStructureProducerStages.applyPaperImageTextDemotionClassification(
+      segments,
+      segments.map(getPaperImageTextDemotionEvidence),
+    );
     segments = demoteBodyLikeCaptionSegmentsBeforeTranslation(segments, pipelineConfig);
     segments = resolveCaptionBodyConflictsForPaperSegments(segments, pipelineConfig);
     // PDF.js paint operators are the sole image-geometry authority. Caption/body heuristics are not

@@ -203,10 +203,46 @@ function applyPaperSegmentNoiseClassification(segments, evidenceByIndex) {
   });
 }
 
+function applyPaperImageTextDemotionClassification(segments, evidenceByIndex) {
+  const candidates = Array.isArray(segments) ? segments : [];
+  const evidence = Array.isArray(evidenceByIndex) ? evidenceByIndex : [];
+  if (evidence.length !== candidates.length) {
+    throw structureError("SEMANTIC_PAPER_IMAGE_TEXT_EVIDENCE_COUNT_MISMATCH", "Paper image-text demotion evidence must align with every candidate", {
+      segmentCount: candidates.length,
+      evidenceCount: evidence.length,
+    });
+  }
+  return candidates.map((segment, index) => {
+    const itemEvidence = evidence[index];
+    if (!itemEvidence || Number(itemEvidence.segmentIndex) !== index) {
+      throw structureError("SEMANTIC_PAPER_IMAGE_TEXT_EVIDENCE_ORDER_MISMATCH", "Paper image-text demotion evidence order does not match candidates", {
+        index,
+        evidenceIndex: itemEvidence && itemEvidence.segmentIndex,
+      });
+    }
+    const currentType = normalizeCanonicalType(segment && (segment.semanticType || segment.type)).semanticType;
+    const bodyLikeReason = String(itemEvidence.bodyLikeReason || "");
+    if (currentType !== "imageText" || !bodyLikeReason) return segment;
+    return {
+      ...segment,
+      type: "body",
+      status: "pending",
+      skipReason: "",
+      preserveReasonLabel: "",
+      classificationReason: "image_text_body_like_demoted_to_body",
+      imageTextDemotedToBody: true,
+      imageTextDemoteReason: bodyLikeReason,
+      translatedText: segment.translatedText || "",
+      zoneType: segment.zoneType === "imageZone" ? "" : segment.zoneType,
+    };
+  });
+}
+
 const semanticStructureProducerStages = Object.freeze({
   classifyPaperLineEvidence,
   classifyPaperSegmentNoiseEvidence,
   applyPaperSegmentNoiseClassification,
+  applyPaperImageTextDemotionClassification,
 });
 
 function deriveDisposition(mode, semanticType) {
