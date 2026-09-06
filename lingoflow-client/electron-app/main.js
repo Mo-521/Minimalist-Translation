@@ -10,7 +10,7 @@ const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
 const fontkit = require("@pdf-lib/fontkit");
 const { createPdfDiagnosticRuntime, findingsFromAudit } = require("./pdf-pipeline-diagnostics");
 const paperLayoutAuthority = require("./paper-layout-authority");
-const { runSemanticStructureShadowValidation } = require("./semantic-structure-authority");
+const { produceSemanticStructureArtifact, compareCandidateSemanticStructure } = require("./semantic-structure-authority");
 const {
   bindSemanticStructureConsumerPayload,
   bindSemanticStructureConsumerSegments,
@@ -5713,22 +5713,23 @@ function buildStructuredPdfText(pageItemsByPage, pipelineConfig, imageGeometryBy
 }
 
 function runPdfExtractionPipeline(pageItemsByPage, config, imageGeometryByPage = new Map()) {
-  let legacyResult;
+  let structureCandidates;
   if (config && config.mode === "simple_pdf") {
-    legacyResult = runSimplePdfSimplifiedCore(pageItemsByPage, config);
+    structureCandidates = runSimplePdfSimplifiedCore(pageItemsByPage, config);
   } else if (config && config.mode === "paper_pdf") {
-    legacyResult = buildStructuredPdfText(pageItemsByPage, config, imageGeometryByPage);
+    structureCandidates = buildStructuredPdfText(pageItemsByPage, config, imageGeometryByPage);
   } else {
     throw new Error("Unsupported PDF mode");
   }
-  const semanticStructureShadow = runSemanticStructureShadowValidation(legacyResult, {
+  const semanticStructureArtifact = produceSemanticStructureArtifact({
     mode: config.mode,
-    inputStage: "runPdfExtractionPipeline.legacy_result",
+    segments: structureCandidates.segments,
+    inputStage: "runPdfExtractionPipeline.structure_candidates",
   });
   return {
-    ...legacyResult,
-    semanticStructureArtifact: semanticStructureShadow.artifact,
-    semanticStructureShadowValidation: semanticStructureShadow.comparison,
+    ...structureCandidates,
+    semanticStructureArtifact,
+    semanticStructureValidationEvidence: compareCandidateSemanticStructure(structureCandidates.segments, semanticStructureArtifact),
   };
 }
 
@@ -5788,7 +5789,7 @@ async function extractPdfTextWithPdfJs(buffer, pipelineConfig) {
     : (isPaperPdfConfig(pipelineConfig) ? segments : []);
   const pipelineDebug = structured.pipelineDebug || { pages: [] };
   const semanticStructureArtifact = structured.semanticStructureArtifact || null;
-  const semanticStructureShadowValidation = structured.semanticStructureShadowValidation || null;
+  const semanticStructureValidationEvidence = structured.semanticStructureValidationEvidence || null;
   const text = structured.text || normalizeExtractedPdfText(pageTexts.join("\n\n"));
   const simpleMode = isSimplePdfV2Config(pipelineConfig);
   return {
@@ -5803,7 +5804,7 @@ async function extractPdfTextWithPdfJs(buffer, pipelineConfig) {
     paperSegments,
     pipelineDebug,
     semanticStructureArtifact,
-    semanticStructureShadowValidation,
+    semanticStructureValidationEvidence,
     pdfTranslationMode: pipelineConfig && pipelineConfig.mode || "",
     pipelineLabel: pipelineConfig && pipelineConfig.label || "",
     pipelineConfigSummary: summarizePdfPipelineConfig(pipelineConfig || {}),

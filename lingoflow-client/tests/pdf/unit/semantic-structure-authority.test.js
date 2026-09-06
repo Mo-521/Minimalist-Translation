@@ -104,7 +104,7 @@ test("retired legacy simple mode is rejected instead of aliasing canonical simpl
 test("ingress aliases are normalized once and shadow differences are explicitly explained", () => {
   const legacy = [{ id: "seg-alias", type: "formulaBlock", sourceText: "E = mc2" }];
   const artifact = authority.produceSemanticStructureArtifact({ mode: "paper_pdf", segments: legacy });
-  const comparison = authority.compareLegacySemanticStructure(legacy, artifact);
+  const comparison = authority.compareCandidateSemanticStructure(legacy, artifact);
   assert.equal(artifact.segments[0].semanticType, "formula");
   assert.equal(comparison.status, "explained_differences");
   assert.equal(comparison.explainedDifferenceCount, 1);
@@ -124,35 +124,21 @@ test("unknown types and duplicate identities fail fast instead of becoming body"
   );
 });
 
-test("shadow runner isolates producer failure and leaves legacy consumers authoritative", () => {
-  const legacyResult = { segments: [{ id: "seg-1", type: "unknown-type", sourceText: "x" }], text: "x" };
-  const before = JSON.parse(JSON.stringify(legacyResult));
-  const shadow = authority.runSemanticStructureShadowValidation(legacyResult, { mode: "paper_pdf" });
-  assert.deepEqual(legacyResult, before);
-  assert.equal(shadow.artifact, null);
-  assert.equal(shadow.comparison.status, "producer_error");
-  assert.equal(shadow.comparison.differences[0].explanationCode, "SEMANTIC_TYPE_UNKNOWN");
-  assert.equal(shadow.legacyConsumersRemainAuthoritative, true);
-  assert.equal(shadow.shadowOnly, true);
-  assertDeepFrozen(shadow);
-});
-
 test("shadow comparison reports boundary drift with a stable unexplained reason", () => {
   const legacy = sampleSegments();
   const artifact = authority.produceSemanticStructureArtifact({ mode: "paper_pdf", segments: legacy.slice(0, 2) });
-  const comparison = authority.compareLegacySemanticStructure(legacy, artifact);
+  const comparison = authority.compareCandidateSemanticStructure(legacy, artifact);
   assert.equal(comparison.status, "unexplained_differences");
   assert.equal(comparison.unexplainedDifferenceCount, 1);
   assert.equal(comparison.differences[0].explanationCode, "canonical_segment_missing");
 });
 
-test("main extraction convergence preserves legacy segment references while attaching shadow outputs", () => {
+test("main extraction publishes the canonical artifact directly and keeps comparison as evidence", () => {
   const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
   const packageJson = JSON.parse(fs.readFileSync(path.join(root, "electron-app/package.json"), "utf8"));
-  assert.match(mainSource, /runSemanticStructureShadowValidation\(legacyResult,/);
-  assert.match(mainSource, /semanticStructureArtifact:\s*semanticStructureShadow\.artifact/);
-  assert.match(mainSource, /semanticStructureShadowValidation:\s*semanticStructureShadow\.comparison/);
-  assert.match(mainSource, /\.\.\.legacyResult/);
+  assert.match(mainSource, /produceSemanticStructureArtifact\(\{/);
+  assert.match(mainSource, /semanticStructureValidationEvidence:\s*compareCandidateSemanticStructure/);
+  assert.doesNotMatch(mainSource, /runSemanticStructureShadowValidation|compareLegacySemanticStructure|legacyConsumersRemainAuthoritative|shadowOnly|legacyResult/);
   assert.ok(packageJson.build.files.includes("semantic-structure-authority.js"));
 
   const start = mainSource.indexOf("function runPdfExtractionPipeline(");
@@ -165,17 +151,18 @@ test("main extraction convergence preserves legacy segment references while atta
     Map,
     runSimplePdfSimplifiedCore: () => simpleLegacy,
     buildStructuredPdfText: () => paperLegacy,
-    runSemanticStructureShadowValidation: (legacyResult, options) => {
-      calls.push({ legacyResult, options });
-      return { artifact: { frozen: true, mode: options.mode }, comparison: { status: "match" } };
+    produceSemanticStructureArtifact: (input) => {
+      calls.push(input);
+      return { frozen: true, mode: input.mode, segments: input.segments };
     },
+    compareCandidateSemanticStructure: () => ({ status: "match" }),
   });
   vm.runInContext(functionSource, context);
   const simpleResult = context.runPdfExtractionPipeline(new Map(), { mode: "simple_pdf" });
   const paperResult = context.runPdfExtractionPipeline(new Map(), { mode: "paper_pdf" });
   assert.strictEqual(simpleResult.segments, simpleLegacy.segments);
   assert.strictEqual(paperResult.segments, paperLegacy.segments);
-  assert.equal(simpleResult.semanticStructureShadowValidation.status, "match");
-  assert.equal(paperResult.semanticStructureShadowValidation.status, "match");
-  assert.deepEqual(calls.map((call) => call.options.mode), ["simple_pdf", "paper_pdf"]);
+  assert.equal(simpleResult.semanticStructureValidationEvidence.status, "match");
+  assert.equal(paperResult.semanticStructureValidationEvidence.status, "match");
+  assert.deepEqual(calls.map((call) => call.mode), ["simple_pdf", "paper_pdf"]);
 });

@@ -282,51 +282,51 @@ function produceSemanticStructureArtifact(input = {}) {
   });
 }
 
-function shadowDifference(kind, segmentId, expected, actual, explanationCode, explanation, explained) {
+function candidateDifference(kind, segmentId, expected, actual, explanationCode, explanation, explained) {
   return { kind, segmentId: String(segmentId || ""), expected, actual, explanationCode, explanation, explained: Boolean(explained) };
 }
 
-function compareLegacySemanticStructure(legacySegments, artifact) {
-  const legacy = Array.isArray(legacySegments) ? legacySegments : [];
+function compareCandidateSemanticStructure(candidateSegments, artifact) {
+  const candidates = Array.isArray(candidateSegments) ? candidateSegments : [];
   if (!artifact || artifact.schemaVersion !== SCHEMA_VERSION || !Array.isArray(artifact.segments)) {
-    throw structureError("SEMANTIC_ARTIFACT_INVALID", "A valid SemanticStructureArtifact is required for shadow comparison");
+    throw structureError("SEMANTIC_ARTIFACT_INVALID", "A valid SemanticStructureArtifact is required for candidate comparison");
   }
   const differences = [];
   const canonicalById = new Map(artifact.segments.map((segment) => [segment.segmentId, segment]));
-  const legacyIds = [];
-  legacy.forEach((segment, index) => {
+  const candidateIds = [];
+  candidates.forEach((segment, index) => {
     const segmentId = String(segment && (segment.id || segment.segmentIdentity && segment.segmentIdentity.segmentId) || "");
-    legacyIds.push(segmentId);
+    candidateIds.push(segmentId);
     const canonical = canonicalById.get(segmentId);
     if (!canonical) {
-      differences.push(shadowDifference("segment_boundary", segmentId, "legacy_segment_present", "canonical_segment_missing", "canonical_segment_missing", "Legacy segment has no canonical counterpart", false));
+      differences.push(candidateDifference("segment_boundary", segmentId, "candidate_segment_present", "canonical_segment_missing", "canonical_segment_missing", "Structure candidate has no canonical counterpart", false));
       return;
     }
     const normalized = normalizeCanonicalType(segment.semanticType || segment.type);
     if (String(segment.type || "") !== canonical.semanticType) {
       const aliasExplained = normalized.aliasApplied && normalized.semanticType === canonical.semanticType;
-      differences.push(shadowDifference("semantic_type", segmentId, String(segment.type || ""), canonical.semanticType, aliasExplained ? "ingress_alias_normalized" : "semantic_type_divergence", aliasExplained ? "Legacy ingress alias was normalized once by Structure Authority" : "Canonical semantic type differs from the normalized legacy candidate", aliasExplained));
+      differences.push(candidateDifference("semantic_type", segmentId, String(segment.type || ""), canonical.semanticType, aliasExplained ? "ingress_alias_normalized" : "semantic_type_divergence", aliasExplained ? "Candidate ingress alias was normalized once by Structure Authority" : "Canonical semantic type differs from the normalized structure candidate", aliasExplained));
     }
-    const legacyTextHash = sha256(String(segment.sourceText || ""));
-    if (legacyTextHash !== canonical.sourceOwnership.sourceTextHash) {
-      differences.push(shadowDifference("source_ownership", segmentId, legacyTextHash, canonical.sourceOwnership.sourceTextHash, "source_text_hash_mismatch", "Canonical source snapshot differs from the legacy source candidate", false));
+    const candidateTextHash = sha256(String(segment.sourceText || ""));
+    if (candidateTextHash !== canonical.sourceOwnership.sourceTextHash) {
+      differences.push(candidateDifference("source_ownership", segmentId, candidateTextHash, canonical.sourceOwnership.sourceTextHash, "source_text_hash_mismatch", "Canonical source snapshot differs from the structure candidate", false));
     }
     if (canonical.outputOrder !== index) {
-      differences.push(shadowDifference("segment_order", segmentId, index, canonical.outputOrder, "segment_order_mismatch", "Canonical segment order differs from legacy order", false));
+      differences.push(candidateDifference("segment_order", segmentId, index, canonical.outputOrder, "segment_order_mismatch", "Canonical segment order differs from candidate order", false));
     }
     canonicalById.delete(segmentId);
   });
   canonicalById.forEach((segment, segmentId) => {
-    differences.push(shadowDifference("segment_boundary", segmentId, "legacy_segment_missing", "canonical_segment_present", "canonical_segment_extra", "Canonical artifact contains a segment absent from the legacy result", false));
+    differences.push(candidateDifference("segment_boundary", segmentId, "candidate_segment_missing", "canonical_segment_present", "canonical_segment_extra", "Canonical artifact contains a segment absent from the candidate set", false));
   });
   const explainedDifferenceCount = differences.filter((difference) => difference.explained).length;
   const unexplainedDifferenceCount = differences.length - explainedDifferenceCount;
   const reportBody = {
-    schemaVersion: "semantic-structure-shadow-validation/v1",
+    schemaVersion: "semantic-structure-validation-evidence/v1",
     artifactId: artifact.artifactId,
-    legacySegmentCount: legacy.length,
+    candidateSegmentCount: candidates.length,
     canonicalSegmentCount: artifact.segments.length,
-    legacySegmentIds: legacyIds,
+    candidateSegmentIds: candidateIds,
     canonicalSegmentIds: artifact.segments.map((segment) => segment.segmentId),
     differenceCount: differences.length,
     explainedDifferenceCount,
@@ -335,44 +335,6 @@ function compareLegacySemanticStructure(legacySegments, artifact) {
     differences,
   };
   return deepFreeze({ ...reportBody, reportHash: sha256(stableStringify(reportBody)), frozen: true });
-}
-
-function runSemanticStructureShadowValidation(legacyResult, options = {}) {
-  const result = legacyResult && typeof legacyResult === "object" ? legacyResult : {};
-  const legacySegments = Array.isArray(result.segments) ? result.segments : [];
-  try {
-    const artifact = produceSemanticStructureArtifact({
-      mode: options.mode,
-      segments: legacySegments,
-      inputStage: options.inputStage || "legacy_structure_candidate_shadow",
-    });
-    return deepFreeze({
-      artifact,
-      comparison: compareLegacySemanticStructure(legacySegments, artifact),
-      legacyConsumersRemainAuthoritative: true,
-      shadowOnly: true,
-    });
-  } catch (error) {
-    const comparison = {
-      schemaVersion: "semantic-structure-shadow-validation/v1",
-      status: "producer_error",
-      differenceCount: 1,
-      explainedDifferenceCount: 0,
-      unexplainedDifferenceCount: 1,
-      differences: [{
-        kind: "producer_error",
-        segmentId: "",
-        expected: "frozen_semantic_structure_artifact",
-        actual: String(error && error.code || error && error.name || "Error"),
-        explanationCode: String(error && error.code || "SEMANTIC_STRUCTURE_PRODUCER_ERROR"),
-        explanation: String(error && error.message || error),
-        explained: false,
-      }],
-      frozen: true,
-    };
-    comparison.reportHash = sha256(stableStringify(comparison));
-    return deepFreeze({ artifact: null, comparison, legacyConsumersRemainAuthoritative: true, shadowOnly: true });
-  }
 }
 
 module.exports = {
@@ -384,6 +346,5 @@ module.exports = {
   deepFreeze,
   normalizeCanonicalType,
   produceSemanticStructureArtifact,
-  compareLegacySemanticStructure,
-  runSemanticStructureShadowValidation,
+  compareCandidateSemanticStructure,
 };

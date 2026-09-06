@@ -167,7 +167,8 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   const auditSource = fs.readFileSync(path.join(root, "tools/audit-translated-pdf.js"), "utf8");
 
   assert.match(mainSource, /semanticStructureArtifact\s*=\s*structured\.semanticStructureArtifact/);
-  assert.match(mainSource, /semanticStructureArtifact,\s*\r?\n\s*semanticStructureShadowValidation/);
+  assert.match(mainSource, /semanticStructureArtifact,\s*\r?\n\s*semanticStructureValidationEvidence/);
+  assert.doesNotMatch(mainSource, /runSemanticStructureShadowValidation|legacyConsumersRemainAuthoritative|shadowOnly|semanticStructureShadowValidation/);
   assert.match(mainSource, /stage:\s*"main\.exportTranslatedPdf"/);
   assert.match(mainSource, /bindDiagnosticConsumerPayload\(payload,\s*"main\.debugBbox"\)/);
 
