@@ -183,6 +183,8 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.doesNotMatch(mainSource, /pageBoundaryFlowNormalized/);
   assert.doesNotMatch(mainSource, /const SIMPLE_PDF_EXPORT_(?:ALLOWED|PRESERVE)_TYPES\s*=/);
   assert.doesNotMatch(mainSource, /const PDF_EXPORT_(?:ALLOWED|TRANSLATABLE|PRESERVE)_TYPES\s*=/);
+  assert.doesNotMatch(mainSource, /const PAPER_PDF_(?:TRANSLATABLE|OPTIONAL_TRANSLATABLE|PRESERVE|NON_WRITABLE|WRITABLE)_TYPES\s*=/);
+  assert.doesNotMatch(mainSource, /function isPaperPdf(?:Translatable|OptionalTranslatable|Preserve|NonWritable|Writable)Type\(/);
   assert.doesNotMatch(auditSource, /const (?:ALLOWED_WRITE|PRESERVE)_TYPES\s*=/);
   assert.match(auditSource, /semanticTranslationDisposition \|\| report\.semanticPolicy/);
   assert.doesNotMatch(mainSource, /function getPdfExport(?:Allowed|Preserve)TypesForMode\(/);

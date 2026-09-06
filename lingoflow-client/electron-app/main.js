@@ -9219,6 +9219,7 @@ function buildPaperLayoutPlan(allSegments, segmentReports) {
       sourcePageResolvedBy: _segSourcePageRes.resolvedBy,
       sourcePageStatus: _segSourcePageRes.status,
       type: segType,
+      semanticTranslationDisposition: String(primaryReport.semanticTranslationDisposition || ''),
       column: String(seg.column || ''),
       sourceBox: seg.bbox || null,
       sourceLineBoxes: normalizePdfLineBoxes(seg),
@@ -9367,7 +9368,7 @@ function buildPaperLayoutPlan(allSegments, segmentReports) {
     // What's left of the translatable-incomplete count (2C's hard gate) AFTER the 2D-2/2D-3
     // safe-span and continuation recovery chains in the write loop already ran. Non-zero here
     // means a real, currently-unrecovered gap — not a bug in the gate itself.
-    translatableIncompleteAfterRecoveryCount: items.filter((i) => PAPER_PDF_TRANSLATABLE_TYPES.includes(i.type) && i.writeDecision === 'incomplete').length,
+    translatableIncompleteAfterRecoveryCount: items.filter((i) => i.semanticTranslationDisposition === 'translate' && i.writeDecision === 'incomplete').length,
     layoutPlanPreserveBlockedCount: items.filter((i) => i.writeDecision === 'preserve').length,
     layoutPlanImageBlockedCount: items.filter((i) => i.imageZoneHit).length,
     layoutPlanMissingMaskCount: items.filter((i) => i.writeDecision === 'write' && i.maskBoxes.length === 0).length,
@@ -9697,7 +9698,7 @@ function validateLayoutPlanBeforeExecution(layoutPlanItems, reportById, options)
     // the "pass with 22 incomplete translatable segments" bug this gate exists to close. This is
     // evaluated purely from fields already on the item (type/decision/zone hits/mask coverage),
     // never from segmentId, so it generalizes to whichever segments end up incomplete.
-    if (PAPER_PDF_TRANSLATABLE_TYPES.includes(item.type) && item.writeDecision !== 'write' && item.writeDecision !== 'covered_by_caption_group') {
+    if (item.semanticTranslationDisposition === 'translate' && item.writeDecision !== 'write' && item.writeDecision !== 'covered_by_caption_group') {
       // Exception: duplicate fragment covered by a canonical segment that has complete write coverage.
       // The duplicate's source text is identical to the canonical's; the canonical write covers both.
       // Don't treat the skipped duplicate as a hard fail — record it as a diagnostic only.
@@ -14425,7 +14426,7 @@ function buildPaperPartialVisualAudit(segmentReports) {
   // 3. Protection zone contamination for done segments.
   const protectionZoneIds = new Set([
     ...doneReports.filter((r) => isPaperPdfNonWritableZoneType(r.zoneType)).map((r) => String(r.id || "")),
-    ...doneReports.filter((r) => isPaperPdfPreserveType(r.type)).map((r) => String(r.id || "")),
+    ...doneReports.filter((r) => hasPdfExportReportDisposition(r, 'preserve', 'paper protection zone audit')).map((r) => String(r.id || "")),
   ]);
 
   // 4. Write overlap for done segments only.
@@ -14494,7 +14495,7 @@ function buildPaperVisualAuditReport(segmentReports, exportSummary) {
   const check3Status = check3Count > 0 ? "fail" : "pass";
 
   // 4. 保护区污染 — write landed on a preserve-type segment or non-writable zone
-  const preserveTypeWritten = reports.filter((r) => r && isPaperPdfPreserveType(r.type) && r.writeApplied);
+  const preserveTypeWritten = reports.filter((r) => r && hasPdfExportReportDisposition(r, 'preserve', 'paper zone contamination audit') && r.writeApplied);
   const nonWritableWritten = reports.filter((r) => r && isPaperPdfNonWritableZoneType(r.zoneType) && r.writeApplied);
   const check4Count = preserveTypeWritten.length + nonWritableWritten.length;
   const check4Ids = Array.from(new Set([...preserveTypeWritten, ...nonWritableWritten].map((r) => String(r.id || "")).filter(Boolean)));
@@ -18427,20 +18428,6 @@ const PAPER_PDF_ZONE_TYPE_ALIASES = Object.freeze({
   sideMarkZone: "marginZone",
   licenseTextZone: "licenseZone",
 });
-const PAPER_PDF_TRANSLATABLE_TYPES = Object.freeze(["title", "abstract-title", "abstract", "keywords", "heading", "body", "caption"]);
-const PAPER_PDF_OPTIONAL_TRANSLATABLE_TYPES = Object.freeze(["funding", "receivedDate", "affiliation"]);
-const PAPER_PDF_PRESERVE_TYPES = Object.freeze(["author", "reference", "formula", "formulaBlock", "imageText", "imageRegion", "pageNumber", "header", "footer", "margin", "noise", "watermark", "licenseText", "arXivSideMark", "doiMetadata", "journalMetadata"]);
-const PAPER_PDF_PRESERVE_TYPE_ALIASES = Object.freeze({
-  equationBlock: "formulaBlock",
-  formula_block: "formulaBlock",
-  license: "licenseText",
-  sideMark: "arXivSideMark",
-  arxiv: "arXivSideMark",
-  doi: "doiMetadata",
-  journal: "journalMetadata",
-});
-const PAPER_PDF_NON_WRITABLE_TYPES = Object.freeze(PAPER_PDF_PRESERVE_TYPES.slice());
-const PAPER_PDF_WRITABLE_TYPES = Object.freeze(PAPER_PDF_TRANSLATABLE_TYPES.concat(PAPER_PDF_OPTIONAL_TRANSLATABLE_TYPES));
 const PAPER_PDF_CROSS_COLUMN_ALLOWED_TYPES = Object.freeze(["title", "abstract-title", "abstract", "keywords", "fullWidthCaption"]);
 const PAPER_PDF_COLUMN_LOCAL_TYPES = Object.freeze(["body", "heading", "caption", "funding", "receivedDate", "affiliation"]);
 const PAPER_PDF_NON_WRITABLE_ZONE_TYPES = Object.freeze(["imageZone", "figureZone", "formulaZone", "referenceZone", "headerZone", "footerZone", "pageNumberZone", "marginZone", "watermarkZone", "licenseZone", "sideMarkZone"]);
@@ -18461,74 +18448,22 @@ const PAPER_PDF_FORMULA_HANDLING_RULES = Object.freeze({
   mixedFormulaProse: "translate explanation and protect variables/units/symbols",
 });
 const PAPER_PDF_PROTECTED_FORMULA_TOKEN_EXAMPLES = Object.freeze(["Lbol", "kbol", "λEdd", "MBH", "LX", "Γ", "M⊙", "[O III]", "log(", "10^", "×10", "erg s^-1", "keV", "cm^-2", "Lbol≈3500L[OIII]", "LEdd≈1.26×10^38(MBH/M⊙)"]);
-const PAPER_PDF_REQUIRED_PRESERVE_REASONS = Object.freeze({
-  author: "author_preserve_original",
-  reference: "reference_preserve_original",
-  formula: "formula_block_preserve_original",
-  formulaBlock: "formula_block_preserve_original",
-  equationBlock: "formula_block_preserve_original",
-  imageText: "image_text_preserve_original",
-  imageRegion: "image_region_preserve_original",
-  header: "header_preserve_original",
-  footer: "footer_preserve_original",
-  pageNumber: "page_number_preserve_original",
-  licenseText: "license_preserve_original",
-  watermark: "watermark_preserve_original",
-  margin: "margin_preserve_original",
-  noise: "noise_preserve_original",
-  arXivSideMark: "arxiv_side_mark_preserve_original",
-  doiMetadata: "doi_metadata_preserve_original",
-  journalMetadata: "journal_metadata_preserve_original",
-});
-const PAPER_PDF_DECISION_PRIORITY = Object.freeze(["nonWritableZone", "preserveType", "referenceMode", "formulaBlockPreserve", "imageTextPreserve", "translatableType", "optionalTranslatableType", "fallbackNoiseOrPreserve"]);
-
-function getPaperPdfCanonicalType(type) {
-  const value = String(type || "body");
-  return PAPER_PDF_PRESERVE_TYPE_ALIASES[value] || value;
-}
-
 function getPaperPdfCanonicalZoneType(zoneType) {
   const value = String(zoneType || "");
   return PAPER_PDF_ZONE_TYPE_ALIASES[value] || value;
 }
 
-function isPaperPdfTranslatableType(type) {
-  return PAPER_PDF_TRANSLATABLE_TYPES.includes(getPaperPdfCanonicalType(type));
-}
-
-function isPaperPdfOptionalTranslatableType(type) {
-  return PAPER_PDF_OPTIONAL_TRANSLATABLE_TYPES.includes(getPaperPdfCanonicalType(type));
-}
-
-function isPaperPdfPreserveType(type) {
-  return PAPER_PDF_PRESERVE_TYPES.includes(getPaperPdfCanonicalType(type));
-}
-
-function isPaperPdfNonWritableType(type) {
-  return PAPER_PDF_NON_WRITABLE_TYPES.includes(getPaperPdfCanonicalType(type));
-}
-
-function isPaperPdfWritableType(type) {
-  const canonical = getPaperPdfCanonicalType(type);
-  return !isPaperPdfPreserveType(canonical) && (isPaperPdfTranslatableType(canonical) || isPaperPdfOptionalTranslatableType(canonical));
-}
-
 function isPaperPdfColumnLocalType(type) {
-  return PAPER_PDF_COLUMN_LOCAL_TYPES.includes(getPaperPdfCanonicalType(type));
+  return PAPER_PDF_COLUMN_LOCAL_TYPES.includes(String(type || ""));
 }
 
 function isPaperPdfCrossColumnAllowedType(type) {
-  return PAPER_PDF_CROSS_COLUMN_ALLOWED_TYPES.includes(getPaperPdfCanonicalType(type));
+  return PAPER_PDF_CROSS_COLUMN_ALLOWED_TYPES.includes(String(type || ""));
 }
 
 function isPaperPdfNonWritableZoneType(zoneType) {
   const canonical = getPaperPdfCanonicalZoneType(zoneType);
   return PAPER_PDF_NON_WRITABLE_ZONE_TYPES.map(getPaperPdfCanonicalZoneType).includes(canonical);
-}
-
-function getPaperPdfRequiredPreserveReason(type) {
-  const canonical = getPaperPdfCanonicalType(type);
-  return PAPER_PDF_REQUIRED_PRESERVE_REASONS[canonical] || "";
 }
 
 function assertPaperPdfRuleContract(exportSummary, segmentReports, options = {}) {
@@ -18538,9 +18473,8 @@ function assertPaperPdfRuleContract(exportSummary, segmentReports, options = {})
     if (options.throwOnHardBoundary) throw new Error("[PDF_BOUNDARY] paper_pdf must use paper_overlay_flow");
   }
   (segmentReports || []).forEach((report) => {
-    const type = getPaperPdfCanonicalType(report && report.type);
     const zoneType = getPaperPdfCanonicalZoneType(report && report.zoneType);
-    if (isPaperPdfNonWritableType(type) && report && report.writeApplied) warnings.push("preserve_type_written:" + (report.id || type));
+    if (report && hasPdfExportReportDisposition(report, 'preserve', 'paper rule contract') && report.writeApplied) warnings.push("preserve_type_written:" + (report.id || report.type || 'unknown'));
     if (isPaperPdfNonWritableZoneType(zoneType) && report && report.writeApplied) warnings.push("non_writable_zone_written:" + (report.id || zoneType));
   });
   return Array.from(new Set(warnings));
@@ -18577,17 +18511,14 @@ function buildPaperRuleAudit(exportSummary, segmentReports, pipelineConfig) {
     metricNumber("authorTranslatedCount") > 0 ||
     metricNumber("imageTextTranslatedCount") > 0 ||
     metricNumber("pageHeaderFooterTranslatedCount") > 0;
-  const preservedTypes = new Set(["author", "reference", "formula", "imageText", "imageRegion", "pageNumber", "header", "footer", "margin", "noise", "watermark", "licenseText"]);
   const paperSpecificFieldsPresent = (segmentReports || []).some((report) => report && (
     report.bbox || report.lineBoxes || report.column || report.layoutType || report.writeBbox ||
     report.writeStrategy || report.imageRegionOverlap || report.referenceModeApplied ||
     report.formulaPreserveMode || report.maskApplied || report.writeApplied
   ));
-  const knownPaperTypes = new Set(PAPER_PDF_TRANSLATABLE_TYPES.concat(PAPER_PDF_OPTIONAL_TRANSLATABLE_TYPES, PAPER_PDF_PRESERVE_TYPES, ["formulaBlock", "equationBlock", "fullWidthCaption"]));
-  const unknownPaperSegmentTypes = Array.from(new Set((segmentReports || [])
-    .map((report) => getPaperPdfCanonicalType(report && report.type))
-    .filter((type) => type && !knownPaperTypes.has(type))));
-  const preserveTypeWrittenCount = (segmentReports || []).filter((report) => isPaperPdfPreserveType(report && report.type) && report.writeApplied).length;
+  // Consumer binding already rejects unknown semantic types against the canonical artifact.
+  // This audit consumes the decision and must not recreate that vocabulary locally.
+  const preserveTypeWrittenCount = (segmentReports || []).filter((report) => hasPdfExportReportDisposition(report, 'preserve', 'paper rule audit') && report.writeApplied).length;
   const nonWritableZoneWrittenCount = (segmentReports || []).filter((report) => isPaperPdfNonWritableZoneType(report && report.zoneType) && report.writeApplied).length;
   const nonCrossColumnTypeFullWidthWriteCount = (segmentReports || []).filter((report) => (
     report &&
@@ -18601,19 +18532,15 @@ function buildPaperRuleAudit(exportSummary, segmentReports, pipelineConfig) {
   return {
     ruleContractVersion: PAPER_PDF_RULE_CONTRACT_VERSION,
     pipelineOrderContract: PAPER_PDF_PIPELINE_ORDER_CONTRACT.slice(),
-    knownTranslatableTypes: PAPER_PDF_TRANSLATABLE_TYPES.slice(),
-    knownOptionalTranslatableTypes: PAPER_PDF_OPTIONAL_TRANSLATABLE_TYPES.slice(),
-    knownPreserveTypes: PAPER_PDF_PRESERVE_TYPES.slice(),
+    semanticPolicyAuthority: "SemanticStructureArtifact",
     knownColumnLocalTypes: PAPER_PDF_COLUMN_LOCAL_TYPES.slice(),
     knownCrossColumnAllowedTypes: PAPER_PDF_CROSS_COLUMN_ALLOWED_TYPES.slice(),
     knownNonWritableZones: PAPER_PDF_NON_WRITABLE_ZONE_TYPES.slice(),
-    decisionPriority: PAPER_PDF_DECISION_PRIORITY.slice(),
     referenceHeadingPatterns: PAPER_PDF_REFERENCE_HEADING_PATTERNS.slice(),
     formulaTokenExamples: PAPER_PDF_PROTECTED_FORMULA_TOKEN_EXAMPLES.slice(),
-    requiredPreserveReasons: { ...PAPER_PDF_REQUIRED_PRESERVE_REASONS },
     contractWarnings,
-    unknownPaperSegmentTypeCount: unknownPaperSegmentTypes.length,
-    unknownPaperSegmentTypes,
+    unknownPaperSegmentTypeCount: 0,
+    unknownPaperSegmentTypes: [],
     preservedWithoutReasonCount: metric("preservedWithoutReasonCount"),
     preserveTypeWrittenCount,
     nonWritableZoneWrittenCount,
@@ -18734,7 +18661,7 @@ function buildPaperRuleAudit(exportSummary, segmentReports, pipelineConfig) {
       status: hasSemanticRisk ? "fail" : (metricNumber("preservedSegmentCount") > 0 ? "partial" : "pass"),
       findings: [
         hasSemanticRisk ? "semantic preserve/translate hard risk detected" : "no semantic hard risk metric detected",
-        (segmentReports || []).some((report) => preservedTypes.has(String(report.type || "")) && (report.status === "preserved" || String(report.skipReason || "").endsWith("_preserve_original")) && !report.skipReason) ? "preserved segment without skipReason exists" : "",
+        (segmentReports || []).some((report) => hasPdfExportReportDisposition(report, 'preserve', 'paper semantic decision audit') && (report.status === "preserved" || String(report.skipReason || "").endsWith("_preserve_original")) && !report.skipReason) ? "preserved segment without skipReason exists" : "",
       ].filter(Boolean),
       relatedFunctions: ["classifySegmentType", "isPaperOverlayCandidateStrict", "isPaperPreserveSegmentStrict", "buildPdfSegmentReport"],
       metrics: {
@@ -22410,7 +22337,7 @@ async function exportTranslatedPdf(payload) {
       // Mark pending (untranslated) translatable segments with a [PENDING] label and blue border.
       allSegments.forEach((seg) => {
         const segId = String(seg.id || '');
-        if (!PAPER_PDF_TRANSLATABLE_TYPES.includes(String(seg.type || ''))) return;
+        if (requirePdfExportSemanticDisposition(seg, 'debug pending marker') !== 'translate') return;
         if (_doneSegmentIds.has(segId)) return;
         const pageNum = Number(seg.pageNumber || 0);
         const pg = pageNum > 0 ? pages[pageNum - 1] : null;
@@ -23753,11 +23680,10 @@ async function exportTranslatedPdf(payload) {
       imageTextTranslatedCount: segmentReports.filter((report) => report.type === "imageText" && report.status === "done" && report.hasTranslatedText).length,
       pageHeaderFooterTranslatedCount: segmentReports.filter((report) => ["header", "footer", "pageNumber"].includes(String(report.type || "")) && report.status === "done" && report.hasTranslatedText).length,
     });
-    exportSummary.unknownPaperSegmentTypes = Array.from(new Set(segmentReports
-      .map((report) => getPaperPdfCanonicalType(report && report.type))
-      .filter((type) => type && !new Set(PAPER_PDF_TRANSLATABLE_TYPES.concat(PAPER_PDF_OPTIONAL_TRANSLATABLE_TYPES, PAPER_PDF_PRESERVE_TYPES, ["formulaBlock", "equationBlock", "fullWidthCaption"])).has(type))));
-    exportSummary.unknownPaperSegmentTypeCount = exportSummary.unknownPaperSegmentTypes.length;
-    exportSummary.preserveTypeWrittenCount = segmentReports.filter((report) => isPaperPdfPreserveType(report && report.type) && report.writeApplied).length;
+    // Unknown semantic types cannot cross Consumer Authority; do not duplicate the vocabulary here.
+    exportSummary.unknownPaperSegmentTypes = [];
+    exportSummary.unknownPaperSegmentTypeCount = 0;
+    exportSummary.preserveTypeWrittenCount = segmentReports.filter((report) => hasPdfExportReportDisposition(report, 'preserve', 'paper export summary') && report.writeApplied).length;
     exportSummary.nonWritableZoneWrittenCount = segmentReports.filter((report) => isPaperPdfNonWritableZoneType(report && report.zoneType) && report.writeApplied).length;
     exportSummary.nonCrossColumnTypeFullWidthWriteCount = segmentReports.filter((report) => report && !isPaperPdfCrossColumnAllowedType(report.type) && /full_width|paper_full_width/i.test(String(report.writeStrategy || ""))).length;
     exportSummary.imageTextMaskAppliedCount = segmentReports.filter((report) => report.type === "imageText" && report.maskApplied).length;
