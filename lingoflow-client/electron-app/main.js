@@ -14004,6 +14004,16 @@ function requirePdfExportSemanticDisposition(segment, consumerName) {
   throw error;
 }
 
+function hasPdfExportReportDisposition(report, expectedDisposition, consumerName) {
+  const disposition = String(report && (report.semanticTranslationDisposition || report.semanticPolicy && report.semanticPolicy.translationDisposition) || "");
+  if (disposition !== "translate" && disposition !== "preserve" && disposition !== "blocked") {
+    const error = new Error(`Canonical semantic report policy is required before ${String(consumerName || "PDF export audit")}`);
+    error.code = "SEMANTIC_CONSUMER_POLICY_REQUIRED";
+    throw error;
+  }
+  return disposition === expectedDisposition;
+}
+
 function getPdfExportSkipReason(segment, pipelineConfig) {
   if (!segment) return "invalid_segment";
   const mode = String(pipelineConfig && pipelineConfig.mode || "");
@@ -14147,7 +14157,7 @@ function getPaperTranslationReadinessBeforeExport(segmentReports) {
   const reports = Array.isArray(segmentReports) ? segmentReports : [];
   // Cross-page duplicate fragments are intentionally excluded from the completeness gate:
   // they are extraction artifacts suppressed before the write loop, not missing translations.
-  const translatableReports = reports.filter((report) => PDF_EXPORT_TRANSLATABLE_TYPES.has(String(report && report.type || "")) && String(report && report.skipReason || '') !== 'cross_page_duplicate_fragment');
+  const translatableReports = reports.filter((report) => hasPdfExportReportDisposition(report, "translate", "translation completeness audit") && String(report && report.skipReason || '') !== 'cross_page_duplicate_fragment');
   const incompleteReports = translatableReports.filter((report) => {
     const status = String(report && report.status || "");
     const skipReason = String(report && report.skipReason || '');
@@ -14218,7 +14228,7 @@ function buildPaperFinalRenderedResidualCheck(segmentReports, layoutPlanValidati
   const captionGroupMemberFinalResidualSuppressedIds = [];
   const captionGroupMemberCoverageMissingDetails = [];
   reports.forEach((report) => {
-    if (!PDF_EXPORT_TRANSLATABLE_TYPES.has(String(report && report.type || ""))) return;
+    if (!hasPdfExportReportDisposition(report, "translate", "source residual audit")) return;
     // Duplicate extraction fragments are suppressed by design — their source text is covered by the
     // canonical recovered segment on the correct page. They must never appear as residual failures.
     if (String(report && report.skipReason || '') === 'cross_page_duplicate_fragment') {
@@ -14308,7 +14318,7 @@ function detectPaperWriteBoxOverlaps(segmentReports) {
   (segmentReports || []).forEach((r) => {
     if (!r || !r.writeApplied || !r.writeBbox) return;
     // Exclude preserve/reference/metadata types — their write is a contamination bug, not overlap.
-    if (PDF_EXPORT_PRESERVE_TYPES.has(String(r.type || ""))) { ignoredPreserveCount++; return; }
+    if (hasPdfExportReportDisposition(r, "preserve", "write overlap audit")) { ignoredPreserveCount++; return; }
     // Exclude pending and debugFail placeholders — these have no committed translated text.
     const st = String(r.status || "");
     if (st === "pending" || st === "debugFail" || String(r.skipReason || "").includes("debug")) {
@@ -14437,7 +14447,7 @@ function buildPaperPartialVisualAudit(segmentReports) {
 
   // Pending: translatable segments that were not completed (no write or no translation).
   const pendingIgnoredCount = allReports.filter((r) =>
-    r && PDF_EXPORT_TRANSLATABLE_TYPES.has(String(r.type || "")) &&
+    r && hasPdfExportReportDisposition(r, "translate", "visual completion pending audit") &&
     (String(r.status || "") === "pending" || !r.writeApplied || !r.hasTranslatedText)
   ).length;
 
@@ -14457,7 +14467,7 @@ function buildPaperPartialVisualAudit(segmentReports) {
   // Done: translatable, status=done, written, translated.
   const doneReports = allReports.filter((r) =>
     r &&
-    PDF_EXPORT_TRANSLATABLE_TYPES.has(String(r.type || "")) &&
+    hasPdfExportReportDisposition(r, "translate", "visual completion done audit") &&
     String(r.status || "") === "done" &&
     r.writeApplied &&
     r.hasTranslatedText
@@ -14522,7 +14532,7 @@ function buildPaperPartialVisualAudit(segmentReports) {
 // and returns a top-level paperVisualAuditStatus (pass/warning/fail).
 function buildPaperVisualAuditReport(segmentReports, exportSummary) {
   const reports = Array.isArray(segmentReports) ? segmentReports : [];
-  const translatableReports = reports.filter((r) => r && PDF_EXPORT_TRANSLATABLE_TYPES.has(String(r.type || "")));
+  const translatableReports = reports.filter((r) => r && hasPdfExportReportDisposition(r, "translate", "paper visual audit"));
 
   // 1. 原文视觉残留 — source text still visible because mask incomplete or missing.
   // Only examine written segments: pending segments have no write and no mask, so no residual risk.
@@ -14635,7 +14645,7 @@ function buildPaperTranslatedTextOverlapReport(segmentReports) {
 
   const eligible = allReports.filter((r) => {
     if (!r || !r.writeApplied || !r.renderedTextBbox) return false;
-    if (PDF_EXPORT_PRESERVE_TYPES.has(String(r.type || ''))) return false;
+    if (hasPdfExportReportDisposition(r, "preserve", "group compression audit")) return false;
     const st = String(r.status || '');
     if (st === 'pending' || st === 'debugFail' || String(r.skipReason || '').includes('debug')) return false;
     return true;
@@ -14773,7 +14783,7 @@ function buildPaperGroupCompressionAudit(segmentReports) {
 
   allReports.forEach((r) => {
     if (!r || !r.writeApplied) return;
-    if (PDF_EXPORT_PRESERVE_TYPES.has(String(r.type || ''))) return;
+    if (hasPdfExportReportDisposition(r, "preserve", "group write audit")) return;
     const st = String(r.status || '');
     if (st === 'pending' || st === 'debugFail' || String(r.skipReason || '').includes('debug')) return;
     const memberIds = r.finalWriteGroupSegmentIds || [];
@@ -14885,7 +14895,7 @@ function buildPaperDuplicateWriteBoxAudit(segmentReports) {
   const allReports = Array.isArray(segmentReports) ? segmentReports : [];
   const eligible = allReports.filter((r) => {
     if (!r || !r.writeApplied) return false;
-    if (PDF_EXPORT_PRESERVE_TYPES.has(String(r.type || ''))) return false;
+    if (hasPdfExportReportDisposition(r, "preserve", "group collision audit")) return false;
     const st = String(r.status || '');
     if (st === 'pending' || st === 'debugFail' || String(r.skipReason || '').includes('debug')) return false;
     const box = r.finalWriteBox || r.writeBbox;
@@ -14996,7 +15006,7 @@ function buildPaperRenderedLineOverlapReport(segmentReports) {
 
   const eligible = allReports.filter((r) => {
     if (!r || !r.writeApplied || !r.renderedTextBbox) return false;
-    if (PDF_EXPORT_PRESERVE_TYPES.has(String(r.type || ''))) return false;
+    if (hasPdfExportReportDisposition(r, "preserve", "rendered text audit")) return false;
     const st = String(r.status || '');
     if (st === 'pending' || st === 'debugFail' || String(r.skipReason || '').includes('debug')) return false;
     return true;
@@ -15281,7 +15291,7 @@ function buildPaperVisualUserVisibleIssues(segmentReports) {
   byPage.forEach((pageReports, pageNum) => {
     if (!pageNum) return;
     const written = pageReports.filter((r) => r && r.writeApplied);
-    const preserve = pageReports.filter((r) => r && PDF_EXPORT_PRESERVE_TYPES.has(String(r.type || "")));
+    const preserve = pageReports.filter((r) => r && hasPdfExportReportDisposition(r, "preserve", "page preserve audit"));
     if (written.length === 0) return;
 
     if (preserve.length >= 3 && preserve.length >= written.length * 0.4) {

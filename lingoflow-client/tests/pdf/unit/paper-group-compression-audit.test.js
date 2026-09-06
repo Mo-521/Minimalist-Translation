@@ -25,9 +25,9 @@ function makeContext() {
   const context = vm.createContext({
     Array, Boolean, Math, Number, Set, String,
     PAPER_VISUAL_GROUP_MIN_HEIGHT_PER_MEMBER: 29,
-    PDF_EXPORT_PRESERVE_TYPES: new Set(),
   });
   vm.runInContext([
+    extractFunction(mainSource, 'hasPdfExportReportDisposition'),
     extractFunction(mainSource, 'getPaperParagraphRunCompressionHardFailReasons'),
     extractFunction(mainSource, 'buildPaperGroupCompressionAudit'),
   ].join('\n'), context);
@@ -41,6 +41,7 @@ function makeGroup(overrides = {}) {
     finalWriteGroupSegmentIds: ['member-a', 'member-b', 'member-c', 'member-d'],
     pageNumber: 1,
     type: 'body',
+    semanticTranslationDisposition: 'translate',
     status: 'done',
     writeApplied: true,
     actualWriteApplied: true,
