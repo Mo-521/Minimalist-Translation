@@ -22873,7 +22873,7 @@ async function exportTranslatedPdf(payload) {
   }, {});
   // Cross-page duplicate fragments are excluded from all completeness/coverage counts.
   // They are suppressed extraction artifacts, not missing translations or write failures.
-  const translatableReports = segmentReports.filter((report) => PDF_EXPORT_TRANSLATABLE_TYPES.has(report.type) && report.skipReason !== 'cross_page_duplicate_fragment');
+  const translatableReports = segmentReports.filter((report) => report.semanticTranslationDisposition === 'translate' && report.skipReason !== 'cross_page_duplicate_fragment');
   // 5A-5: a caption-group member is real, translatable content — unlike a cross-page duplicate
   // fragment, it must stay counted in translatableReports (denominator) — it is just "written" by
   // its canonical caption owner instead of independently, so every completeness check below treats
@@ -22899,7 +22899,7 @@ async function exportTranslatedPdf(payload) {
       report.captionGroupMemberCompletenessCovered = Boolean(report.captionGroupCompletenessCovered);
       report.visualResidualRisk = false;
     } else {
-      report.visualResidualRisk = Boolean(report.visualResidualRisk || (PDF_EXPORT_TRANSLATABLE_TYPES.has(report.type) && (!report.maskApplied || report.incompleteWriteApplied || report.skipReason)));
+      report.visualResidualRisk = Boolean(report.visualResidualRisk || (report.semanticTranslationDisposition === 'translate' && (!report.maskApplied || report.incompleteWriteApplied || report.skipReason)));
       if (_captionCoverage) {
         report.captionGroupCoverageRecognizedByFinalResidualCheck = false;
         report.captionGroupMemberFinalResidualSuppressed = false;
@@ -23242,12 +23242,12 @@ async function exportTranslatedPdf(payload) {
     exportCompletenessCoveredByDuplicateSourceMaskCount: Number(_doneWritableCoverageByKind.cross_page_duplicate_masked || 0),
     exportCompletenessCoverageConflictCount: 0,
     exportCompletenessCoverageConflictDetails: [],
-    allowedWritten: segmentReports.filter((report) => report.writeApplied && PDF_EXPORT_ALLOWED_TYPES.has(report.type)).length,
+    allowedWritten: segmentReports.filter((report) => report.writeApplied && report.semanticTranslationDisposition === 'translate').length,
     skippedByType,
     partialRegressionMode,
     partialTranslateRatio: partialRegressionMode ? partialTranslateRatio : 0,
     expectedPendingDueToPartial: segmentReports.filter((report) => report.partialRegressionNotTranslated).length,
-    actualPendingAllowed: segmentReports.filter((report) => PDF_EXPORT_ALLOWED_TYPES.has(report.type) && report.status === "pending").length,
+    actualPendingAllowed: segmentReports.filter((report) => report.semanticTranslationDisposition === 'translate' && report.status === "pending").length,
     pendingIsFailure: false,
     promptLeakCount: segmentReports.filter((report) => report.promptLeakDetected || report.skipReason === "invalid_translation_prompt_leak").length,
     invalidTranslationCount: segmentReports.filter((report) => report.invalidTranslationDetected || /^invalid_translation|^suspicious_translation_length/.test(String(report.skipReason || ""))).length,
