@@ -127,6 +127,10 @@ function makeDifference(kind, segmentId, expected, actual, explanationCode) {
 function compareConsumerCarrierSegments(inputSegments, artifact, options = {}) {
   const stage = String(options.stage || "consumer_boundary");
   const allowSubset = Boolean(options.allowSubset);
+  const allowMissingCarrierType = Boolean(options.allowMissingCarrierType);
+  if (allowMissingCarrierType && stage !== "runPdfExtractionPipeline.canonical_carrier_binding") {
+    throw consumerError("SEMANTIC_CONSUMER_MISSING_TYPE_BYPASS_FORBIDDEN", `Missing carrier type may only be materialized at the canonical producer boundary: ${stage}`, { stage });
+  }
   const segments = Array.isArray(inputSegments) ? inputSegments : [];
   const artifactById = new Map(artifact.segments.map((segment) => [segment.segmentId, segment]));
   const seenIds = new Set();
@@ -155,10 +159,15 @@ function compareConsumerCarrierSegments(inputSegments, artifact, options = {}) {
     previousOutputOrder = canonical.outputOrder;
 
     let carrierType = "";
-    try {
-      carrierType = normalizeCanonicalType(segment.semanticType || segment.type).semanticType;
-    } catch (error) {
-      differences.push(makeDifference("semantic_type", segmentId, canonical.semanticType, String(segment.semanticType || segment.type || ""), String(error && error.code || "consumer_semantic_type_invalid")));
+    const rawCarrierType = String(segment.semanticType || segment.type || "");
+    if (rawCarrierType) {
+      try {
+        carrierType = normalizeCanonicalType(rawCarrierType).semanticType;
+      } catch (error) {
+        differences.push(makeDifference("semantic_type", segmentId, canonical.semanticType, rawCarrierType, String(error && error.code || "consumer_semantic_type_invalid")));
+      }
+    } else if (!allowMissingCarrierType) {
+      differences.push(makeDifference("semantic_type", segmentId, canonical.semanticType, "", "consumer_semantic_type_missing"));
     }
     if (carrierType && carrierType !== canonical.semanticType) {
       differences.push(makeDifference("semantic_type", segmentId, canonical.semanticType, carrierType, "consumer_semantic_type_drift"));
@@ -173,8 +182,9 @@ function compareConsumerCarrierSegments(inputSegments, artifact, options = {}) {
     if (String(canonical.sourceOwnership.ownerSegmentId || "") !== segmentId) {
       differences.push(makeDifference("ownership", segmentId, segmentId, canonical.sourceOwnership.ownerSegmentId, "consumer_owner_segment_drift"));
     }
-    if (Number(segment.pageNumber || 0) !== Number(canonical.pageNumber || 0)) {
-      differences.push(makeDifference("ownership", segmentId, canonical.pageNumber, Number(segment.pageNumber || 0), "consumer_page_ownership_drift"));
+    const carrierPageNumber = Number(segment.pageNumber || segment.firstLinePageNumber || 0);
+    if (carrierPageNumber !== Number(canonical.pageNumber || 0)) {
+      differences.push(makeDifference("ownership", segmentId, canonical.pageNumber, carrierPageNumber, "consumer_page_ownership_drift"));
     }
     if (Array.isArray(segment.sourcePageRange) && stableStringify(segment.sourcePageRange.map(Number)) !== stableStringify(canonical.sourceOwnership.sourcePageRange)) {
       differences.push(makeDifference("ownership", segmentId, canonical.sourceOwnership.sourcePageRange, segment.sourcePageRange, "consumer_source_page_range_drift"));

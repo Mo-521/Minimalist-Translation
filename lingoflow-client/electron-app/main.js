@@ -5726,10 +5726,20 @@ function runPdfExtractionPipeline(pageItemsByPage, config, imageGeometryByPage =
     segments: structureCandidates.segments,
     inputStage: "runPdfExtractionPipeline.structure_candidates",
   });
+  const semanticStructureValidationEvidence = compareCandidateSemanticStructure(structureCandidates.segments, semanticStructureArtifact);
+  bindSemanticStructureConsumerSegments(structureCandidates.segments, semanticStructureArtifact, {
+    stage: "runPdfExtractionPipeline.canonical_carrier_binding",
+    mode: config.mode,
+    allowMissingCarrierType: config.mode === "simple_pdf",
+  });
+  if (config.mode === "simple_pdf" && structureCandidates.pipelineDebug) {
+    structureCandidates.pipelineDebug.summary = simpleBuildReport(structureCandidates.segments, structureCandidates.pipelineDebug.summary || {});
+    structureCandidates.pipelineDebug.blocks = simpleBuildBlockDebugReport(structureCandidates.segments);
+  }
   return {
     ...structureCandidates,
     semanticStructureArtifact,
-    semanticStructureValidationEvidence: compareCandidateSemanticStructure(structureCandidates.segments, semanticStructureArtifact),
+    semanticStructureValidationEvidence,
   };
 }
 
@@ -6548,13 +6558,14 @@ function simpleMergeParagraphs(lines, titleInfo, metrics = simpleEstimateBodyLin
   return paragraphs;
 }
 
-function simpleMakeBlockFromLines(id, type, lines, outputOrder, extra = {}) {
+function simpleMakeBlockFromLines(id, structureRole, lines, outputOrder, extra = {}) {
   const sourceText = simpleJoinParagraphLines(lines || []);
   const firstLine = lines && lines[0] || {};
   const lastLine = lines && lines[lines.length - 1] || firstLine;
   return {
     id,
-    type: simpleNormalizeBlockType(type),
+    structureRole,
+    classificationReason: structureRole === "simple_title" ? "simple_first_page_title" : "simple_paragraph_structure",
     sourceText,
     translatedText: "",
     status: "pending",
@@ -6569,13 +6580,6 @@ function simpleMakeBlockFromLines(id, type, lines, outputOrder, extra = {}) {
     splitReason: extra.splitReason || "",
     error: "",
   };
-}
-
-function simpleNormalizeBlockType(type) {
-  const value = String(type || "body");
-  if (["title", "paragraph", "body", "header", "footer", "pageNumber", "noise", "watermark", "margin"].includes(value)) return value;
-  if (["abstract", "abstract-title", "keywords", "heading", "caption", "reference", "formula", "imageText", "author", "affiliation", "correspondence", "funding", "receivedDate"].includes(value)) return "body";
-  return "body";
 }
 
 function simpleJoinParagraphLines(lines) {
@@ -6600,7 +6604,7 @@ function simpleJoinParagraphLines(lines) {
 
 function simpleShouldMergeCrossPageBlocks(previous, block) {
   if (!previous || !block) return { merge: false, reasonSignals: ["missing_block"], confidence: 0 };
-  if (previous.type !== "body" || block.type !== "body") return { merge: false, reasonSignals: ["type_mismatch"], confidence: 0 };
+  if (previous.structureRole !== "simple_paragraph" || block.structureRole !== "simple_paragraph") return { merge: false, reasonSignals: ["structure_role_mismatch"], confidence: 0 };
   if (Number(previous.lastLinePageNumber || 0) + 1 !== Number(block.firstLinePageNumber || 0)) return { merge: false, reasonSignals: ["non_contiguous_pages"], confidence: 0 };
   const prevText = normalizeExtractedPdfText(previous.sourceText || "");
   const nextText = normalizeExtractedPdfText(block.sourceText || "");
@@ -6684,7 +6688,7 @@ function simpleSplitOverlongBlocks(blocks) {
   const output = [];
   let splitCount = 0;
   (blocks || []).forEach((block) => {
-    if (!["body", "paragraph"].includes(String(block.type || "body"))) {
+    if (String(block.structureRole || "") !== "simple_paragraph") {
       output.push(block);
       return;
     }
@@ -6728,7 +6732,7 @@ function simpleBuildBlocks(lines, titleInfo) {
   const blocks = [];
   let outputOrder = 1;
   if (titleInfo && titleInfo.titleLine) {
-    blocks.push(simpleMakeBlockFromLines(`simple-${outputOrder}`, "title", [titleInfo.titleLine], outputOrder));
+    blocks.push(simpleMakeBlockFromLines(`simple-${outputOrder}`, "simple_title", [titleInfo.titleLine], outputOrder));
     outputOrder += 1;
   }
   const metrics = simpleEstimateBodyLineMetrics(lines);
@@ -6737,7 +6741,7 @@ function simpleBuildBlocks(lines, titleInfo) {
   simpleMergeParagraphs(lines, titleInfo, metrics).forEach((paragraph) => {
     const paragraphLines = Array.isArray(paragraph) ? paragraph : paragraph.lines || [];
     if (!paragraphLines.length) return;
-    blocks.push(simpleMakeBlockFromLines(`simple-${outputOrder}`, "body", paragraphLines, outputOrder, {
+    blocks.push(simpleMakeBlockFromLines(`simple-${outputOrder}`, "simple_paragraph", paragraphLines, outputOrder, {
       mergeReason: paragraphLines.some((line) => metaIds.has(line.lineId)) ? "simple_front_matter_meta" : "",
       breakReasons: paragraph.breakReasons || [],
     }));
@@ -18524,6 +18528,7 @@ function simpleBuildBlockDebugReport(blocks) {
   return (blocks || []).map((block) => ({
     id: block.id,
     type: block.type,
+    structureRole: block.structureRole || "",
     outputOrder: block.outputOrder,
     sourcePageRange: block.sourcePageRange,
     sourceLineRange: block.sourceLineRange,
@@ -18542,9 +18547,10 @@ function simpleBuildReport(blocks, summary) {
   var titleCount = 0, bodyCount = 0, paragraphCount = 0, doneCount = 0, pendingCount = 0, failedCount = 0;
   var boundary = simpleAssertSimpleBlockBoundary(blocks || []);
   (blocks || []).forEach(function(b) {
-    var t = String(b.type || "body");
-    if (t === "title") titleCount++;
-    else if (t === "body") bodyCount++;
+    var role = String(b.structureRole || "");
+    var t = String(b.type || "");
+    if (role === "simple_title" || t === "title") titleCount++;
+    else if (role === "simple_paragraph" || t === "body") bodyCount++;
     else paragraphCount++;
     if (b.status === "done") doneCount++;
     else if (b.status === "pending" || b.status === "translating") pendingCount++;

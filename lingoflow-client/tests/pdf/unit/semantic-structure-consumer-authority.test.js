@@ -76,6 +76,22 @@ test("canonical binding makes semantic fields artifact-backed and rejects mutati
   assert.equal(bound.segments[0].status, "done");
 });
 
+test("an untyped carrier can only be materialized at the canonical producer boundary", () => {
+  const candidates = [{ id: "simple-1", structureRole: "simple_paragraph", sourceText: "Body", firstLinePageNumber: 1 }];
+  const artifact = produceSemanticStructureArtifact({ mode: "simple_pdf", segments: candidates });
+  assert.throws(
+    () => bindSemanticStructureConsumerSegments(candidates, artifact, { stage: "renderer", allowMissingCarrierType: true }),
+    (error) => error && error.code === "SEMANTIC_CONSUMER_MISSING_TYPE_BYPASS_FORBIDDEN",
+  );
+  const bound = bindSemanticStructureConsumerSegments(candidates, artifact, {
+    stage: "runPdfExtractionPipeline.canonical_carrier_binding",
+    mode: "simple_pdf",
+    allowMissingCarrierType: true,
+  });
+  assert.equal(bound.segments[0].type, "body");
+  assert.equal(bound.segments[0].semanticStructureArtifactId, artifact.artifactId);
+});
+
 test("type, identity and ownership drift fail fast without repair", () => {
   const { segments, artifact } = fixture();
   const cases = [

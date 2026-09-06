@@ -20,6 +20,10 @@ const INGRESS_TYPE_ALIASES = Object.freeze({
   formulaBlock: "formula",
   formula_block: "formula",
 });
+const SIMPLE_STRUCTURE_ROLE_TYPES = Object.freeze({
+  simple_title: "title",
+  simple_paragraph: "body",
+});
 
 const PAPER_TRANSLATE_TYPES = new Set([
   "title", "affiliation", "correspondence", "receivedDate", "funding", "abstract-title",
@@ -98,6 +102,37 @@ function normalizeCanonicalType(rawType) {
   };
 }
 
+function resolveCandidateSemanticType(segment, mode) {
+  const structureRole = String(segment && segment.structureRole || "").trim();
+  const rawType = String(segment && (segment.semanticType || segment.type) || "").trim();
+  if (!structureRole) return { ...normalizeCanonicalType(rawType), structureRole: "" };
+  if (mode !== "simple_pdf") {
+    throw structureError("SEMANTIC_STRUCTURE_ROLE_UNSUPPORTED", `Structure role is not supported for ${mode}: ${structureRole}`, { mode, structureRole });
+  }
+  const semanticType = SIMPLE_STRUCTURE_ROLE_TYPES[structureRole];
+  if (!semanticType) {
+    throw structureError("SEMANTIC_STRUCTURE_ROLE_UNKNOWN", `Unknown Simple structure role: ${structureRole}`, { mode, structureRole });
+  }
+  if (rawType) {
+    const declared = normalizeCanonicalType(rawType);
+    if (declared.semanticType !== semanticType) {
+      throw structureError("SEMANTIC_STRUCTURE_ROLE_TYPE_CONFLICT", `Simple structure role conflicts with declared semantic type: ${structureRole} -> ${rawType}`, {
+        mode,
+        structureRole,
+        declaredType: rawType,
+        resolvedType: semanticType,
+      });
+    }
+  }
+  return {
+    rawType,
+    semanticType,
+    aliasApplied: false,
+    aliasReason: "simple_structure_role_decision",
+    structureRole,
+  };
+}
+
 function deriveDisposition(mode, semanticType) {
   const translateTypes = mode === "simple_pdf" ? SIMPLE_TRANSLATE_TYPES : PAPER_TRANSLATE_TYPES;
   const preserveTypes = mode === "simple_pdf" ? SIMPLE_PRESERVE_TYPES : PAPER_PRESERVE_TYPES;
@@ -164,9 +199,10 @@ function normalizeLineOwnership(segment, segmentId) {
 function buildClassificationEvidence(segment, normalizedType) {
   return {
     ingressType: normalizedType.rawType,
+    structureRole: normalizedType.structureRole || "",
     aliasApplied: normalizedType.aliasApplied,
     aliasReason: normalizedType.aliasReason,
-    classificationReason: String(segment && segment.classificationReason || "legacy_structure_candidate"),
+    classificationReason: String(segment && segment.classificationReason || "structure_candidate_type_input"),
     zoneType: String(segment && segment.zoneType || ""),
     referenceModeApplied: Boolean(segment && segment.referenceModeApplied),
     formulaEvidence: {
@@ -197,7 +233,7 @@ function buildCanonicalSegment(segment, index, mode) {
       identitySegmentId: String(segmentIdentity.segmentId || ""),
     });
   }
-  const normalizedType = normalizeCanonicalType(segment.semanticType || segment.type);
+  const normalizedType = resolveCandidateSemanticType(segment, mode);
   const sourceText = String(segment.sourceText || "");
   const sourceLines = normalizeLineOwnership(segment, segmentId);
   const sourceOwnership = {
@@ -302,10 +338,11 @@ function compareCandidateSemanticStructure(candidateSegments, artifact) {
       differences.push(candidateDifference("segment_boundary", segmentId, "candidate_segment_present", "canonical_segment_missing", "canonical_segment_missing", "Structure candidate has no canonical counterpart", false));
       return;
     }
-    const normalized = normalizeCanonicalType(segment.semanticType || segment.type);
-    if (String(segment.type || "") !== canonical.semanticType) {
+    const normalized = resolveCandidateSemanticType(segment, artifact.producer.mode);
+    const declaredType = String(segment.semanticType || segment.type || "");
+    if (declaredType && declaredType !== canonical.semanticType) {
       const aliasExplained = normalized.aliasApplied && normalized.semanticType === canonical.semanticType;
-      differences.push(candidateDifference("semantic_type", segmentId, String(segment.type || ""), canonical.semanticType, aliasExplained ? "ingress_alias_normalized" : "semantic_type_divergence", aliasExplained ? "Candidate ingress alias was normalized once by Structure Authority" : "Canonical semantic type differs from the normalized structure candidate", aliasExplained));
+      differences.push(candidateDifference("semantic_type", segmentId, declaredType, canonical.semanticType, aliasExplained ? "ingress_alias_normalized" : "semantic_type_divergence", aliasExplained ? "Candidate ingress alias was normalized once by Structure Authority" : "Canonical semantic type differs from the normalized structure candidate", aliasExplained));
     }
     const candidateTextHash = sha256(String(segment.sourceText || ""));
     if (candidateTextHash !== canonical.sourceOwnership.sourceTextHash) {

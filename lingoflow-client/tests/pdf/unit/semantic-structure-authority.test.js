@@ -94,6 +94,21 @@ test("simple mode uses the same artifact schema with a mode-specific frozen poli
   assertDeepFrozen(artifact);
 });
 
+test("simple structure roles are classified only by the canonical producer", () => {
+  const candidates = [
+    { id: "simple-1", structureRole: "simple_title", sourceText: "Title", firstLinePageNumber: 1 },
+    { id: "simple-2", structureRole: "simple_paragraph", sourceText: "Body", firstLinePageNumber: 1 },
+  ];
+  const artifact = authority.produceSemanticStructureArtifact({ mode: "simple_pdf", segments: candidates });
+  assert.deepEqual(artifact.segments.map((segment) => segment.semanticType), ["title", "body"]);
+  assert.deepEqual(artifact.segments.map((segment) => segment.classification.evidence.structureRole), ["simple_title", "simple_paragraph"]);
+  assert.equal(authority.compareCandidateSemanticStructure(candidates, artifact).status, "match");
+  assert.throws(
+    () => authority.produceSemanticStructureArtifact({ mode: "simple_pdf", segments: [{ id: "simple-conflict", structureRole: "simple_title", type: "body" }] }),
+    (error) => error && error.code === "SEMANTIC_STRUCTURE_ROLE_TYPE_CONFLICT",
+  );
+});
+
 test("retired legacy simple mode is rejected instead of aliasing canonical simple authority", () => {
   assert.throws(
     () => authority.produceSemanticStructureArtifact({ mode: "legacy_simple_pdf", segments: [] }),
@@ -137,7 +152,8 @@ test("main extraction publishes the canonical artifact directly and keeps compar
   const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
   const packageJson = JSON.parse(fs.readFileSync(path.join(root, "electron-app/package.json"), "utf8"));
   assert.match(mainSource, /produceSemanticStructureArtifact\(\{/);
-  assert.match(mainSource, /semanticStructureValidationEvidence:\s*compareCandidateSemanticStructure/);
+  assert.match(mainSource, /const semanticStructureValidationEvidence = compareCandidateSemanticStructure/);
+  assert.match(mainSource, /bindSemanticStructureConsumerSegments\(structureCandidates\.segments, semanticStructureArtifact/);
   assert.doesNotMatch(mainSource, /runSemanticStructureShadowValidation|compareLegacySemanticStructure|legacyConsumersRemainAuthoritative|shadowOnly|legacyResult/);
   assert.ok(packageJson.build.files.includes("semantic-structure-authority.js"));
 
@@ -156,6 +172,9 @@ test("main extraction publishes the canonical artifact directly and keeps compar
       return { frozen: true, mode: input.mode, segments: input.segments };
     },
     compareCandidateSemanticStructure: () => ({ status: "match" }),
+    bindSemanticStructureConsumerSegments: () => ({ report: { status: "match" } }),
+    simpleBuildReport: (_segments, summary) => summary,
+    simpleBuildBlockDebugReport: () => [],
   });
   vm.runInContext(functionSource, context);
   const simpleResult = context.runPdfExtractionPipeline(new Map(), { mode: "simple_pdf" });
