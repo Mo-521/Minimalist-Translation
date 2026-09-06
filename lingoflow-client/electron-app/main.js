@@ -19158,7 +19158,8 @@ async function exportTranslatedPdf(payload) {
     const pureFormulaSegment = isPureFormulaSegment(segment, pipelineConfig);
     const strictPureEquationBlock = isStrictPureEquationBlock(segment, pipelineConfig);
     const type = assertSemanticConsumerTypeProjection(segment, rawType, "export_report");
-    const preserveOriginal = PDF_EXPORT_PRESERVE_TYPES.has(type) || strictPureEquationBlock;
+    const semanticTranslationDisposition = requirePdfExportSemanticDisposition(segment, "export_report");
+    const preserveOriginal = semanticTranslationDisposition === "preserve" || strictPureEquationBlock;
     const reportStatus = preserveOriginal ? "preserved" : String(segment && segment.status || "");
     const formulaGroups = getFormulaSegmentLineGroups(segment, pipelineConfig);
     const preservedFormulaLines = formulaGroups.formulaLines.map((line) => cleanPdfText(line.text || line.sourceLineText)).filter(Boolean);
@@ -19167,7 +19168,7 @@ async function exportTranslatedPdf(payload) {
     const formulaLineDemotedToInline = pipelineConfig.mode === "paper_pdf" &&
       !pureFormulaSegment &&
       preservedFormulaLines.length === 0 &&
-      PDF_EXPORT_ALLOWED_TYPES.has(type) &&
+      semanticTranslationDisposition === "translate" &&
       hasStandardFormulaToken(cleanPdfText(segment && segment.sourceText));
     return {
       id: String(segment && segment.id || ""),
@@ -19177,6 +19178,8 @@ async function exportTranslatedPdf(payload) {
       semanticDecisionId: String(segment && segment.semanticDecisionId || ""),
       semanticStructureArtifactId: String(segment && segment.semanticStructureArtifactId || ""),
       semanticSourceOwnership: segment && segment.semanticSourceOwnership || null,
+      semanticPolicy: segment && segment.semanticPolicy || null,
+      semanticTranslationDisposition,
       layoutType: String(segment && segment.layoutType || ""),
       column: String(segment && segment.column || "single"),
       zoneType: String(segment && segment.zoneType || ""),
@@ -22627,7 +22630,7 @@ async function exportTranslatedPdf(payload) {
   const doneWritableReports = segmentReports.filter((report) => (
     report.status === "done" &&
     report.hasTranslatedText &&
-    PDF_EXPORT_ALLOWED_TYPES.has(report.type) &&
+    report.semanticTranslationDisposition === "translate" &&
     report.skipReason !== "reference_preserve_original" &&
     report.skipReason !== "formula_preserve_original" &&
     !String(report.skipReason || "").endsWith("_preserve_original")
