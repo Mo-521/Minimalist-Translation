@@ -14062,9 +14062,13 @@ function getPdfExportSkipReason(segment, pipelineConfig) {
   if (mode === "simple_pdf" || mode === "legacy_simple_pdf") {
     return getPdfExportSkipReasonForMode(segment, mode, pipelineConfig);
   }
-  const rawType = String(segment.type || "body");
-  const projectedType = rawType === "formula" && !isStrictPureEquationBlock(segment, pipelineConfig) ? "body" : rawType;
-  const type = assertSemanticConsumerTypeProjection(segment, projectedType, "export_skip_reason");
+  const rawType = String(segment.semanticType || segment.type || "");
+  if (!rawType) {
+    const error = new Error("Canonical semantic type is required before export skip evaluation");
+    error.code = "SEMANTIC_CONSUMER_TYPE_REQUIRED";
+    throw error;
+  }
+  const type = assertSemanticConsumerTypeProjection(segment, rawType, "export_skip_reason");
   if (segment.partialRegressionNotTranslated) return "partial_regression_not_translated";
   const invalidTranslationReason = getInvalidTranslationSkipReason(segment);
   if (invalidTranslationReason) return invalidTranslationReason;
@@ -14087,8 +14091,13 @@ function getPdfExportSkipReason(segment, pipelineConfig) {
 
 function getPdfExportSkipReasonForMode(segment, mode, pipelineConfig) {
   if (!segment) return "invalid_segment";
-  const rawType = String(segment.type || "body");
-  const type = rawType === "formula" && !isStrictPureEquationBlock(segment, pipelineConfig) ? "body" : rawType;
+  const rawType = String(segment.semanticType || segment.type || "");
+  if (!rawType) {
+    const error = new Error("Canonical semantic type is required before mode export skip evaluation");
+    error.code = "SEMANTIC_CONSUMER_TYPE_REQUIRED";
+    throw error;
+  }
+  const type = assertSemanticConsumerTypeProjection(segment, rawType, "mode_export_skip_reason");
   if (segment.partialRegressionNotTranslated) return "partial_regression_not_translated";
   const invalidTranslationReason = getInvalidTranslationSkipReason(segment);
   if (invalidTranslationReason) return invalidTranslationReason;
@@ -19194,13 +19203,15 @@ async function exportTranslatedPdf(payload) {
     reboundExportSegments.report,
   ];
   const segmentReports = allSegments.map((segment) => {
-    const rawType = String(segment && segment.type || "body");
+    const rawType = String(segment && (segment.semanticType || segment.type) || "");
+    if (!rawType) {
+      const error = new Error("Canonical semantic type is required before export report generation");
+      error.code = "SEMANTIC_CONSUMER_TYPE_REQUIRED";
+      throw error;
+    }
     const pureFormulaSegment = isPureFormulaSegment(segment, pipelineConfig);
     const strictPureEquationBlock = isStrictPureEquationBlock(segment, pipelineConfig);
-    const projectedType = strictPureEquationBlock && PDF_EXPORT_TRANSLATABLE_TYPES.has(rawType)
-      ? "formula"
-      : (rawType === "formula" && !strictPureEquationBlock ? "body" : rawType);
-    const type = assertSemanticConsumerTypeProjection(segment, projectedType, "export_report");
+    const type = assertSemanticConsumerTypeProjection(segment, rawType, "export_report");
     const preserveOriginal = PDF_EXPORT_PRESERVE_TYPES.has(type) || strictPureEquationBlock;
     const reportStatus = preserveOriginal ? "preserved" : String(segment && segment.status || "");
     const formulaGroups = getFormulaSegmentLineGroups(segment, pipelineConfig);
