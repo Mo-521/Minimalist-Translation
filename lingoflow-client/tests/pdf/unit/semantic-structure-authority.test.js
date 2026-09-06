@@ -180,6 +180,33 @@ test("paper image-text body-like demotion is written only by Structure Authority
   assert.doesNotMatch(mainSource, /function auditPaperImageTextPreserveRisk/);
 });
 
+test("paper caption body-like demotion is written only by Structure Authority", () => {
+  const stages = authority.semanticStructureProducerStages;
+  const candidates = [
+    { id: "caption-body-like", type: "caption", sourceText: "Figure 1 shows prose", zoneType: "captionZone", warnings: [] },
+    { id: "caption", type: "caption", sourceText: "Figure 1: label" },
+    { id: "body", type: "body", sourceText: "Figure 1 shows prose" },
+  ];
+  const result = stages.applyPaperCaptionBodyDemotionClassification(candidates, [
+    { segmentIndex: 0, bodyLikeReason: "caption_marker_body_sentence" },
+    { segmentIndex: 1, bodyLikeReason: "" },
+    { segmentIndex: 2, bodyLikeReason: "caption_marker_body_sentence" },
+  ]);
+  assert.deepEqual(result.map((segment) => segment.type), ["body", "caption", "body"]);
+  assert.equal(result[0].classificationReason, "caption_body_like_demoted_to_body");
+  assert.equal(result[0].captionBodyLikeRiskReason, "caption_marker_body_sentence");
+  assert.equal(result[0].zoneType, "");
+  assert.deepEqual(result[0].warnings, ["caption_body_like_demoted_to_body"]);
+  assert.equal(candidates[0].type, "caption");
+  assert.throws(
+    () => stages.applyPaperCaptionBodyDemotionClassification(candidates, []),
+    (error) => error && error.code === "SEMANTIC_PAPER_CAPTION_BODY_EVIDENCE_COUNT_MISMATCH",
+  );
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  assert.match(mainSource, /semanticStructureProducerStages\.applyPaperCaptionBodyDemotionClassification\(/);
+  assert.doesNotMatch(mainSource, /function demoteBodyLikeCaptionSegmentsBeforeTranslation/);
+});
+
 test("retired legacy simple mode is rejected instead of aliasing canonical simple authority", () => {
   assert.throws(
     () => authority.produceSemanticStructureArtifact({ mode: "legacy_simple_pdf", segments: [] }),

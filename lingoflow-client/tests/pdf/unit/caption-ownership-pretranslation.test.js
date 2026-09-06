@@ -201,7 +201,7 @@ test('renderer normalization preserves pretranslation authority artifacts before
 
 test('pretranslation ownership decision precedes authority finalization', () => {
   const extractionSource = extractFunction(mainSource, 'buildStructuredPdfText');
-  const demoteAt = extractionSource.indexOf('demoteBodyLikeCaptionSegmentsBeforeTranslation(segments');
+  const demoteAt = extractionSource.indexOf('semanticStructureProducerStages.applyPaperCaptionBodyDemotionClassification(');
   const resolveAt = extractionSource.indexOf('resolveCaptionBodyConflictsForPaperSegments(segments');
   const finalizeAt = extractionSource.indexOf('finalizePaperCaptionBodyOwnershipBeforeTranslation(segments');
   assert.ok(demoteAt >= 0 && resolveAt > demoteAt && finalizeAt > resolveAt);

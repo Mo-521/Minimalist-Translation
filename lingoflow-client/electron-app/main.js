@@ -1310,22 +1310,11 @@ function isBodyLikeCaptionText(text) {
   return Boolean(getCaptionBodyLikeRiskReason(text));
 }
 
-function demoteBodyLikeCaptionSegmentsBeforeTranslation(segments, pipelineConfig) {
-  if (!isPaperPdfConfig(pipelineConfig)) return segments || [];
-  return (segments || []).map((segment) => {
-    if (!segment || String(segment.type || "") !== "caption") return segment;
-    const reason = getCaptionBodyLikeRiskReason(segment.sourceText || segment.previewText || "");
-    if (!reason) return segment;
-    return {
-      ...segment,
-      type: "body",
-      captionBodyLikeDemotedToBody: true,
-      captionBodyLikeRiskReason: reason,
-      classificationReason: "caption_body_like_demoted_to_body",
-      zoneType: String(segment.zoneType || "") === "captionZone" ? "" : segment.zoneType,
-      warnings: Array.from(new Set([...(segment.warnings || []), "caption_body_like_demoted_to_body"])),
-    };
-  });
+function getPaperCaptionBodyDemotionEvidence(segment, segmentIndex) {
+  return {
+    segmentIndex,
+    bodyLikeReason: getCaptionBodyLikeRiskReason(segment && (segment.sourceText || segment.previewText) || ""),
+  };
 }
 
 function isStandaloneFigureReferenceCaption(segment) {
@@ -5257,7 +5246,10 @@ function buildStructuredPdfText(pageItemsByPage, pipelineConfig, imageGeometryBy
       segments,
       segments.map(getPaperImageTextDemotionEvidence),
     );
-    segments = demoteBodyLikeCaptionSegmentsBeforeTranslation(segments, pipelineConfig);
+    segments = semanticStructureProducerStages.applyPaperCaptionBodyDemotionClassification(
+      segments,
+      segments.map(getPaperCaptionBodyDemotionEvidence),
+    );
     segments = resolveCaptionBodyConflictsForPaperSegments(segments, pipelineConfig);
     // PDF.js paint operators are the sole image-geometry authority. Caption/body heuristics are not
     // allowed to create, shrink, drop, or replace these artifacts.

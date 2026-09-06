@@ -238,11 +238,44 @@ function applyPaperImageTextDemotionClassification(segments, evidenceByIndex) {
   });
 }
 
+function applyPaperCaptionBodyDemotionClassification(segments, evidenceByIndex) {
+  const candidates = Array.isArray(segments) ? segments : [];
+  const evidence = Array.isArray(evidenceByIndex) ? evidenceByIndex : [];
+  if (evidence.length !== candidates.length) {
+    throw structureError("SEMANTIC_PAPER_CAPTION_BODY_EVIDENCE_COUNT_MISMATCH", "Paper caption-body demotion evidence must align with every candidate", {
+      segmentCount: candidates.length,
+      evidenceCount: evidence.length,
+    });
+  }
+  return candidates.map((segment, index) => {
+    const itemEvidence = evidence[index];
+    if (!itemEvidence || Number(itemEvidence.segmentIndex) !== index) {
+      throw structureError("SEMANTIC_PAPER_CAPTION_BODY_EVIDENCE_ORDER_MISMATCH", "Paper caption-body demotion evidence order does not match candidates", {
+        index,
+        evidenceIndex: itemEvidence && itemEvidence.segmentIndex,
+      });
+    }
+    const currentType = normalizeCanonicalType(segment && (segment.semanticType || segment.type)).semanticType;
+    const bodyLikeReason = String(itemEvidence.bodyLikeReason || "");
+    if (currentType !== "caption" || !bodyLikeReason) return segment;
+    return {
+      ...segment,
+      type: "body",
+      captionBodyLikeDemotedToBody: true,
+      captionBodyLikeRiskReason: bodyLikeReason,
+      classificationReason: "caption_body_like_demoted_to_body",
+      zoneType: String(segment.zoneType || "") === "captionZone" ? "" : segment.zoneType,
+      warnings: Array.from(new Set([...(segment.warnings || []), "caption_body_like_demoted_to_body"])),
+    };
+  });
+}
+
 const semanticStructureProducerStages = Object.freeze({
   classifyPaperLineEvidence,
   classifyPaperSegmentNoiseEvidence,
   applyPaperSegmentNoiseClassification,
   applyPaperImageTextDemotionClassification,
+  applyPaperCaptionBodyDemotionClassification,
 });
 
 function deriveDisposition(mode, semanticType) {
