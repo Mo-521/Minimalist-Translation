@@ -101,7 +101,7 @@ test("retired legacy simple mode is rejected instead of aliasing canonical simpl
   );
 });
 
-test("ingress aliases are normalized once and shadow differences are explicitly explained", () => {
+test("ingress aliases are normalized once and candidate differences are explicitly explained", () => {
   const legacy = [{ id: "seg-alias", type: "formulaBlock", sourceText: "E = mc2" }];
   const artifact = authority.produceSemanticStructureArtifact({ mode: "paper_pdf", segments: legacy });
   const comparison = authority.compareCandidateSemanticStructure(legacy, artifact);
@@ -124,7 +124,7 @@ test("unknown types and duplicate identities fail fast instead of becoming body"
   );
 });
 
-test("shadow comparison reports boundary drift with a stable unexplained reason", () => {
+test("candidate comparison reports boundary drift with a stable unexplained reason", () => {
   const legacy = sampleSegments();
   const artifact = authority.produceSemanticStructureArtifact({ mode: "paper_pdf", segments: legacy.slice(0, 2) });
   const comparison = authority.compareCandidateSemanticStructure(legacy, artifact);

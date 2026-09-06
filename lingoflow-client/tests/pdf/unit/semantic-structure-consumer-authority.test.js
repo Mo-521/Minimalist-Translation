@@ -56,7 +56,7 @@ test("IPC-cloned artifact is hash-validated and recursively re-frozen", () => {
   assert.equal(Object.isFrozen(restored.segments[0].sourceOwnership), true);
 });
 
-test("consumer shadow comparison proves identity, type, ownership, boundary and order parity", () => {
+test("consumer comparison proves identity, type, ownership, boundary and order parity", () => {
   const { segments, artifact } = fixture();
   const report = compareConsumerCarrierSegments(segments, artifact, { stage: "shadow", mode: "paper_pdf" });
   assert.equal(report.status, "match");

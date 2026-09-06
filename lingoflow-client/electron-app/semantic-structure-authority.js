@@ -3,7 +3,7 @@
 const crypto = require("crypto");
 
 const AUTHORITY_NAME = "semantic-structure-authority";
-const AUTHORITY_VERSION = "1.0.0-shadow";
+const AUTHORITY_VERSION = "1.0.0";
 const SCHEMA_VERSION = "semantic-structure-artifact/v1";
 
 const CANONICAL_SEMANTIC_TYPES = Object.freeze([
@@ -186,9 +186,9 @@ function buildCanonicalSegment(segment, index, mode) {
   const segmentIdentity = segment.segmentIdentity && typeof segment.segmentIdentity === "object"
     ? stableValue(segment.segmentIdentity)
     : {
-      schemaVersion: "semantic-structure-shadow-identity/v1",
+      schemaVersion: "semantic-structure-identity/v1",
       segmentId,
-      origin: "legacy_candidate_id",
+      origin: "structure_candidate_id",
       parentSegmentId: String(segment.splitFromSegmentId || ""),
     };
   if (String(segmentIdentity.segmentId || "") !== segmentId) {
@@ -266,7 +266,7 @@ function produceSemanticStructureArtifact(input = {}) {
       name: AUTHORITY_NAME,
       version: AUTHORITY_VERSION,
       mode,
-      inputStage: String(input.inputStage || "legacy_structure_candidate_shadow"),
+      inputStage: String(input.inputStage || "structure_candidates"),
     },
     vocabulary: CANONICAL_SEMANTIC_TYPES.slice(),
     segmentCount: segments.length,
