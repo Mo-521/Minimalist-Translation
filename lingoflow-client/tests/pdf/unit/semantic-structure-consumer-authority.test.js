@@ -186,6 +186,7 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.doesNotMatch(auditSource, /const (?:ALLOWED_WRITE|PRESERVE)_TYPES\s*=/);
   assert.match(auditSource, /semanticTranslationDisposition \|\| report\.semanticPolicy/);
   assert.doesNotMatch(mainSource, /function getPdfExport(?:Allowed|Preserve)TypesForMode\(/);
+  assert.match(mainSource, /return requirePdfExportSemanticDisposition\(block, "simple block translation eligibility"\) === "translate"/);
   assert.match(mainSource, /requirePdfExportSemanticDisposition\(segment, "export_skip_reason"\)/);
   assert.match(mainSource, /semanticTranslationDisposition = requirePdfExportSemanticDisposition\(segment, "export_report"\)/);
   assert.match(mainSource, /semanticPolicy: segment && segment\.semanticPolicy \|\| null/);

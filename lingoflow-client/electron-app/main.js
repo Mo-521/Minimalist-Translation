@@ -18414,11 +18414,7 @@ function drawSingleZhToEnDocumentFlow(sortedSegments, pages, font, targetLanguag
 
 function simpleIsTranslatableBlock(block) {
   if (!block) return false;
-  if (block.semanticPolicy) return block.semanticPolicy.translationDisposition === "translate";
-  var type = String(block.type || "body");
-  if (type === "title" || type === "body" || type === "paragraph") return true;
-  if (type === "header" || type === "footer" || type === "pageNumber" || type === "noise" || type === "watermark" || type === "margin") return false;
-  return true;
+  return requirePdfExportSemanticDisposition(block, "simple block translation eligibility") === "translate";
 }
 
 const PAPER_PDF_RULE_CONTRACT_VERSION = "paper_pdf_p0_v1";
