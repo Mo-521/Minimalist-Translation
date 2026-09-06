@@ -15738,7 +15738,7 @@ function getPaperSourceMaskPreserveBoxes(pageNumber, sourceSegmentIds, allSegmen
     if (!segment || Number(segment.pageNumber || 0) !== Number(pageNumber || 0) || !segment.bbox) return false;
     if (sourceIds.has(String(segment.id || ''))) return false;
     const report = reportById instanceof Map ? reportById.get(String(segment.id || '')) : null;
-    return PDF_EXPORT_PRESERVE_TYPES.has(String(segment.type || '')) || Boolean(report && String(report.skipReason || '').endsWith('_preserve_original'));
+    return requirePdfExportSemanticDisposition(segment, "source mask preserve boxes") === "preserve" || Boolean(report && String(report.skipReason || '').endsWith('_preserve_original'));
   }).map((segment) => ({ ...segment.bbox, preserveType: String(segment.type || 'preserve') }));
 }
 
@@ -18239,7 +18239,7 @@ function buildPipelineDebugReport(pipelineDebug, segmentReports, pageLayouts, ex
 function isSingleZhToEnDocumentFlowExport(segments, targetLanguage) {
   if (!isEnglishTargetLanguage(targetLanguage)) return false;
   const candidates = normalizePdfDiagnosticSegments(segments).filter((segment) => {
-    return PDF_EXPORT_ALLOWED_TYPES.has(String(segment.type || "body")) &&
+    return requirePdfExportSemanticDisposition(segment, "single document flow eligibility") === "translate" &&
       String(segment.status || "") === "done" &&
       cleanPdfText(segment.translatedText);
   });
@@ -18309,7 +18309,7 @@ function getFlowPageBox(page, pageNumber, flowSegments, startPageNumber) {
 
 function applySegmentVisualMask(segment, pages, report) {
   let lineMasks = getValidSegmentLineMasks(segment, pages);
-  if (!lineMasks.length && report && PDF_EXPORT_TRANSLATABLE_TYPES.has(String(report.type || segment && segment.type || "body"))) {
+  if (!lineMasks.length && report && hasPdfExportReportDisposition(report, "translate", "visual mask fallback")) {
     lineMasks = getFallbackSegmentLineMasks(segment, pages, report);
     if (lineMasks.length) {
       report.maskFallbackApplied = true;
@@ -20259,7 +20259,7 @@ async function exportTranslatedPdf(payload) {
         }
         segLineMasks.forEach((mask) => { mask.segmentId = String(entry.id || ''); });
         lineMasks.push(...segLineMasks);
-      } else if (PDF_EXPORT_TRANSLATABLE_TYPES.has(String(entryReport && entryReport.type || "body"))) {
+      } else if (hasPdfExportReportDisposition(entryReport, "translate", "group visual mask fallback")) {
         const fallback = getFallbackSegmentLineMasks(entry, pages, entryReport);
         if (fallback.length) {
           fallback.forEach((mask) => { mask.segmentId = String(entry.id || ''); });

@@ -187,6 +187,8 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.match(mainSource, /semanticPolicy: segment && segment\.semanticPolicy \|\| null/);
   assert.match(mainSource, /translatableReports = segmentReports\.filter\(\(report\) => report\.semanticTranslationDisposition === 'translate'/);
   assert.match(mainSource, /function hasPdfExportReportDisposition\(/);
+  assert.match(mainSource, /requirePdfExportSemanticDisposition\(segment, "source mask preserve boxes"\)/);
+  assert.match(mainSource, /hasPdfExportReportDisposition\(report, "translate", "visual mask fallback"\)/);
   assert.match(mainSource, /assertSemanticConsumerTypeProjection\(segment, rawType, "export_report"\)/);
   assert.match(rendererSource, /semanticStructureConsumerReports:\s*state\.semanticStructureConsumerReports\.slice\(\)/);
   assert.match(rendererSource, /function requireSemanticTranslationDisposition\(segment, consumerName\)/);
