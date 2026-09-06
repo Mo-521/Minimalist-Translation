@@ -8222,23 +8222,6 @@ function buildPaperLayoutBlockingZones(allSegments, imageRegionsByPage, pageSize
     if (!zones.has(key)) zones.set(key, []);
     zones.get(key).push(zone);
   };
-  // HARD must be the SAME canonical nonWritable-zone source the downstream layoutPlan gate
-  // (collectPaperNonWritableZoneEntriesByPage / PAPER_NON_WRITABLE_ZONE_TYPE_MAP) uses — header,
-  // footer, pageNumber, margin, watermark, noise, author, imageText, side-mark/metadata zones are
-  // ALL absolutely non-writable there. Keeping two hand-written lists in sync by hand is exactly
-  // how a segment could pass this upstream check yet still get downgraded to incomplete later
-  // (the root cause behind 2D's non_writable_zone_no_safe_write_box failures): so this list is
-  // derived from PDF_EXPORT_PRESERVE_TYPES instead of re-enumerated.
-  const HARD = new Set([...PDF_EXPORT_PRESERVE_TYPES, 'formulaBlock', 'equationBlock']);
-  // SOFT registers every other top-zone translatable type's OWN occupied space so the safe-span
-  // search (buildWritableSafeSpansForPage, used by both this file's relocation chain and the
-  // image-no-escape continuation search) knows to route around it too — without these, a segment
-  // like 'correspondence'/'receivedDate'/'funding' that is still untranslated this run (so it never
-  // gets its own mask/write box yet) would look like empty page space and a relocated box could
-  // land directly on top of its still-original, unmasked source text. Keeping these in sync with
-  // PDF_EXPORT_TRANSLATABLE_TYPES (minus 'body', which isn't a single static top-zone span) instead
-  // of re-enumerating ad hoc avoids this list silently drifting out of date again.
-  const SOFT = new Set(['caption', 'heading', 'title', 'affiliation', 'keywords', 'abstract', 'abstract-title', 'correspondence', 'receivedDate', 'funding']);
   Object.entries(imageRegionsByPage || {}).forEach(([pStr, regions]) => {
     const pn = Number(pStr);
     (regions || []).forEach((r) => {
@@ -8285,8 +8268,9 @@ function buildPaperLayoutBlockingZones(allSegments, imageRegionsByPage, pageSize
   });
   (allSegments || []).forEach((seg) => {
     const t = String(seg.type || '');
-    const isHard = HARD.has(t) || Boolean(seg.referenceModeApplied);
-    const isSoft = SOFT.has(t);
+    const semanticDisposition = requirePdfExportSemanticDisposition(seg, "layout blocking zones");
+    const isHard = semanticDisposition === "preserve" || Boolean(seg.referenceModeApplied);
+    const isSoft = semanticDisposition === "translate" && t !== "body";
     if (!isHard && !isSoft) return;
     if (!seg.bbox) return;
     const pn = Number(seg.pageNumber || 0);
@@ -8490,9 +8474,10 @@ const PAPER_NON_WRITABLE_ZONE_TYPE_MAP = Object.freeze({
   journalMetadata: 'sideMarkZone',
 });
 
-function getPaperNonWritableZoneCategory(segType, skipReason) {
+function getPaperNonWritableZoneCategory(segment, skipReason) {
+  const segType = String(segment && segment.type || "");
   if (PAPER_NON_WRITABLE_ZONE_TYPE_MAP[segType]) return PAPER_NON_WRITABLE_ZONE_TYPE_MAP[segType];
-  if (PDF_EXPORT_PRESERVE_TYPES.has(segType) || String(skipReason || '').endsWith('_preserve_original')) return 'preserveZone';
+  if (requirePdfExportSemanticDisposition(segment, "non-writable zone category") === "preserve" || String(skipReason || '').endsWith('_preserve_original')) return 'preserveZone';
   return '';
 }
 
@@ -8511,7 +8496,7 @@ function collectPaperNonWritableZoneEntriesByPage(allSegments, reportById) {
     const segReport = reportById.get(String(seg.id || ''));
     const segSkipReason = String((segReport && segReport.skipReason) || '');
     const segType = String(seg.type || '');
-    const zoneCategory = getPaperNonWritableZoneCategory(segType, segSkipReason);
+    const zoneCategory = getPaperNonWritableZoneCategory(seg, segSkipReason);
     if (!zoneCategory) return;
     // Use resolved sourcePage so zone-forming segments with stale seg.pageNumber
     // are indexed under their correct page, not a mis-attributed one.
@@ -9066,7 +9051,7 @@ function buildPaperLayoutPlan(allSegments, segmentReports) {
     if (!seg || !seg.bbox) return;
     const segReport = reportById.get(String(seg.id || ''));
     const segSkipReason = String((segReport && segReport.skipReason) || '');
-    const isSegPreserve = segSkipReason.endsWith('_preserve_original') || PDF_EXPORT_PRESERVE_TYPES.has(String(seg.type || ''));
+    const isSegPreserve = segSkipReason.endsWith('_preserve_original') || requirePdfExportSemanticDisposition(seg, "layout preserve boxes") === "preserve";
     if (!isSegPreserve) return;
     const pageKey = String(seg.pageNumber || 0);
     if (!preserveBoxesByPage.has(pageKey)) preserveBoxesByPage.set(pageKey, []);
@@ -9085,7 +9070,7 @@ function buildPaperLayoutPlan(allSegments, segmentReports) {
     const primaryReport = groupedReports.find((entry) => String(entry.id || '') === representativeId) || report;
     const skipReason = String(report.skipReason || '');
     const segType = String(seg.type || '');
-    const isPreserve = skipReason.endsWith('_preserve_original') || PDF_EXPORT_PRESERVE_TYPES.has(segType);
+    const isPreserve = skipReason.endsWith('_preserve_original') || hasPdfExportReportDisposition(report, "preserve", "layout plan item");
     const isImageBlocked = Boolean(report.imageClipAttemptedNoEscape) && !Boolean(report.imageRegionNoEscapeRelocated);
     const isReferenceZone = segType === 'reference' || skipReason === 'reference_preserve_original';
     const isLicenseZone = segType === 'licenseText' || skipReason === 'licenseText_preserve_original';
@@ -12773,55 +12758,6 @@ function normalizePdfExportSegments(segments) {
       Number(segment.bbox.height) > 0;
   });
 }
-
-const PDF_EXPORT_ALLOWED_TYPES = new Set([
-  "title",
-  "author",
-  "affiliation",
-  "correspondence",
-  "receivedDate",
-  "funding",
-  "abstract",
-  "abstract-title",
-  "keywords",
-  "heading",
-  "body",
-  "caption",
-]);
-
-const PDF_EXPORT_TRANSLATABLE_TYPES = new Set([
-  "title",
-  "abstract-title",
-  "abstract",
-  "keywords",
-  "heading",
-  "body",
-  "caption",
-  "affiliation",
-  "funding",
-  "receivedDate",
-  "correspondence",
-]);
-
-const PDF_EXPORT_PRESERVE_TYPES = new Set([
-  "author",
-  "reference",
-  "formula",
-  "imageText",
-  "header",
-  "watermark",
-  "licenseText",
-  "margin",
-  "footer",
-  "pageNumber",
-  "noise",
-  // Keep in sync with PAPER_PDF_PRESERVE_TYPES — these metadata/side-mark zones must be
-  // geometrically excluded from source-cover mask subtraction and layout-plan preserve checks,
-  // not just from the canonical contract list used for reporting.
-  "arXivSideMark",
-  "doiMetadata",
-  "journalMetadata",
-]);
 
 function hasStandardFormulaToken(text) {
   const value = String(text || "");
