@@ -79,7 +79,7 @@ function structureError(code, message, details = {}) {
 function normalizeMode(mode) {
   const value = String(mode || "");
   if (value === "paper_pdf") return "paper_pdf";
-  if (value === "simple_pdf" || value === "legacy_simple_pdf") return "simple_pdf";
+  if (value === "simple_pdf") return "simple_pdf";
   throw structureError("SEMANTIC_STRUCTURE_MODE_UNSUPPORTED", `Unsupported semantic structure mode: ${value || "<empty>"}`, { mode: value });
 }
 

@@ -2422,9 +2422,6 @@ function filterImageRegionLines(lines, imageRegions) {
 
 
 
-function isPaperCoreFunctionAllowed(config) {
-  return Boolean(config && (config.mode === "paper_pdf" || config.mode === "legacy_simple_pdf"));
-}
 function isPaperPdfConfig(config) {
   return Boolean(config && config.mode === "paper_pdf");
 }
@@ -4913,123 +4910,12 @@ function isDoiLikeOrDanglingRecoveryText(text) {
 }
 
 function isSimplePdfConfig(config) {
-  return Boolean(config && (config.mode === "simple_pdf" || config.mode === "legacy_simple_pdf"));
+  return Boolean(config && config.mode === "simple_pdf");
 }
 
 function isSimplePdfV2Config(config) {
   return Boolean(config && config.mode === "simple_pdf" && config.pipelineBranch === "simple_pdf_simplified_core");
 }
-
-function isLegacySimplePdfConfig(config) {
-  return Boolean(config && config.mode === "legacy_simple_pdf");
-}
-
-function isSimplePdfAllowedPreserveType(type) {
-  return ["header", "footer", "pageNumber", "noise"].includes(String(type || ""));
-}
-
-function getSimpleLineTextLength(text) {
-  const value = normalizeExtractedPdfText(text || "").replace(/\s+/g, "");
-  const cjkCount = (value.match(/[\u3400-\u9fff]/g) || []).length;
-  return cjkCount ? cjkCount : value.length;
-}
-
-function isSimpleStrongSentenceEnd(text) {
-  return /[。！？；：.!?;:]$/.test(normalizeExtractedPdfText(text || ""));
-}
-
-function isSimpleFirstPageTitleCandidate(segment) {
-  if (!segment || Number(segment.pageNumber || 0) !== 1 || isSimplePdfAllowedPreserveType(segment.type)) return false;
-  const lines = segment.lines || [];
-  if (!lines.length) return false;
-  const firstLine = lines[0];
-  const firstText = getSegmentLineText(firstLine);
-  const nextText = getSegmentLineText(lines[1]) || "";
-  if (!firstText || isSimpleStrongSentenceEnd(firstText)) return false;
-  if (getSimpleLineTextLength(firstText) > 24 && !/^[A-Za-z0-9 ,:'"()-]{1,120}$/.test(firstText)) return false;
-  const firstBox = segment.lineBoxes && segment.lineBoxes[0] || firstLine.bbox || {};
-  const y = Number(firstBox.y || 0);
-  if (y > 180) return false;
-  if (!nextText || getSimpleLineTextLength(nextText) < 18) return false;
-  return true;
-}
-
-function splitSimpleFirstPageTitle(segments) {
-  let titleApplied = false;
-  const output = [];
-  (segments || []).forEach((segment) => {
-    if (!titleApplied && isSimpleFirstPageTitleCandidate(segment)) {
-      titleApplied = true;
-      const title = makeSegmentFromParts(segment, [0], "title", "single");
-      title.classificationReason = "simple_first_page_title";
-      title.simpleParagraphSplitReason = "simple_first_page_title";
-      title.simpleFirstLineTitleCandidate = true;
-      const restIndexes = (segment.lines || []).slice(1).map((_, index) => index + 1);
-      output.push(title);
-      if (restIndexes.length) {
-        const body = makeSegmentFromParts(segment, restIndexes, "body", "single");
-        body.classificationReason = "simple_pdf_document_flow";
-        body.simpleParagraphSplitReason = "simple_title_body_remainder";
-        output.push(body);
-      }
-      return;
-    }
-    output.push(segment);
-  });
-  return output.filter((segment) => segment && segment.sourceText);
-}
-
-function isSimpleNewSectionStart(text) {
-  const value = normalizeExtractedPdfText(text || "");
-  return /^(第[一二三四五六七八九十\d]+[章节篇]|[一二三四五六七八九十]+[、.]|\d+(?:\.\d+)*\s+|Chapter\b|Section\b)/i.test(value);
-}
-
-function hasSimpleParagraphIndent(segment) {
-  const lineBoxes = segment && segment.lineBoxes || [];
-  if (lineBoxes.length < 2) return false;
-  const firstX = Number(lineBoxes[0].x || 0);
-  const nextX = Number(lineBoxes[1].x || 0);
-  return firstX - nextX > 12;
-}
-
-function shouldMergeSimpleCrossPageParagraph(previous, next) {
-  if (!previous || !next) return false;
-  if (previous.type !== "body" || next.type !== "body") return false;
-  if (Number(previous.pageNumber || 0) + 1 !== Number(next.pageNumber || 0)) return false;
-  const previousLines = previous.lines || [];
-  const nextLines = next.lines || [];
-  const previousText = getSegmentLineText(previousLines[previousLines.length - 1]) || normalizeExtractedPdfText(previous.sourceText || "");
-  const nextText = getSegmentLineText(nextLines[0]) || normalizeExtractedPdfText(next.sourceText || "");
-  if (!previousText || !nextText) return false;
-  if (isSimpleStrongSentenceEnd(previousText)) return false;
-  if (isSimpleNewSectionStart(nextText)) return false;
-  if (hasSimpleParagraphIndent(next)) return false;
-  return true;
-}
-
-function mergeSimpleCrossPageParagraphs(segments) {
-  const output = [];
-  (segments || []).forEach((segment) => {
-    const previous = output[output.length - 1];
-    if (shouldMergeSimpleCrossPageParagraph(previous, segment)) {
-      if (mergeSegments(previous, segment, "body", "single")) {
-        previous.crossedPageBoundary = true;
-        previous.mergeReason = "simple_cross_page_paragraph_continuation";
-        previous.simpleParagraphSplitReason = "simple_cross_page_paragraph_continuation";
-        previous.simpleCrossPageContinuationCandidate = true;
-        previous.firstLinePageNumber = previous.firstLinePageNumber || Number(previous.pageNumber || 0);
-        previous.lastLinePageNumber = Number(segment.pageNumber || 0);
-        previous.pageNumber = previous.firstLinePageNumber;
-        return;
-      }
-    }
-    output.push(segment);
-  });
-  return output;
-}
-
-
-
 
 function assertSimpleBlockClean(blocks) {
   var forbidden = ["bbox","writeBox","writeBbox","lineBoxes","lines","column","layoutType","maskApplied","writeApplied","zoneType","referenceMode","referenceModeApplied","imageRegion","imageRegionOverlap","formulaLinePreserve","captionRegion","paperSecondPassSplit","columnReassignedByBbox"];
@@ -5059,46 +4945,10 @@ function simpleAssertSimpleBlockBoundary(blocks) {
   return { simpleBoundaryViolation: offendingBlockIds.length > 0, offendingBlockIds };
 }
 
-function postProcessSimplePdfSegments(segments, pipelineConfig) {
-  if (!isSimplePdfConfig(pipelineConfig)) return segments || [];
-  const splitSegments = mergeSimpleCrossPageParagraphs(splitSimpleFirstPageTitle(applyNaturalParagraphSplits(segments || [])));
-  const output = [];
-  splitSegments.forEach((segment) => {
-    const sourceType = String(segment && segment.type || "body");
-    const type = sourceType === "title" ? "title" : (isSimplePdfAllowedPreserveType(sourceType) ? sourceType : "body");
-    if (type === "body" && isNoisePdfLine({ text: segment.sourceText, bbox: segment.bbox, avgFontSize: 8, items: segment.items || [] })) {
-      if (/^\d+$/.test(normalizeExtractedPdfText(segment.sourceText || ""))) currentPdfIgnoredPageNumberLines += 1;
-      currentPdfIgnoredNoiseLines += 1;
-      return;
-    }
-    output.push({
-      ...segment,
-      type,
-      column: "single",
-      classificationReason: String(segment && segment.classificationReason || "simple_pdf_document_flow"),
-      status: "pending",
-      simpleModePipelineBranch: "simple_document_flow",
-    });
-  });
-  return output.map((segment, index) => {
-    const id = `seg-${index + 1}`;
-    return {
-      ...segment,
-      id,
-      lineBoxes: (segment.lineBoxes || []).map((line) => ({ ...line, segmentId: id, column: "single" })),
-      lines: (segment.lines || []).map((line) => ({ ...line, column: "single" })),
-    };
-  });
-}
-
 function postProcessPdfSegments(segments, pipelineConfig) {
   if (isSimplePdfV2Config(pipelineConfig)) {
     throw new Error("simple_pdf_v2 must use runSimplePdfPipeline, not postProcessPdfSegments");
   }
-  if (isLegacySimplePdfConfig(pipelineConfig)) {
-    return postProcessSimplePdfSegments(segments, pipelineConfig);
-  }
-
   const expanded = [];
   segments.forEach((segment) => expanded.push(...splitTopMatterSegment(segment)));
 
@@ -5866,7 +5716,7 @@ function runPdfExtractionPipeline(pageItemsByPage, config, imageGeometryByPage =
   let legacyResult;
   if (config && config.mode === "simple_pdf") {
     legacyResult = runSimplePdfSimplifiedCore(pageItemsByPage, config);
-  } else if (config && (config.mode === "paper_pdf" || config.mode === "legacy_simple_pdf")) {
+  } else if (config && config.mode === "paper_pdf") {
     legacyResult = buildStructuredPdfText(pageItemsByPage, config, imageGeometryByPage);
   } else {
     throw new Error("Unsupported PDF mode");
@@ -6247,29 +6097,6 @@ function getPdfPipelineConfig(pdfTranslationMode) {
       preserveReferences: false,
       preserveFormulaBlocks: false,
       segmentationMode: "simple_simplified_blocks",
-      writeStrategyPreference: "document_flow",
-      progressMode: "simple",
-    };
-  }
-  if (mode === "legacy_simple_pdf") {
-    return {
-      mode: "legacy_simple_pdf",
-      label: "普通版 PDF（旧版）",
-      pipelineBranch: "legacy_simple_document_flow",
-      enablePaperStructure: false,
-      enableTitleZoneClassification: false,
-      enableAuthorAffiliationClassification: false,
-      enableReferencePreserve: false,
-      enableCaptionClassification: false,
-      enableEquationBlockPreserve: false,
-      enableFormulaLinePreserve: false,
-      enableInlineFormulaTokenProtect: true,
-      preserveImages: true,
-      imageTextOcr: false,
-      enableImageTextOcr: false,
-      preserveReferences: false,
-      preserveFormulaBlocks: false,
-      segmentationMode: "legacy_simple_paragraph_flow",
       writeStrategyPreference: "document_flow",
       progressMode: "simple",
     };
@@ -13954,7 +13781,7 @@ function hasPdfExportReportDisposition(report, expectedDisposition, consumerName
 function getPdfExportSkipReason(segment, pipelineConfig) {
   if (!segment) return "invalid_segment";
   const mode = String(pipelineConfig && pipelineConfig.mode || "");
-  if (mode === "simple_pdf" || mode === "legacy_simple_pdf") {
+  if (mode === "simple_pdf") {
     return getPdfExportSkipReasonForMode(segment, mode, pipelineConfig);
   }
   const rawType = String(segment.semanticType || segment.type || "");

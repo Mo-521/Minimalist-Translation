@@ -84,7 +84,6 @@ test('source merge entry points are guarded and rejected merges preserve incomin
   const headingFlow = extractFunction(mainSource, 'applyHeadingContinuationMerges');
   const bodyFlow = extractFunction(mainSource, 'applyBodyContinuationMerges');
   const captionFlow = extractFunction(mainSource, 'applyCaptionFragmentMerges');
-  const simpleCrossPageFlow = extractFunction(mainSource, 'mergeSimpleCrossPageParagraphs');
   const inlineMerge = extractFunction(mainSource, 'mergeInlineFigureReferenceCaptionIntoBody');
   const paragraphMerge = extractFunction(mainSource, 'splitAndMergeParagraphs');
 
@@ -94,7 +93,7 @@ test('source merge entry points are guarded and rejected merges preserve incomin
   assert.match(headingFlow, /if \(mergeSegments\(/);
   assert.match(bodyFlow, /if \(mergeSegments\(/);
   assert.match(captionFlow, /if \(mergeSegments\(/);
-  assert.match(simpleCrossPageFlow, /if \(mergeSegments\(/);
+  assert.doesNotMatch(mainSource, /function mergeSimpleCrossPageParagraphs\(/);
   assert.match(inlineMerge, /finalizePaperSourceMergeContract\(body, caption\)/);
   assert.match(paragraphMerge, /finalizePaperSourceMergeContract\(previous, paragraph\)/);
   assert.doesNotMatch(mainSource, /function postProcessPdfParagraphs\(/);

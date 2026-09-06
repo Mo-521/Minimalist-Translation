@@ -94,6 +94,13 @@ test("simple mode uses the same artifact schema with a mode-specific frozen poli
   assertDeepFrozen(artifact);
 });
 
+test("retired legacy simple mode is rejected instead of aliasing canonical simple authority", () => {
+  assert.throws(
+    () => authority.produceSemanticStructureArtifact({ mode: "legacy_simple_pdf", segments: [] }),
+    (error) => error && error.code === "SEMANTIC_STRUCTURE_MODE_UNSUPPORTED",
+  );
+});
+
 test("ingress aliases are normalized once and shadow differences are explicitly explained", () => {
   const legacy = [{ id: "seg-alias", type: "formulaBlock", sourceText: "E = mc2" }];
   const artifact = authority.produceSemanticStructureArtifact({ mode: "paper_pdf", segments: legacy });
