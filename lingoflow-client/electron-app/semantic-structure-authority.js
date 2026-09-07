@@ -314,6 +314,44 @@ function applyPaperTopMatterPartClassification(segment, evidence = {}) {
   return { ...segment, type: semanticType };
 }
 
+function applyPaperBodyContinuationSegmentClassification(segment, evidence = {}) {
+  if (!segment || typeof segment !== "object") {
+    throw structureError("SEMANTIC_PAPER_BODY_CONTINUATION_SEGMENT_REQUIRED", "Paper body-continuation segment candidate is required");
+  }
+  const continuationReason = String(evidence.continuationReason || "").trim();
+  const currentType = normalizeCanonicalType(segment.semanticType || segment.type).semanticType;
+  if (!continuationReason || currentType !== "heading") return segment;
+  return {
+    ...segment,
+    type: "body",
+    classificationReason: "body_continuation_demoted_from_heading",
+    mergeReason: continuationReason,
+    headingDemotedToBody: true,
+    continuationMergeReasons: [continuationReason],
+  };
+}
+
+function applyPaperBodyContinuationMergedClassification(segment, evidence = {}) {
+  if (!segment || typeof segment !== "object") {
+    throw structureError("SEMANTIC_PAPER_BODY_CONTINUATION_MERGED_SEGMENT_REQUIRED", "Merged Paper body-continuation candidate is required");
+  }
+  const continuationReason = String(evidence.continuationReason || "").trim();
+  const currentType = normalizeCanonicalType(segment.semanticType || segment.type).semanticType;
+  if (!continuationReason || currentType !== "body") return segment;
+  const incomingWasHeading = Boolean(evidence.incomingWasHeading);
+  return {
+    ...segment,
+    type: "body",
+    mergeReason: continuationReason,
+    classificationReason: incomingWasHeading
+      ? "body_continuation_demoted_from_heading"
+      : (segment.classificationReason || "body_continuation_merged"),
+    headingDemotedToBody: Boolean(segment.headingDemotedToBody || incomingWasHeading),
+    headingContinuationMerged: Boolean(segment.headingContinuationMerged || incomingWasHeading),
+    continuationMergeReasons: Array.from(new Set([...(segment.continuationMergeReasons || []), continuationReason])),
+  };
+}
+
 const semanticStructureProducerStages = Object.freeze({
   classifyPaperLineEvidence,
   classifyPaperSegmentNoiseEvidence,
@@ -323,6 +361,8 @@ const semanticStructureProducerStages = Object.freeze({
   applyPaperAbstractContinuationClassification,
   applyPaperTopMatterSingleLineHeaderClassification,
   applyPaperTopMatterPartClassification,
+  applyPaperBodyContinuationSegmentClassification,
+  applyPaperBodyContinuationMergedClassification,
 });
 
 function deriveDisposition(mode, semanticType) {

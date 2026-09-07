@@ -268,6 +268,39 @@ test("paper split top-matter roles are mapped to semantic types only by Structur
   assert.doesNotMatch(splitSource, /makeSegmentFromParts\(/);
 });
 
+test("paper heading-to-body continuation typing is written only by Structure Authority", () => {
+  const stages = authority.semanticStructureProducerStages;
+  const heading = { type: "heading", sourceText: "continues as prose" };
+  const demoted = stages.applyPaperBodyContinuationSegmentClassification(heading, { continuationReason: "body_context_continuation" });
+  assert.equal(demoted.type, "body");
+  assert.equal(demoted.classificationReason, "body_continuation_demoted_from_heading");
+  assert.equal(demoted.mergeReason, "body_context_continuation");
+  assert.deepEqual(demoted.continuationMergeReasons, ["body_context_continuation"]);
+  assert.equal(heading.type, "heading");
+  assert.strictEqual(stages.applyPaperBodyContinuationSegmentClassification(heading, {}), heading);
+  assert.strictEqual(stages.applyPaperBodyContinuationSegmentClassification({ type: "body" }, { continuationReason: "numeric_continuation" }).type, "body");
+
+  const body = { type: "body", classificationReason: "body", continuationMergeReasons: ["hyphen_continuation"] };
+  const merged = stages.applyPaperBodyContinuationMergedClassification(body, {
+    continuationReason: "numeric_continuation",
+    incomingWasHeading: true,
+  });
+  assert.equal(merged.type, "body");
+  assert.equal(merged.classificationReason, "body_continuation_demoted_from_heading");
+  assert.equal(merged.headingDemotedToBody, true);
+  assert.equal(merged.headingContinuationMerged, true);
+  assert.deepEqual(merged.continuationMergeReasons, ["hyphen_continuation", "numeric_continuation"]);
+  assert.equal(body.headingDemotedToBody, undefined);
+
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const start = mainSource.indexOf("function applyBodyContinuationMerges(");
+  const end = mainSource.indexOf("\nfunction ", start + 1);
+  const source = mainSource.slice(start, end);
+  assert.match(source, /applyPaperBodyContinuationSegmentClassification\(/);
+  assert.match(source, /applyPaperBodyContinuationMergedClassification\(/);
+  assert.doesNotMatch(source, /type:\s*["']body["']/);
+});
+
 test("retired legacy simple mode is rejected instead of aliasing canonical simple authority", () => {
   assert.throws(
     () => authority.produceSemanticStructureArtifact({ mode: "legacy_simple_pdf", segments: [] }),

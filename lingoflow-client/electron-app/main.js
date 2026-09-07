@@ -2902,26 +2902,21 @@ function applyBodyContinuationMerges(segments) {
     const previous = output[output.length - 1];
     const next = (segments || [])[index + 1];
     const reason = getContinuationMergeReason(segment, previous, next);
+    const classifiedSegment = semanticStructureProducerStages.applyPaperBodyContinuationSegmentClassification(segment, {
+      continuationReason: reason,
+    });
     if (previous && previous.type === "body" && reason && (segment.type === "heading" || segment.type === "body")) {
       const wasHeading = segment.type === "heading";
-      if (mergeSegments(previous, { ...segment, type: "body" }, "body", previous.column || segment.column)) {
-        previous.mergeReason = reason;
-        previous.classificationReason = wasHeading ? "body_continuation_demoted_from_heading" : (previous.classificationReason || "body_continuation_merged");
-        previous.headingDemotedToBody = Boolean(previous.headingDemotedToBody || wasHeading);
-        previous.headingContinuationMerged = Boolean(previous.headingContinuationMerged || wasHeading);
-        previous.continuationMergeReasons = Array.from(new Set([...(previous.continuationMergeReasons || []), reason]));
+      if (mergeSegments(previous, classifiedSegment, previous.type, previous.column || segment.column)) {
+        output[output.length - 1] = semanticStructureProducerStages.applyPaperBodyContinuationMergedClassification(previous, {
+          continuationReason: reason,
+          incomingWasHeading: wasHeading,
+        });
         return;
       }
     }
-    if (segment.type === "heading" && reason) {
-      output.push({
-        ...segment,
-        type: "body",
-        classificationReason: "body_continuation_demoted_from_heading",
-        mergeReason: reason,
-        headingDemotedToBody: true,
-        continuationMergeReasons: [reason],
-      });
+    if (classifiedSegment !== segment) {
+      output.push(classifiedSegment);
       return;
     }
     output.push(segment);
