@@ -301,6 +301,34 @@ test("paper heading-to-body continuation typing is written only by Structure Aut
   assert.doesNotMatch(source, /type:\s*["']body["']/);
 });
 
+test("paper line paragraph and segment carriers are typed only by Structure Authority", () => {
+  const materialize = authority.semanticStructureProducerStages.materializePaperClassifiedCarrier;
+  const carrier = { pageNumber: 1, column: "left", sourceText: "Body" };
+  const body = materialize(carrier, { semanticType: "body" });
+  assert.equal(body.type, "body");
+  assert.equal(carrier.type, undefined);
+  assert.throws(
+    () => materialize({}, {}),
+    (error) => error && error.code === "SEMANTIC_TYPE_MISSING",
+  );
+  assert.throws(
+    () => materialize({ type: "heading" }, { semanticType: "body" }),
+    (error) => error && error.code === "SEMANTIC_PAPER_CARRIER_ALREADY_TYPED",
+  );
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const mergeStart = mainSource.indexOf("function mergeLinesIntoParagraphs(");
+  const mergeEnd = mainSource.indexOf("\nfunction ", mergeStart + 1);
+  const mergeSource = mainSource.slice(mergeStart, mergeEnd);
+  const convertStart = mainSource.indexOf("function paragraphsToSegments(");
+  const convertEnd = mainSource.indexOf("\nfunction ", convertStart + 1);
+  const convertSource = mainSource.slice(convertStart, convertEnd);
+  assert.match(mergeSource, /materializePaperClassifiedCarrier\(/);
+  assert.doesNotMatch(mergeSource, /type:\s*lineType/);
+  assert.doesNotMatch(mergeSource, /getPdfLineType\(paragraph\.lines\[0\]\)\s*\|\|\s*["']body["']/);
+  assert.match(convertSource, /materializePaperClassifiedCarrier\(/);
+  assert.doesNotMatch(convertSource, /paragraph\.type\s*\|\|\s*["']body["']/);
+});
+
 test("retired legacy simple mode is rejected instead of aliasing canonical simple authority", () => {
   assert.throws(
     () => authority.produceSemanticStructureArtifact({ mode: "legacy_simple_pdf", segments: [] }),

@@ -1645,7 +1645,10 @@ function mergeLinesIntoParagraphs(lines) {
     const lineType = getPdfLineType(line);
     if (!current || current.pageNumber !== line.pageNumber || current.column !== line.column) {
       if (current) paragraphs.push(current);
-      current = { pageNumber: line.pageNumber, column: line.column || "single", type: lineType, lines: [line], items: line.items.slice() };
+      current = semanticStructureProducerStages.materializePaperClassifiedCarrier(
+        { pageNumber: line.pageNumber, column: line.column || "single", lines: [line], items: line.items.slice() },
+        { semanticType: lineType },
+      );
       return;
     }
 
@@ -1702,7 +1705,10 @@ function mergeLinesIntoParagraphs(lines) {
 
     if (startsNewParagraph) {
       paragraphs.push(current);
-      current = { pageNumber: line.pageNumber, column: line.column || "single", type: lineType, lines: [line], items: line.items.slice() };
+      current = semanticStructureProducerStages.materializePaperClassifiedCarrier(
+        { pageNumber: line.pageNumber, column: line.column || "single", lines: [line], items: line.items.slice() },
+        { semanticType: lineType },
+      );
     } else {
       current.lines.push(line);
       current.items.push(...line.items);
@@ -1731,13 +1737,12 @@ function mergeLinesIntoParagraphs(lines) {
     const paragraphMetrics = getColumnMetrics(paragraph.lines);
     const firstLineStats = getLineVisualStats(paragraph.lines[0], paragraphMetrics);
     const lastLineStats = getLineVisualStats(paragraph.lines[paragraph.lines.length - 1], paragraphMetrics);
-    return {
+    return semanticStructureProducerStages.materializePaperClassifiedCarrier({
       id: segmentId,
       pageNumber: paragraph.pageNumber,
       column: paragraph.column || "single",
       layoutType: paragraph.lines[0] ? paragraph.lines[0].layoutType || "single_column" : "single_column",
       sourceLanguageHint: getPdfLanguageHint(sourceText),
-      type: paragraph.type || getPdfLineType(paragraph.lines[0]) || "body",
       sourceText,
       previewText: makePreviewText(sourceText),
       lines: paragraph.lines.map((line) => ({
@@ -1758,18 +1763,17 @@ function mergeLinesIntoParagraphs(lines) {
       suspiciousReasons,
       firstLineStartGap: Number(firstLineStats.lineStartGap.toFixed(2)),
       lastLineEndGap: Number(lastLineStats.lineEndGap.toFixed(2)),
-    };
+    }, { semanticType: paragraph.type });
   }).filter((paragraph) => paragraph.sourceText);
 }
 
 function paragraphsToSegments(paragraphs) {
-  return paragraphs.map((paragraph, index) => ({
+  return paragraphs.map((paragraph, index) => semanticStructureProducerStages.materializePaperClassifiedCarrier({
     id: paragraph.id || `seg-${index + 1}`,
     pageNumber: paragraph.pageNumber,
     column: paragraph.column || "single",
     layoutType: paragraph.layoutType || "single_column",
     sourceLanguageHint: paragraph.sourceLanguageHint || getPdfLanguageHint(paragraph.sourceText || ""),
-    type: paragraph.type || "body",
     sourceText: paragraph.sourceText,
     previewText: paragraph.previewText || makePreviewText(paragraph.sourceText),
     translatedText: "",
@@ -1782,7 +1786,7 @@ function paragraphsToSegments(paragraphs) {
     suspiciousReasons: paragraph.suspiciousReasons || [],
     firstLineStartGap: paragraph.firstLineStartGap,
     lastLineEndGap: paragraph.lastLineEndGap,
-  }));
+  }, { semanticType: paragraph.type }));
 }
 
 function getPageBounds(items) {

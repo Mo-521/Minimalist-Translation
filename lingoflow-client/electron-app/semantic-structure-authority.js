@@ -352,6 +352,20 @@ function applyPaperBodyContinuationMergedClassification(segment, evidence = {}) 
   };
 }
 
+function materializePaperClassifiedCarrier(carrier, evidence = {}) {
+  if (!carrier || typeof carrier !== "object") {
+    throw structureError("SEMANTIC_PAPER_CARRIER_REQUIRED", "An untyped Paper carrier is required for semantic materialization");
+  }
+  if (carrier.semanticType || carrier.type) {
+    throw structureError("SEMANTIC_PAPER_CARRIER_ALREADY_TYPED", "Paper carrier materialization cannot overwrite an existing semantic type", {
+      semanticType: String(carrier.semanticType || ""),
+      type: String(carrier.type || ""),
+    });
+  }
+  const semanticType = normalizeCanonicalType(evidence.semanticType).semanticType;
+  return { ...carrier, type: semanticType };
+}
+
 const semanticStructureProducerStages = Object.freeze({
   classifyPaperLineEvidence,
   classifyPaperSegmentNoiseEvidence,
@@ -363,6 +377,7 @@ const semanticStructureProducerStages = Object.freeze({
   applyPaperTopMatterPartClassification,
   applyPaperBodyContinuationSegmentClassification,
   applyPaperBodyContinuationMergedClassification,
+  materializePaperClassifiedCarrier,
 });
 
 function deriveDisposition(mode, semanticType) {
