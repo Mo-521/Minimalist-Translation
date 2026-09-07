@@ -284,6 +284,14 @@ function applyPaperAbstractContinuationClassification(paragraph, evidence = {}) 
   return { ...paragraph, type: "abstract" };
 }
 
+function applyPaperTopMatterSingleLineHeaderClassification(segment, evidence = {}) {
+  if (!segment || typeof segment !== "object") {
+    throw structureError("SEMANTIC_PAPER_TOP_MATTER_SEGMENT_REQUIRED", "Paper top-matter segment candidate is required for single-line header classification");
+  }
+  if (!evidence.singleLineHeader) return segment;
+  return { ...segment, type: "header", column: "single" };
+}
+
 const semanticStructureProducerStages = Object.freeze({
   classifyPaperLineEvidence,
   classifyPaperSegmentNoiseEvidence,
@@ -291,6 +299,7 @@ const semanticStructureProducerStages = Object.freeze({
   applyPaperImageTextDemotionClassification,
   applyPaperCaptionBodyDemotionClassification,
   applyPaperAbstractContinuationClassification,
+  applyPaperTopMatterSingleLineHeaderClassification,
 });
 
 function deriveDisposition(mode, semanticType) {

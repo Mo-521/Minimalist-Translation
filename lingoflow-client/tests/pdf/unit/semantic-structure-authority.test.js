@@ -221,6 +221,23 @@ test("paper abstract paragraph continuation is written only by Structure Authori
   assert.doesNotMatch(mainSource, /paragraph\.type\s*=\s*["']abstract["']/);
 });
 
+test("paper single-line top-matter header is written only by Structure Authority", () => {
+  const classify = authority.semanticStructureProducerStages.applyPaperTopMatterSingleLineHeaderClassification;
+  const segment = { type: "body", pageNumber: 1, column: "single", sourceText: "Draft version" };
+  const classified = classify(segment, { singleLineHeader: true });
+  assert.equal(classified.type, "header");
+  assert.equal(classified.column, "single");
+  assert.equal(segment.type, "body");
+  assert.strictEqual(classify(segment, { singleLineHeader: false }), segment);
+  assert.throws(
+    () => classify(null, { singleLineHeader: true }),
+    (error) => error && error.code === "SEMANTIC_PAPER_TOP_MATTER_SEGMENT_REQUIRED",
+  );
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  assert.match(mainSource, /semanticStructureProducerStages\.applyPaperTopMatterSingleLineHeaderClassification\(/);
+  assert.doesNotMatch(mainSource, /return \[\{ \.\.\.segment, type: ["']header["'], column: ["']single["'] \}\]/);
+});
+
 test("retired legacy simple mode is rejected instead of aliasing canonical simple authority", () => {
   assert.throws(
     () => authority.produceSemanticStructureArtifact({ mode: "legacy_simple_pdf", segments: [] }),

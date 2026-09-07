@@ -2563,10 +2563,9 @@ function splitTopMatterSegment(segment) {
   const lines = segment.lines || [];
   if (lines.length < 2) {
     const onlyText = getSegmentLineText(lines[0]) || normalizeExtractedPdfText(segment.sourceText || "");
-    if (/draft version|typeset using|aastex|twocolumn/i.test(onlyText)) {
-      return [{ ...segment, type: "header", column: "single" }];
-    }
-    return [segment];
+    return [semanticStructureProducerStages.applyPaperTopMatterSingleLineHeaderClassification(segment, {
+      singleLineHeader: /draft version|typeset using|aastex|twocolumn/i.test(onlyText),
+    })];
   }
   const buckets = { header: [], title: [], author: [], affiliation: [], funding: [], correspondence: [], receivedDate: [] };
   lines.forEach((line, index) => {
