@@ -1706,7 +1706,6 @@ function mergeLinesIntoParagraphs(lines) {
     } else {
       current.lines.push(line);
       current.items.push(...line.items);
-      if (current.type === "body" && lineType !== "body") current.type = lineType;
     }
   });
 
