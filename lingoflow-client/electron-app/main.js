@@ -2398,7 +2398,6 @@ function filterImageRegionLines(lines, imageRegions) {
     if (!imageRegion) return true;
     if (isCaptionMarkerText(text)) return true;
     if (!isTrueImageInternalTextLine(line, imageRegion)) return true;
-    line.type = "imageText";
     currentPdfIgnoredImageTextLines += 1;
     if (currentPdfIgnoredImageTextPreviews.length < 20) {
       currentPdfIgnoredImageTextPreviews.push(text.slice(0, 80));
@@ -5178,7 +5177,6 @@ function buildStructuredPdfText(pageItemsByPage, pipelineConfig, imageGeometryBy
       lines: mergeTextItemsIntoLines(column.items)
         .map((line) => ({ ...line, column: column.name })),
     }));
-    const pageLines = columnLines.flatMap((entry) => entry.lines);
     const imageGeometry = isPaperPdfConfig(pipelineConfig) ? imageGeometryByPage.get(pageNumber) : null;
     if (isPaperPdfConfig(pipelineConfig) && (!imageGeometry || imageGeometry.schemaVersion !== PDF_IMAGE_GEOMETRY_SCHEMA_VERSION)) {
       const error = new Error(`Authoritative PDF image geometry is missing for page ${pageNumber}.`);

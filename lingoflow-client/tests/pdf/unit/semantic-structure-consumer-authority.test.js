@@ -252,4 +252,6 @@ test("unreachable legacy structure producers and registry aliases stay retired",
   ].forEach((name) => assert.doesNotMatch(mainSource, new RegExp(`function ${name}\\(`)));
   assert.doesNotMatch(mainSource, /const PAPER_PDF_EXPORT_ALLOWED_TYPES\s*=/);
   assert.doesNotMatch(mainSource, /const PAPER_PDF_EXPORT_PRESERVE_TYPES\s*=/);
+  assert.doesNotMatch(mainSource, /line\.type\s*=\s*["']imageText["']/);
+  assert.doesNotMatch(mainSource, /const pageLines = columnLines\.flatMap/);
 });
