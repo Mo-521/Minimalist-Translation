@@ -238,6 +238,36 @@ test("paper single-line top-matter header is written only by Structure Authority
   assert.doesNotMatch(mainSource, /return \[\{ \.\.\.segment, type: ["']header["'], column: ["']single["'] \}\]/);
 });
 
+test("paper split top-matter roles are mapped to semantic types only by Structure Authority", () => {
+  const classify = authority.semanticStructureProducerStages.applyPaperTopMatterPartClassification;
+  const roles = {
+    paper_top_matter_header: "header",
+    paper_top_matter_title: "title",
+    paper_top_matter_author: "author",
+    paper_top_matter_affiliation: "affiliation",
+    paper_top_matter_correspondence: "correspondence",
+    paper_top_matter_received_date: "receivedDate",
+    paper_top_matter_funding: "funding",
+    paper_top_matter_body: "body",
+  };
+  Object.entries(roles).forEach(([structureRole, expectedType]) => {
+    const candidate = { sourceText: structureRole, column: "single" };
+    const classified = classify(candidate, { structureRole });
+    assert.equal(classified.type, expectedType);
+    assert.equal(candidate.type, undefined);
+  });
+  assert.throws(
+    () => classify({}, { structureRole: "paper_top_matter_unknown" }),
+    (error) => error && error.code === "SEMANTIC_PAPER_TOP_MATTER_PART_ROLE_UNKNOWN",
+  );
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const splitStart = mainSource.indexOf("function splitTopMatterSegment(");
+  const splitEnd = mainSource.indexOf("\nfunction ", splitStart + 1);
+  const splitSource = mainSource.slice(splitStart, splitEnd);
+  assert.match(splitSource, /makeTopMatterSegmentFromParts\(/);
+  assert.doesNotMatch(splitSource, /makeSegmentFromParts\(/);
+});
+
 test("retired legacy simple mode is rejected instead of aliasing canonical simple authority", () => {
   assert.throws(
     () => authority.produceSemanticStructureArtifact({ mode: "legacy_simple_pdf", segments: [] }),

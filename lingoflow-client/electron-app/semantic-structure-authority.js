@@ -39,6 +39,16 @@ const PAPER_LINE_TOP_MATTER_ROLE_TYPES = Object.freeze({
   paper_correspondence_line: "correspondence",
   paper_received_date_line: "receivedDate",
 });
+const PAPER_TOP_MATTER_PART_ROLE_TYPES = Object.freeze({
+  paper_top_matter_header: "header",
+  paper_top_matter_title: "title",
+  paper_top_matter_author: "author",
+  paper_top_matter_affiliation: "affiliation",
+  paper_top_matter_correspondence: "correspondence",
+  paper_top_matter_received_date: "receivedDate",
+  paper_top_matter_funding: "funding",
+  paper_top_matter_body: "body",
+});
 
 const PAPER_TRANSLATE_TYPES = new Set([
   "title", "affiliation", "correspondence", "receivedDate", "funding", "abstract-title",
@@ -292,6 +302,18 @@ function applyPaperTopMatterSingleLineHeaderClassification(segment, evidence = {
   return { ...segment, type: "header", column: "single" };
 }
 
+function applyPaperTopMatterPartClassification(segment, evidence = {}) {
+  if (!segment || typeof segment !== "object") {
+    throw structureError("SEMANTIC_PAPER_TOP_MATTER_PART_REQUIRED", "Paper top-matter part candidate is required for role classification");
+  }
+  const structureRole = String(evidence.structureRole || "").trim();
+  const semanticType = PAPER_TOP_MATTER_PART_ROLE_TYPES[structureRole];
+  if (!semanticType) {
+    throw structureError("SEMANTIC_PAPER_TOP_MATTER_PART_ROLE_UNKNOWN", `Unknown Paper top-matter part role: ${structureRole || "<empty>"}`, { structureRole });
+  }
+  return { ...segment, type: semanticType };
+}
+
 const semanticStructureProducerStages = Object.freeze({
   classifyPaperLineEvidence,
   classifyPaperSegmentNoiseEvidence,
@@ -300,6 +322,7 @@ const semanticStructureProducerStages = Object.freeze({
   applyPaperCaptionBodyDemotionClassification,
   applyPaperAbstractContinuationClassification,
   applyPaperTopMatterSingleLineHeaderClassification,
+  applyPaperTopMatterPartClassification,
 });
 
 function deriveDisposition(mode, semanticType) {

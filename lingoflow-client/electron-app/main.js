@@ -2536,7 +2536,7 @@ function makeSegmentFromParts(base, lineIndexes, type, column) {
     id: "",
     pageNumber: base.pageNumber,
     column: column || base.column || "single",
-    type,
+    ...(type ? { type } : {}),
     sourceText,
     previewText: makePreviewText(sourceText),
     lines,
@@ -2546,14 +2546,21 @@ function makeSegmentFromParts(base, lineIndexes, type, column) {
   };
 }
 
+function makeTopMatterSegmentFromParts(base, lineIndexes, structureRole, column) {
+  return semanticStructureProducerStages.applyPaperTopMatterPartClassification(
+    makeSegmentFromParts(base, lineIndexes, "", column),
+    { structureRole },
+  );
+}
+
 function splitTopMatterSegment(segment) {
   if (!segment || segment.pageNumber !== 1 || segment.column !== "single") return [segment];
   if ((segment.sourceLanguageHint || getPdfLanguageHint(segment.sourceText || "")) === "zh") {
     const firstLineText = getSegmentLineText(segment.lines && segment.lines[0]);
     if ((segment.lines || []).length > 1 && firstLineText && firstLineText.length <= 22) {
       return [
-        makeSegmentFromParts(segment, [0], "title", "single"),
-        makeSegmentFromParts(segment, segment.lines.slice(1).map((_, index) => index + 1), "body", "single"),
+        makeTopMatterSegmentFromParts(segment, [0], "paper_top_matter_title", "single"),
+        makeTopMatterSegmentFromParts(segment, segment.lines.slice(1).map((_, index) => index + 1), "paper_top_matter_body", "single"),
       ].filter((part) => part.sourceText);
     }
     return [segment];
@@ -2579,13 +2586,13 @@ function splitTopMatterSegment(segment) {
     else buckets.title.push(index);
   });
   const parts = [];
-  if (buckets.header.length) parts.push(makeSegmentFromParts(segment, buckets.header, "header", "single"));
-  if (buckets.title.length) parts.push(makeSegmentFromParts(segment, buckets.title, "title", "single"));
-  if (buckets.author.length) parts.push(makeSegmentFromParts(segment, buckets.author, "author", "single"));
-  if (buckets.affiliation.length) parts.push(makeSegmentFromParts(segment, buckets.affiliation, "affiliation", "single"));
-  if (buckets.correspondence.length) parts.push(makeSegmentFromParts(segment, buckets.correspondence, "correspondence", "single"));
-  if (buckets.receivedDate.length) parts.push(makeSegmentFromParts(segment, buckets.receivedDate, "receivedDate", "single"));
-  if (buckets.funding.length) parts.push(makeSegmentFromParts(segment, buckets.funding, "funding", "single"));
+  if (buckets.header.length) parts.push(makeTopMatterSegmentFromParts(segment, buckets.header, "paper_top_matter_header", "single"));
+  if (buckets.title.length) parts.push(makeTopMatterSegmentFromParts(segment, buckets.title, "paper_top_matter_title", "single"));
+  if (buckets.author.length) parts.push(makeTopMatterSegmentFromParts(segment, buckets.author, "paper_top_matter_author", "single"));
+  if (buckets.affiliation.length) parts.push(makeTopMatterSegmentFromParts(segment, buckets.affiliation, "paper_top_matter_affiliation", "single"));
+  if (buckets.correspondence.length) parts.push(makeTopMatterSegmentFromParts(segment, buckets.correspondence, "paper_top_matter_correspondence", "single"));
+  if (buckets.receivedDate.length) parts.push(makeTopMatterSegmentFromParts(segment, buckets.receivedDate, "paper_top_matter_received_date", "single"));
+  if (buckets.funding.length) parts.push(makeTopMatterSegmentFromParts(segment, buckets.funding, "paper_top_matter_funding", "single"));
   return parts.length ? parts : [segment];
 }
 
