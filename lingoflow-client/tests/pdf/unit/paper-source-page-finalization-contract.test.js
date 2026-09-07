@@ -95,7 +95,7 @@ test('source merge entry points are guarded and rejected merges preserve incomin
   assert.match(captionFlow, /if \(mergeSegments\(/);
   assert.doesNotMatch(mainSource, /function mergeSimpleCrossPageParagraphs\(/);
   assert.match(inlineMerge, /finalizePaperSourceMergeContract\(body, caption\)/);
-  assert.match(paragraphMerge, /finalizePaperSourceMergeContract\(previous, paragraph\)/);
+  assert.match(paragraphMerge, /finalizePaperSourceMergeContract\(previous, classifiedParagraph\)/);
   assert.doesNotMatch(mainSource, /function postProcessPdfParagraphs\(/);
   assert.doesNotMatch(mainSource, /function splitPageOneTopMatter\(/);
 });

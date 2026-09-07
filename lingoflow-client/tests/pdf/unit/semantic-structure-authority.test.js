@@ -207,6 +207,20 @@ test("paper caption body-like demotion is written only by Structure Authority", 
   assert.doesNotMatch(mainSource, /function demoteBodyLikeCaptionSegmentsBeforeTranslation/);
 });
 
+test("paper abstract paragraph continuation is written only by Structure Authority", () => {
+  const classify = authority.semanticStructureProducerStages.applyPaperAbstractContinuationClassification;
+  const paragraph = { type: "body", pageNumber: 1, column: "single", lines: [], items: [] };
+  const classified = classify(paragraph, { previousType: "abstract", samePage: true, sameColumn: true });
+  assert.equal(classified.type, "abstract");
+  assert.equal(paragraph.type, "body");
+  assert.strictEqual(classify(paragraph, { previousType: "body", samePage: true, sameColumn: true }), paragraph);
+  assert.strictEqual(classify(paragraph, { previousType: "abstract", samePage: false, sameColumn: true }), paragraph);
+  assert.strictEqual(classify({ ...paragraph, type: "heading" }, { previousType: "abstract", samePage: true, sameColumn: true }).type, "heading");
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  assert.match(mainSource, /semanticStructureProducerStages\.applyPaperAbstractContinuationClassification\(/);
+  assert.doesNotMatch(mainSource, /paragraph\.type\s*=\s*["']abstract["']/);
+});
+
 test("retired legacy simple mode is rejected instead of aliasing canonical simple authority", () => {
   assert.throws(
     () => authority.produceSemanticStructureArtifact({ mode: "legacy_simple_pdf", segments: [] }),

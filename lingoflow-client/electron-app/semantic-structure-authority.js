@@ -270,12 +270,27 @@ function applyPaperCaptionBodyDemotionClassification(segments, evidenceByIndex) 
   });
 }
 
+function applyPaperAbstractContinuationClassification(paragraph, evidence = {}) {
+  if (!paragraph || typeof paragraph !== "object") {
+    throw structureError("SEMANTIC_PAPER_PARAGRAPH_REQUIRED", "Paper paragraph candidate is required for abstract continuation classification");
+  }
+  const currentType = normalizeCanonicalType(paragraph.semanticType || paragraph.type).semanticType;
+  const previousType = evidence.previousType
+    ? normalizeCanonicalType(evidence.previousType).semanticType
+    : "";
+  if (previousType !== "abstract" || currentType !== "body" || !evidence.samePage || !evidence.sameColumn) {
+    return paragraph;
+  }
+  return { ...paragraph, type: "abstract" };
+}
+
 const semanticStructureProducerStages = Object.freeze({
   classifyPaperLineEvidence,
   classifyPaperSegmentNoiseEvidence,
   applyPaperSegmentNoiseClassification,
   applyPaperImageTextDemotionClassification,
   applyPaperCaptionBodyDemotionClassification,
+  applyPaperAbstractContinuationClassification,
 });
 
 function deriveDisposition(mode, semanticType) {

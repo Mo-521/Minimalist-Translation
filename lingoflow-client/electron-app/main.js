@@ -1597,30 +1597,26 @@ function splitAndMergeParagraphs(paragraphs) {
     const text = makeParagraphSourceText(paragraph.lines || []);
     const isHeading = isPdfHeadingLine(paragraph.lines && paragraph.lines[0]);
     const previous = merged[merged.length - 1];
-    if (
-      previous &&
-      previous.type === "abstract" &&
-      paragraph.type === "body" &&
-      previous.pageNumber === paragraph.pageNumber &&
-      previous.column === paragraph.column
-    ) {
-      paragraph.type = "abstract";
-    }
+    const classifiedParagraph = semanticStructureProducerStages.applyPaperAbstractContinuationClassification(paragraph, {
+      previousType: previous && previous.type,
+      samePage: Boolean(previous && previous.pageNumber === paragraph.pageNumber),
+      sameColumn: Boolean(previous && previous.column === paragraph.column),
+    });
     if (
       previous &&
       !isHeading &&
       text.length < 20 &&
-      previous.pageNumber === paragraph.pageNumber &&
-      previous.column === paragraph.column &&
+      previous.pageNumber === classifiedParagraph.pageNumber &&
+      previous.column === classifiedParagraph.column &&
       previous.type === "body" &&
       !isPdfHeadingLine(previous.lines && previous.lines[0]) &&
-      finalizePaperSourceMergeContract(previous, paragraph).status === 'ok'
+      finalizePaperSourceMergeContract(previous, classifiedParagraph).status === 'ok'
     ) {
-      previous.lines.push(...paragraph.lines);
-      previous.items.push(...paragraph.items);
+      previous.lines.push(...classifiedParagraph.lines);
+      previous.items.push(...classifiedParagraph.items);
       return;
     }
-    merged.push(paragraph);
+    merged.push(classifiedParagraph);
   });
   return merged;
 }
