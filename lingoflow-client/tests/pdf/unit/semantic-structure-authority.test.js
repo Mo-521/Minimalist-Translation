@@ -395,6 +395,25 @@ test("paper Abstract finalizer roles are mapped to semantic types only by Struct
   assert.doesNotMatch(processSource, /mergeSegments\(abstractBuffer, segment, "abstract"/);
 });
 
+test("paper Reference chain roles are mapped to semantic types only by Structure Authority", () => {
+  const classify = authority.semanticStructureProducerStages.applyPaperReferenceChainClassification;
+  assert.equal(classify({}, { structureRole: "paper_reference_chain_heading" }).type, "reference");
+  assert.equal(classify({}, { structureRole: "paper_reference_chain_entry" }).type, "reference");
+  assert.throws(
+    () => classify({}, { structureRole: "paper_reference_chain_unknown" }),
+    (error) => error && error.code === "SEMANTIC_PAPER_REFERENCE_CHAIN_ROLE_UNKNOWN",
+  );
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const chainStart = mainSource.indexOf("function classifyPaperReferenceChainSegment(");
+  const chainEnd = mainSource.indexOf("\nfunction applyCrossPageContinuations(", chainStart + 1);
+  const chainSource = mainSource.slice(chainStart, chainEnd);
+  assert.match(chainSource, /applyPaperReferenceChainClassification\(/);
+  assert.match(chainSource, /paper_reference_chain_heading/);
+  assert.match(chainSource, /paper_reference_chain_entry/);
+  assert.doesNotMatch(chainSource, /return \{ \.\.\.segment, type: "reference"/);
+  assert.doesNotMatch(chainSource, /type: "reference",/);
+});
+
 test("paper heading-to-body continuation typing is written only by Structure Authority", () => {
   const stages = authority.semanticStructureProducerStages;
   const heading = { type: "heading", sourceText: "continues as prose" };

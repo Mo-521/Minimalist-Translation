@@ -4124,6 +4124,14 @@ function applyCaptionFragmentMerges(segments) {
   return output;
 }
 
+function classifyPaperReferenceChainSegment(segment, structureRole, metadata = {}) {
+  const { type: _ignoredType, semanticType: _ignoredSemanticType, ...untypedSegment } = segment || {};
+  return semanticStructureProducerStages.applyPaperReferenceChainClassification(
+    { ...untypedSegment, ...metadata },
+    { structureRole },
+  );
+}
+
 function applyReferenceTypingAndOrdering(segments) {
   let referencesStarted = false;
   const typed = segments.map((segment) => {
@@ -4131,10 +4139,10 @@ function applyReferenceTypingAndOrdering(segments) {
     const isReferencesHeading = segment.type === "heading" && isReferencesHeadingText(text);
     if (isReferencesHeading) {
       referencesStarted = true;
-      return { ...segment, type: "reference", referenceHeading: true };
+      return classifyPaperReferenceChainSegment(segment, "paper_reference_chain_heading", { referenceHeading: true });
     }
     if (referencesStarted && segment.type === "body") {
-      return { ...segment, type: "reference" };
+      return classifyPaperReferenceChainSegment(segment, "paper_reference_chain_entry");
     }
     return segment;
   });
@@ -4181,12 +4189,11 @@ function makeReferenceSegmentFromEntries(entries) {
   const lineBoxes = filtered.map((entry) => entry.lineBox).filter(Boolean);
   const sourceText = makeParagraphSourceText(lines.map((line) => ({ text: getSegmentLineText(line) })));
   if (!sourceText) return null;
-  return {
+  return classifyPaperReferenceChainSegment({
     ...base,
     id: "",
     pageNumber: filtered[0].pageNumber || lines[0].pageNumber || base.pageNumber,
     column: filtered[0].column || lines[0].column || base.column || "single",
-    type: "reference",
     sourceText,
     previewText: makePreviewText(sourceText),
     lines,
@@ -4194,7 +4201,7 @@ function makeReferenceSegmentFromEntries(entries) {
     bbox: makeBBoxFromLineBoxes(lineBoxes),
     items: [],
     referenceLike: true,
-  };
+  }, "paper_reference_chain_entry");
 }
 
 function splitReferenceSegmentsInOrder(segments) {
@@ -4213,7 +4220,7 @@ function splitReferenceSegmentsInOrder(segments) {
     if (segment.referenceHeading || isReferencesHeadingText(text)) {
       flushReference();
       referencesMode = true;
-      output.push({ ...segment, type: "reference", referenceHeading: true });
+      output.push(classifyPaperReferenceChainSegment(segment, "paper_reference_chain_heading", { referenceHeading: true }));
       return;
     }
 
