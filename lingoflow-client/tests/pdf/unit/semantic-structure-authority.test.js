@@ -268,6 +268,44 @@ test("paper split top-matter roles are mapped to semantic types only by Structur
   assert.doesNotMatch(splitSource, /makeSegmentFromParts\(/);
 });
 
+test("paper title-zone roles are mapped to semantic types only by Structure Authority", () => {
+  const classify = authority.semanticStructureProducerStages.applyPaperTitleZonePartClassification;
+  const roles = {
+    paper_title_zone_header: "header",
+    paper_title_zone_title: "title",
+    paper_title_zone_author: "author",
+    paper_title_zone_affiliation: "affiliation",
+    paper_title_zone_correspondence: "correspondence",
+  };
+  Object.entries(roles).forEach(([structureRole, expectedType]) => {
+    const candidate = { sourceText: structureRole, column: "single" };
+    const classified = classify(candidate, { structureRole, inheritedSemanticType: "body" });
+    assert.equal(classified.type, expectedType);
+    assert.equal(candidate.type, undefined);
+  });
+  assert.equal(classify({}, { structureRole: "paper_title_zone_inherit", inheritedSemanticType: "body" }).type, "body");
+  assert.throws(
+    () => classify({}, { structureRole: "paper_title_zone_unknown", inheritedSemanticType: "body" }),
+    (error) => error && error.code === "SEMANTIC_PAPER_TITLE_ZONE_PART_ROLE_UNKNOWN",
+  );
+  assert.throws(
+    () => classify({}, { structureRole: "paper_title_zone_inherit" }),
+    (error) => error && error.code === "SEMANTIC_TYPE_MISSING",
+  );
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const splitStart = mainSource.indexOf("function splitTitleZoneSegment(");
+  const splitEnd = mainSource.indexOf("\nfunction ", splitStart + 1);
+  const splitSource = mainSource.slice(splitStart, splitEnd);
+  assert.match(splitSource, /makeTitleZoneSegmentFromParts\(/);
+  assert.match(splitSource, /makeTitleZoneSingleLineSegmentFromText\(/);
+  assert.match(splitSource, /const semanticType = semanticStructureProducerStages\.applyPaperTitleZonePartClassification\(/);
+  assert.match(splitSource, /semanticType !== currentSemanticType/);
+  assert.doesNotMatch(splitSource, /makeSegmentFromParts\(/);
+  assert.doesNotMatch(splitSource, /makeSingleLineSegmentFromText\(/);
+  assert.doesNotMatch(splitSource, /structureRole !== currentStructureRole/);
+  assert.doesNotMatch(mainSource, /function getTitleZoneLineType\(/);
+});
+
 test("paper heading-to-body continuation typing is written only by Structure Authority", () => {
   const stages = authority.semanticStructureProducerStages;
   const heading = { type: "heading", sourceText: "continues as prose" };

@@ -3027,16 +3027,34 @@ function makeSingleLineSegmentFromText(base, lineIndex, type, text, reason, boxP
   };
 }
 
-function getTitleZoneLineType(text, titleStarted) {
+function makeTitleZoneSingleLineSegmentFromText(base, lineIndex, structureRole, text, reason, boxPart) {
+  const typedCarrier = makeSingleLineSegmentFromText(base, lineIndex, "", text, reason, boxPart);
+  const { type: _ignoredType, semanticType: _ignoredSemanticType, ...carrier } = typedCarrier;
+  return semanticStructureProducerStages.applyPaperTitleZonePartClassification(carrier, {
+    structureRole,
+    inheritedSemanticType: base.type,
+  });
+}
+
+function makeTitleZoneSegmentFromParts(base, lineIndexes, structureRole, column) {
+  const typedCarrier = makeSegmentFromParts(base, lineIndexes, "", column);
+  const { type: _ignoredType, semanticType: _ignoredSemanticType, ...carrier } = typedCarrier;
+  return semanticStructureProducerStages.applyPaperTitleZonePartClassification(carrier, {
+    structureRole,
+    inheritedSemanticType: base.type,
+  });
+}
+
+function getTitleZoneLineStructureRole(text, titleStarted) {
   const value = normalizeExtractedPdfText(text || "");
   if (!value) return "";
-  if (isArticleMetadataLine(value)) return "header";
+  if (isArticleMetadataLine(value)) return "paper_title_zone_header";
   if (/^(Funding|Keywords?|ABSTRACT)\b/i.test(value)) return "";
-  if (/^(Correspondence|Corresponding author)\s*:/i.test(value) || /\bE-?mail\s*:/i.test(value)) return "correspondence";
-  if (/\b(Department|University|Institute|Observatory|Laboratory|College|School|USA|Email)\b/i.test(value)) return "affiliation";
-  if (isObviousPaperTitleLineText(value) && !titleStarted) return "title";
-  if (isLikelyAuthorLineText(value)) return "author";
-  if (!/[.!?]$/.test(value) && value.length >= 12) return "title";
+  if (/^(Correspondence|Corresponding author)\s*:/i.test(value) || /\bE-?mail\s*:/i.test(value)) return "paper_title_zone_correspondence";
+  if (/\b(Department|University|Institute|Observatory|Laboratory|College|School|USA|Email)\b/i.test(value)) return "paper_title_zone_affiliation";
+  if (isObviousPaperTitleLineText(value) && !titleStarted) return "paper_title_zone_title";
+  if (isLikelyAuthorLineText(value)) return "paper_title_zone_author";
+  if (!/[.!?]$/.test(value) && value.length >= 12) return "paper_title_zone_title";
   return "";
 }
 
@@ -3048,14 +3066,16 @@ function splitTitleZoneSegment(segment) {
   const lines = segment.lines || [];
   if (!lines.length) return [segment];
   const parts = [];
-  let currentType = "";
+  let currentStructureRole = "";
+  let currentSemanticType = "";
   let currentIndexes = [];
   let titleStarted = false;
   const flush = () => {
-    if (!currentIndexes.length || !currentType) return;
-    parts.push(makeSegmentFromParts(segment, currentIndexes, currentType, segment.column || "single"));
+    if (!currentIndexes.length || !currentStructureRole) return;
+    parts.push(makeTitleZoneSegmentFromParts(segment, currentIndexes, currentStructureRole, segment.column || "single"));
     currentIndexes = [];
-    currentType = "";
+    currentStructureRole = "";
+    currentSemanticType = "";
   };
   lines.forEach((line, index) => {
     const lineText = getSegmentLineText(line);
@@ -3063,13 +3083,13 @@ function splitTitleZoneSegment(segment) {
     if (titleAuthorSplit) {
       flush();
       parts.push({
-        ...makeSingleLineSegmentFromText(segment, index, "title", titleAuthorSplit.titleText, "title_zone_split_title_author", "title"),
+        ...makeTitleZoneSingleLineSegmentFromText(segment, index, "paper_title_zone_title", titleAuthorSplit.titleText, "title_zone_split_title_author", "title"),
         titleAuthorSplitApplied: true,
         titleAuthorSplitReason: "title_tail_author_name",
         retaggedFromType: String(segment.type || ""),
       });
       parts.push({
-        ...makeSingleLineSegmentFromText(segment, index, "author", titleAuthorSplit.authorText, "title_zone_split_title_author", "author"),
+        ...makeTitleZoneSingleLineSegmentFromText(segment, index, "paper_title_zone_author", titleAuthorSplit.authorText, "title_zone_split_title_author", "author"),
         titleAuthorSplitApplied: true,
         titleAuthorSplitReason: "title_tail_author_name",
         retaggedFromType: String(segment.type || ""),
@@ -3077,10 +3097,15 @@ function splitTitleZoneSegment(segment) {
       titleStarted = true;
       return;
     }
-    const type = getTitleZoneLineType(lineText, titleStarted) || segment.type;
-    if (type === "title") titleStarted = true;
-    if (type !== currentType) flush();
-    currentType = type;
+    const structureRole = getTitleZoneLineStructureRole(lineText, titleStarted) || "paper_title_zone_inherit";
+    const semanticType = semanticStructureProducerStages.applyPaperTitleZonePartClassification({}, {
+      structureRole,
+      inheritedSemanticType: segment.type,
+    }).type;
+    if (semanticType === "title") titleStarted = true;
+    if (semanticType !== currentSemanticType) flush();
+    currentStructureRole = structureRole;
+    currentSemanticType = semanticType;
     currentIndexes.push(index);
   });
   flush();

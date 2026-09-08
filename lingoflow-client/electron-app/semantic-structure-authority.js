@@ -49,6 +49,13 @@ const PAPER_TOP_MATTER_PART_ROLE_TYPES = Object.freeze({
   paper_top_matter_funding: "funding",
   paper_top_matter_body: "body",
 });
+const PAPER_TITLE_ZONE_PART_ROLE_TYPES = Object.freeze({
+  paper_title_zone_header: "header",
+  paper_title_zone_title: "title",
+  paper_title_zone_author: "author",
+  paper_title_zone_affiliation: "affiliation",
+  paper_title_zone_correspondence: "correspondence",
+});
 
 const PAPER_TRANSLATE_TYPES = new Set([
   "title", "affiliation", "correspondence", "receivedDate", "funding", "abstract-title",
@@ -314,6 +321,20 @@ function applyPaperTopMatterPartClassification(segment, evidence = {}) {
   return { ...segment, type: semanticType };
 }
 
+function applyPaperTitleZonePartClassification(segment, evidence = {}) {
+  if (!segment || typeof segment !== "object") {
+    throw structureError("SEMANTIC_PAPER_TITLE_ZONE_PART_REQUIRED", "Paper title-zone part candidate is required for role classification");
+  }
+  const structureRole = String(evidence.structureRole || "").trim();
+  const semanticType = structureRole === "paper_title_zone_inherit"
+    ? normalizeCanonicalType(evidence.inheritedSemanticType).semanticType
+    : PAPER_TITLE_ZONE_PART_ROLE_TYPES[structureRole];
+  if (!semanticType) {
+    throw structureError("SEMANTIC_PAPER_TITLE_ZONE_PART_ROLE_UNKNOWN", `Unknown Paper title-zone part role: ${structureRole || "<empty>"}`, { structureRole });
+  }
+  return { ...segment, type: semanticType };
+}
+
 function applyPaperBodyContinuationSegmentClassification(segment, evidence = {}) {
   if (!segment || typeof segment !== "object") {
     throw structureError("SEMANTIC_PAPER_BODY_CONTINUATION_SEGMENT_REQUIRED", "Paper body-continuation segment candidate is required");
@@ -375,6 +396,7 @@ const semanticStructureProducerStages = Object.freeze({
   applyPaperAbstractContinuationClassification,
   applyPaperTopMatterSingleLineHeaderClassification,
   applyPaperTopMatterPartClassification,
+  applyPaperTitleZonePartClassification,
   applyPaperBodyContinuationSegmentClassification,
   applyPaperBodyContinuationMergedClassification,
   materializePaperClassifiedCarrier,
