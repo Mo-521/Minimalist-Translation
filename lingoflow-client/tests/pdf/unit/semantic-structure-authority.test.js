@@ -329,6 +329,33 @@ test("paper contaminated-caption boundary roles are mapped to semantic types onl
   assert.doesNotMatch(splitSource, /type:\s*(?:segment\.type|["']caption["']|["']body["'])/);
 });
 
+test("paper image/caption-region chunk roles are mapped to semantic types only by Structure Authority", () => {
+  const classify = authority.semanticStructureProducerStages.applyPaperImageCaptionRegionPartClassification;
+  assert.equal(classify({}, { structureRole: "paper_image_caption_region_caption", inheritedSemanticType: "body" }).type, "caption");
+  assert.equal(classify({}, { structureRole: "paper_image_caption_region_image_text", inheritedSemanticType: "heading" }).type, "imageText");
+  assert.equal(classify({}, { structureRole: "paper_image_caption_region_inherit", inheritedSemanticType: "heading" }).type, "heading");
+  assert.equal(classify({}, { structureRole: "paper_image_caption_region_caption", inheritedSemanticType: "body", captionBodyLikeReason: "caption_marker_body_sentence" }).type, "body");
+  assert.equal(classify({}, { structureRole: "paper_image_caption_region_image_text", inheritedSemanticType: "heading", imageTextBodyLike: true }).type, "heading");
+  assert.throws(
+    () => classify({}, { structureRole: "paper_image_caption_region_unknown", inheritedSemanticType: "body" }),
+    (error) => error && error.code === "SEMANTIC_PAPER_IMAGE_CAPTION_REGION_PART_ROLE_UNKNOWN",
+  );
+  assert.throws(
+    () => classify({}, { structureRole: "paper_image_caption_region_caption" }),
+    (error) => error && error.code === "SEMANTIC_TYPE_MISSING",
+  );
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const splitStart = mainSource.indexOf("function splitSegmentByImageCaptionRegions(");
+  const splitEnd = mainSource.indexOf("\nfunction ", splitStart + 1);
+  const splitSource = mainSource.slice(splitStart, splitEnd);
+  assert.match(splitSource, /getPaperImageCaptionRegionLineRole\(/);
+  assert.match(splitSource, /applyPaperImageCaptionRegionPartClassification\(/);
+  assert.match(splitSource, /makePaperImageCaptionRegionPart\(/);
+  assert.doesNotMatch(mainSource, /function getPaperImageCaptionRegionLineKind\(/);
+  assert.doesNotMatch(splitSource, /const type = regionKind/);
+  assert.doesNotMatch(splitSource, /const safeType = chunk\.type/);
+});
+
 test("paper heading-to-body continuation typing is written only by Structure Authority", () => {
   const stages = authority.semanticStructureProducerStages;
   const heading = { type: "heading", sourceText: "continues as prose" };

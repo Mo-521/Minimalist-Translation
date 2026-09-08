@@ -3641,7 +3641,7 @@ function shouldSplitByImageRegion(segment, imageRegions, captionRegions) {
   });
 }
 
-function getPaperImageCaptionRegionLineKind(entry, imageRegions, captionRegions) {
+function getPaperImageCaptionRegionLineRole(entry, imageRegions, captionRegions) {
   const text = getSegmentLineText(entry && entry.line);
   const box = entry && entry.box || {};
   if (isInlineFigureReferenceText(text, entry && entry.previousText, entry && entry.nextText)) return "";
@@ -3651,7 +3651,7 @@ function getPaperImageCaptionRegionLineKind(entry, imageRegions, captionRegions)
     captionRegions,
     previousText: entry && entry.previousText,
     nextText: entry && entry.nextText,
-  })) return "caption";
+  })) return "paper_image_caption_region_caption";
   if ((captionRegions || []).some((region) => bboxOverlapRatio(box, region) > 0.02)) {
     return isTrueCaptionStart(text, {
       box,
@@ -3659,13 +3659,13 @@ function getPaperImageCaptionRegionLineKind(entry, imageRegions, captionRegions)
       captionRegions,
       previousText: entry && entry.previousText,
       nextText: entry && entry.nextText,
-    }) ? "caption" : "";
+    }) ? "paper_image_caption_region_caption" : "";
   }
   const overlappingImageRegion = (imageRegions || []).find((region) => (
     bboxOverlapRatio(box, region) > 0.02 ||
     bboxCrossesRegionY(box, region) && bboxHorizontalOverlapRatio(box, region) > 0.45
   ));
-  if (overlappingImageRegion && isTrueImageInternalTextLine(text, overlappingImageRegion)) return "imageText";
+  if (overlappingImageRegion && isTrueImageInternalTextLine(text, overlappingImageRegion)) return "paper_image_caption_region_image_text";
   return "";
 }
 
@@ -3674,6 +3674,11 @@ function isBodyLikeImageTextChunk(segment, indexes) {
   const text = makeParagraphSourceText(entries.map((entry) => entry.line));
   if (entries.length > 1 && text.length > 35) return true;
   return isBodyLikeImageText(text);
+}
+
+function makePaperImageCaptionRegionPart(carrier, evidence) {
+  const { type: _ignoredType, semanticType: _ignoredSemanticType, ...untypedCarrier } = carrier || {};
+  return semanticStructureProducerStages.applyPaperImageCaptionRegionPartClassification(untypedCarrier, evidence);
 }
 
 function splitSegmentByImageCaptionRegions(segment, pageContext) {
@@ -3692,27 +3697,35 @@ function splitSegmentByImageCaptionRegions(segment, pageContext) {
   entries.forEach((entry, entryIndex) => {
     entry.previousText = entryIndex > 0 ? getSegmentLineText(entries[entryIndex - 1].line) : "";
     entry.nextText = entryIndex < entries.length - 1 ? getSegmentLineText(entries[entryIndex + 1].line) : "";
-    const regionKind = getPaperImageCaptionRegionLineKind(entry, imageRegions, captionRegions);
-    const type = regionKind === "caption" ? "caption" : (regionKind === "imageText" ? "imageText" : String(segment.type || "body"));
+    const structureRole = getPaperImageCaptionRegionLineRole(entry, imageRegions, captionRegions) || "paper_image_caption_region_inherit";
+    const semanticType = semanticStructureProducerStages.applyPaperImageCaptionRegionPartClassification({}, {
+      structureRole,
+      inheritedSemanticType: segment.type,
+    }).type;
     const column = getPaperLineColumn(entry, segment);
-    if (!current || current.type !== type || current.column !== column) {
+    if (!current || current.semanticType !== semanticType || current.column !== column) {
       flush();
-      current = { type, column, indexes: [] };
+      current = { structureRole, semanticType, column, indexes: [] };
     }
     current.indexes.push(entry.index);
   });
   flush();
-  const hasRegionSplit = chunks.some((chunk) => chunk.type === "caption" || chunk.type === "imageText") || chunks.length > 1;
+  const hasRegionSplit = chunks.some((chunk) => chunk.semanticType === "caption" || chunk.semanticType === "imageText") || chunks.length > 1;
   if (!hasRegionSplit) return [segment];
   return chunks.map((chunk, index) => {
     const chunkText = makeParagraphSourceText(getPaperSegmentLineBoxes(segment).filter((entry) => chunk.indexes.includes(entry.index)).map((entry) => entry.line));
-    const captionBodyLikeReason = chunk.type === "caption" ? getCaptionBodyLikeRiskReason(chunkText) : "";
-    const safeType = chunk.type === "caption" && captionBodyLikeReason
-      ? String(segment.type || "body")
-      : (chunk.type === "imageText" && isBodyLikeImageTextChunk(segment, chunk.indexes)
-      ? String(segment.type || "body")
-      : chunk.type);
-    const part = makeSegmentFromParts(segment, chunk.indexes, safeType, chunk.column);
+    const captionBodyLikeReason = chunk.semanticType === "caption" ? getCaptionBodyLikeRiskReason(chunkText) : "";
+    const imageTextBodyLike = chunk.semanticType === "imageText" && isBodyLikeImageTextChunk(segment, chunk.indexes);
+    const part = makePaperImageCaptionRegionPart(
+      makeSegmentFromParts(segment, chunk.indexes, "", chunk.column),
+      {
+        structureRole: chunk.structureRole,
+        inheritedSemanticType: segment.type,
+        captionBodyLikeReason,
+        imageTextBodyLike,
+      },
+    );
+    const safeType = part.type;
     if (segment.id && chunks.length > 1) {
       part.id = `${String(segment.id)}-region-${index + 1}`;
       part.lineBoxes = (part.lineBoxes || []).map((line) => ({ ...line, segmentId: part.id }));
@@ -3725,12 +3738,12 @@ function splitSegmentByImageCaptionRegions(segment, pageContext) {
     part.bodySplitByImageRegion = safeType !== String(segment.type || "body") || chunks.length > 1;
     part.imageRegionSplitReason = "body_split_by_image_or_caption_region";
     part.classificationReason = safeType === "caption" ? "caption_boundary_split" : (safeType === "imageText" ? "image_region_preserve_split" : (part.classificationReason || "image_caption_region_boundary_split"));
-    if (chunk.type === "imageText" && safeType !== "imageText") {
+    if (chunk.semanticType === "imageText" && safeType !== "imageText") {
       part.classificationReason = "image_text_body_like_demoted_to_body";
       part.imageTextDemotedToBody = true;
       part.imageTextDemoteReason = getImageTextBodyLikeRiskReason(part.sourceText || "") || "image_text_chunk_body_like";
     }
-    if (chunk.type === "caption" && safeType !== "caption") {
+    if (chunk.semanticType === "caption" && safeType !== "caption") {
       part.classificationReason = "caption_body_like_demoted_to_body";
       part.captionBodyLikeDemotedToBody = true;
       part.captionBodyLikeRiskReason = captionBodyLikeReason || "caption_chunk_body_like";

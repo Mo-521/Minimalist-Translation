@@ -60,6 +60,10 @@ const PAPER_CAPTION_BOUNDARY_PART_ROLE_TYPES = Object.freeze({
   paper_caption_boundary_caption: "caption",
   paper_caption_boundary_body: "body",
 });
+const PAPER_IMAGE_CAPTION_REGION_PART_ROLE_TYPES = Object.freeze({
+  paper_image_caption_region_caption: "caption",
+  paper_image_caption_region_image_text: "imageText",
+});
 
 const PAPER_TRANSLATE_TYPES = new Set([
   "title", "affiliation", "correspondence", "receivedDate", "funding", "abstract-title",
@@ -353,6 +357,26 @@ function applyPaperCaptionBoundaryPartClassification(segment, evidence = {}) {
   return { ...segment, type: semanticType };
 }
 
+function applyPaperImageCaptionRegionPartClassification(segment, evidence = {}) {
+  if (!segment || typeof segment !== "object") {
+    throw structureError("SEMANTIC_PAPER_IMAGE_CAPTION_REGION_PART_REQUIRED", "Paper image/caption-region part candidate is required for role classification");
+  }
+  const structureRole = String(evidence.structureRole || "").trim();
+  const inheritedSemanticType = normalizeCanonicalType(evidence.inheritedSemanticType).semanticType;
+  const intendedSemanticType = structureRole === "paper_image_caption_region_inherit"
+    ? inheritedSemanticType
+    : PAPER_IMAGE_CAPTION_REGION_PART_ROLE_TYPES[structureRole];
+  if (!intendedSemanticType) {
+    throw structureError("SEMANTIC_PAPER_IMAGE_CAPTION_REGION_PART_ROLE_UNKNOWN", `Unknown Paper image/caption-region part role: ${structureRole || "<empty>"}`, { structureRole });
+  }
+  const captionBodyLikeReason = String(evidence.captionBodyLikeReason || "");
+  const imageTextBodyLike = Boolean(evidence.imageTextBodyLike);
+  const semanticType = (intendedSemanticType === "caption" && captionBodyLikeReason) || (intendedSemanticType === "imageText" && imageTextBodyLike)
+    ? inheritedSemanticType
+    : intendedSemanticType;
+  return { ...segment, type: semanticType };
+}
+
 function applyPaperBodyContinuationSegmentClassification(segment, evidence = {}) {
   if (!segment || typeof segment !== "object") {
     throw structureError("SEMANTIC_PAPER_BODY_CONTINUATION_SEGMENT_REQUIRED", "Paper body-continuation segment candidate is required");
@@ -416,6 +440,7 @@ const semanticStructureProducerStages = Object.freeze({
   applyPaperTopMatterPartClassification,
   applyPaperTitleZonePartClassification,
   applyPaperCaptionBoundaryPartClassification,
+  applyPaperImageCaptionRegionPartClassification,
   applyPaperBodyContinuationSegmentClassification,
   applyPaperBodyContinuationMergedClassification,
   materializePaperClassifiedCarrier,
