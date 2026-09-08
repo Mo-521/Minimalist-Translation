@@ -69,6 +69,10 @@ const PAPER_OVERSIZED_PART_ROLE_TYPES = Object.freeze({
   paper_oversized_part_heading: "heading",
   paper_oversized_part_body: "body",
 });
+const PAPER_ABSTRACT_FINALIZER_ROLE_TYPES = Object.freeze({
+  paper_abstract_finalizer_title: "abstract-title",
+  paper_abstract_finalizer_body: "abstract",
+});
 
 const PAPER_TRANSLATE_TYPES = new Set([
   "title", "affiliation", "correspondence", "receivedDate", "funding", "abstract-title",
@@ -394,6 +398,18 @@ function applyPaperOversizedPartClassification(segment, evidence = {}) {
   return { ...segment, type: semanticType };
 }
 
+function applyPaperAbstractFinalizerClassification(segment, evidence = {}) {
+  if (!segment || typeof segment !== "object") {
+    throw structureError("SEMANTIC_PAPER_ABSTRACT_FINALIZER_SEGMENT_REQUIRED", "Paper Abstract finalizer candidate is required for role classification");
+  }
+  const structureRole = String(evidence.structureRole || "").trim();
+  const semanticType = PAPER_ABSTRACT_FINALIZER_ROLE_TYPES[structureRole];
+  if (!semanticType) {
+    throw structureError("SEMANTIC_PAPER_ABSTRACT_FINALIZER_ROLE_UNKNOWN", `Unknown Paper Abstract finalizer role: ${structureRole || "<empty>"}`, { structureRole });
+  }
+  return { ...segment, type: semanticType };
+}
+
 function applyPaperBodyContinuationSegmentClassification(segment, evidence = {}) {
   if (!segment || typeof segment !== "object") {
     throw structureError("SEMANTIC_PAPER_BODY_CONTINUATION_SEGMENT_REQUIRED", "Paper body-continuation segment candidate is required");
@@ -459,6 +475,7 @@ const semanticStructureProducerStages = Object.freeze({
   applyPaperCaptionBoundaryPartClassification,
   applyPaperImageCaptionRegionPartClassification,
   applyPaperOversizedPartClassification,
+  applyPaperAbstractFinalizerClassification,
   applyPaperBodyContinuationSegmentClassification,
   applyPaperBodyContinuationMergedClassification,
   materializePaperClassifiedCarrier,

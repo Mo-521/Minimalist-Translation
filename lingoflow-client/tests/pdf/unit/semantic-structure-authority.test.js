@@ -375,6 +375,26 @@ test("paper oversized-split roles are mapped to semantic types only by Structure
   assert.doesNotMatch(splitSource, /makeSegmentFromParts\(segment, indexes, partType/);
 });
 
+test("paper Abstract finalizer roles are mapped to semantic types only by Structure Authority", () => {
+  const classify = authority.semanticStructureProducerStages.applyPaperAbstractFinalizerClassification;
+  assert.equal(classify({}, { structureRole: "paper_abstract_finalizer_title" }).type, "abstract-title");
+  assert.equal(classify({}, { structureRole: "paper_abstract_finalizer_body" }).type, "abstract");
+  assert.throws(
+    () => classify({}, { structureRole: "paper_abstract_finalizer_unknown" }),
+    (error) => error && error.code === "SEMANTIC_PAPER_ABSTRACT_FINALIZER_ROLE_UNKNOWN",
+  );
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const processStart = mainSource.indexOf("function postProcessPdfSegments(");
+  const processEnd = mainSource.indexOf("\nfunction ", processStart + 1);
+  const processSource = mainSource.slice(processStart, processEnd);
+  assert.match(processSource, /applyPaperAbstractFinalizerClassification\(/);
+  assert.match(processSource, /paper_abstract_finalizer_title/);
+  assert.match(processSource, /paper_abstract_finalizer_body/);
+  assert.doesNotMatch(processSource, /type: "abstract-title"/);
+  assert.doesNotMatch(processSource, /type: "abstract", column: "single", sourceText: ""/);
+  assert.doesNotMatch(processSource, /mergeSegments\(abstractBuffer, segment, "abstract"/);
+});
+
 test("paper heading-to-body continuation typing is written only by Structure Authority", () => {
   const stages = authority.semanticStructureProducerStages;
   const heading = { type: "heading", sourceText: "continues as prose" };

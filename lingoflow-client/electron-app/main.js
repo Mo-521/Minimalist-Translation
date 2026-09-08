@@ -4969,14 +4969,21 @@ function postProcessPdfSegments(segments, pipelineConfig) {
         output.push(abstractBuffer);
         abstractBuffer = null;
       }
-      output.push({ ...segment, type: "abstract-title", column: "single" });
-      abstractBuffer = { ...segment, id: "", type: "abstract", column: "single", sourceText: "", previewText: "", lines: [], lineBoxes: [], items: [], bbox: { x: 0, y: 0, width: 0, height: 0 } };
+      const { type: _ignoredTitleType, semanticType: _ignoredTitleSemanticType, ...untypedTitle } = segment;
+      output.push(semanticStructureProducerStages.applyPaperAbstractFinalizerClassification(
+        { ...untypedTitle, column: "single" },
+        { structureRole: "paper_abstract_finalizer_title" },
+      ));
+      abstractBuffer = semanticStructureProducerStages.applyPaperAbstractFinalizerClassification(
+        { ...untypedTitle, id: "", column: "single", sourceText: "", previewText: "", lines: [], lineBoxes: [], items: [], bbox: { x: 0, y: 0, width: 0, height: 0 } },
+        { structureRole: "paper_abstract_finalizer_body" },
+      );
       return;
     }
     if (segment.type === "keywords") {
       if (abstractBuffer && abstractBuffer.lines.length) output.push(abstractBuffer);
       abstractBuffer = null;
-      output.push({ ...segment, type: "keywords", column: "single" });
+      output.push({ ...segment, column: "single" });
       return;
     }
     if (abstractBuffer) {
@@ -4993,7 +5000,7 @@ function postProcessPdfSegments(segments, pipelineConfig) {
         abstractBuffer = null;
         output.push(segment);
       } else {
-        if (!mergeSegments(abstractBuffer, segment, "abstract", "single")) {
+        if (!mergeSegments(abstractBuffer, segment, "", "single")) {
           if (abstractBuffer.lines.length) output.push(abstractBuffer);
           abstractBuffer = null;
           output.push(segment);
