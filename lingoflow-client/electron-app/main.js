@@ -3157,6 +3157,22 @@ function segmentStartsWithBodyText(segment) {
   return isBodyStartText(first);
 }
 
+function makePaperCaptionBoundaryPart(carrier, structureRole, inheritedSemanticType) {
+  const { type: _ignoredType, semanticType: _ignoredSemanticType, ...untypedCarrier } = carrier || {};
+  return semanticStructureProducerStages.applyPaperCaptionBoundaryPartClassification(untypedCarrier, {
+    structureRole,
+    inheritedSemanticType,
+  });
+}
+
+function makePaperCaptionBoundarySingleLinePart(base, lineIndex, structureRole, text, reason, boxPart) {
+  return makePaperCaptionBoundaryPart(
+    makeSingleLineSegmentFromText(base, lineIndex, "", text, reason, boxPart),
+    structureRole,
+    base && base.type,
+  );
+}
+
 function splitContaminatedCaption(segment) {
   if (!segment) return [segment];
   if (segment.type === "body" || segment.type === "heading") {
@@ -3170,8 +3186,8 @@ function splitContaminatedCaption(segment) {
       const bodyText = normalizeExtractedPdfText(text.slice(0, match.index));
       const captionText = normalizeExtractedPdfText(text.slice(match.index));
       if (!bodyText || !captionText) return [segment];
-      const body = makeSingleLineSegmentFromText(segment, 0, segment.type, bodyText, "caption_boundary_split", "title");
-      const caption = makeSingleLineSegmentFromText(segment, 0, "caption", captionText, "caption_boundary_split", "author");
+      const body = makePaperCaptionBoundarySingleLinePart(segment, 0, "paper_caption_boundary_inherit", bodyText, "caption_boundary_split", "title");
+      const caption = makePaperCaptionBoundarySingleLinePart(segment, 0, "paper_caption_boundary_caption", captionText, "caption_boundary_split", "author");
       body.splitReason = "caption_boundary_split";
       caption.splitReason = "caption_boundary_split";
       caption.splitFromSegmentId = segment.id || "";
@@ -3182,32 +3198,30 @@ function splitContaminatedCaption(segment) {
     const parts = [];
     if (captionAt > 0) {
       const bodyText = makeParagraphSourceText(lines.slice(0, captionAt).map((line) => ({ text: getSegmentLineText(line) })));
-      parts.push({
+      parts.push(makePaperCaptionBoundaryPart({
         ...segment,
         lines: lines.slice(0, captionAt),
         lineBoxes: lineBoxes.slice(0, captionAt),
         sourceText: bodyText,
         previewText: makePreviewText(bodyText),
         bbox: makeBBoxFromLineBoxes(lineBoxes.slice(0, captionAt)),
-        type: segment.type,
         splitReason: "caption_boundary_split",
         classificationReason: "caption_boundary_body_prefix",
-      });
+      }, "paper_caption_boundary_inherit", segment.type));
     }
     const captionText = makeParagraphSourceText(lines.slice(captionAt).map((line) => ({ text: getSegmentLineText(line) })));
-    parts.push({
+    parts.push(makePaperCaptionBoundaryPart({
       ...segment,
       lines: lines.slice(captionAt),
       lineBoxes: lineBoxes.slice(captionAt),
       sourceText: captionText,
       previewText: makePreviewText(captionText),
       bbox: makeBBoxFromLineBoxes(lineBoxes.slice(captionAt)),
-      type: "caption",
       splitFromSegmentId: segment.id || "",
       splitReason: "caption_boundary_split",
       classificationReason: "caption_boundary_split",
       zoneType: "captionZone",
-    });
+    }, "paper_caption_boundary_caption", segment.type));
     return parts.filter((part) => part.sourceText);
   }
   if (segment.type !== "caption") return [segment];
@@ -3220,24 +3234,22 @@ function splitContaminatedCaption(segment) {
   });
   if (splitAt <= 0) return [segment];
   return [
-    {
+    makePaperCaptionBoundaryPart({
       ...segment,
       lines: lines.slice(0, splitAt),
       lineBoxes: lineBoxes.slice(0, splitAt),
       sourceText: makeParagraphSourceText(lines.slice(0, splitAt).map((line) => ({ text: getSegmentLineText(line) }))),
       previewText: makePreviewText(makeParagraphSourceText(lines.slice(0, splitAt).map((line) => ({ text: getSegmentLineText(line) })))),
       bbox: makeBBoxFromLineBoxes(lineBoxes.slice(0, splitAt)),
-      type: "caption",
-    },
-    {
+    }, "paper_caption_boundary_caption", segment.type),
+    makePaperCaptionBoundaryPart({
       ...segment,
       lines: lines.slice(splitAt),
       lineBoxes: lineBoxes.slice(splitAt),
       sourceText: makeParagraphSourceText(lines.slice(splitAt).map((line) => ({ text: getSegmentLineText(line) }))),
       previewText: makePreviewText(makeParagraphSourceText(lines.slice(splitAt).map((line) => ({ text: getSegmentLineText(line) })))),
       bbox: makeBBoxFromLineBoxes(lineBoxes.slice(splitAt)),
-      type: "body",
-    },
+    }, "paper_caption_boundary_body", segment.type),
   ].filter((part) => part.sourceText);
 }
 

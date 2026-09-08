@@ -306,6 +306,29 @@ test("paper title-zone roles are mapped to semantic types only by Structure Auth
   assert.doesNotMatch(mainSource, /function getTitleZoneLineType\(/);
 });
 
+test("paper contaminated-caption boundary roles are mapped to semantic types only by Structure Authority", () => {
+  const classify = authority.semanticStructureProducerStages.applyPaperCaptionBoundaryPartClassification;
+  assert.equal(classify({}, { structureRole: "paper_caption_boundary_caption", inheritedSemanticType: "heading" }).type, "caption");
+  assert.equal(classify({}, { structureRole: "paper_caption_boundary_body", inheritedSemanticType: "caption" }).type, "body");
+  assert.equal(classify({}, { structureRole: "paper_caption_boundary_inherit", inheritedSemanticType: "heading" }).type, "heading");
+  assert.throws(
+    () => classify({}, { structureRole: "paper_caption_boundary_unknown", inheritedSemanticType: "body" }),
+    (error) => error && error.code === "SEMANTIC_PAPER_CAPTION_BOUNDARY_PART_ROLE_UNKNOWN",
+  );
+  assert.throws(
+    () => classify({}, { structureRole: "paper_caption_boundary_inherit" }),
+    (error) => error && error.code === "SEMANTIC_TYPE_MISSING",
+  );
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const splitStart = mainSource.indexOf("function splitContaminatedCaption(");
+  const splitEnd = mainSource.indexOf("\nfunction ", splitStart + 1);
+  const splitSource = mainSource.slice(splitStart, splitEnd);
+  assert.match(splitSource, /makePaperCaptionBoundaryPart\(/);
+  assert.match(splitSource, /makePaperCaptionBoundarySingleLinePart\(/);
+  assert.doesNotMatch(splitSource, /makeSingleLineSegmentFromText\(/);
+  assert.doesNotMatch(splitSource, /type:\s*(?:segment\.type|["']caption["']|["']body["'])/);
+});
+
 test("paper heading-to-body continuation typing is written only by Structure Authority", () => {
   const stages = authority.semanticStructureProducerStages;
   const heading = { type: "heading", sourceText: "continues as prose" };
