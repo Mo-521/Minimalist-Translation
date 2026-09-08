@@ -356,6 +356,25 @@ test("paper image/caption-region chunk roles are mapped to semantic types only b
   assert.doesNotMatch(splitSource, /const safeType = chunk\.type/);
 });
 
+test("paper oversized-split roles are mapped to semantic types only by Structure Authority", () => {
+  const classify = authority.semanticStructureProducerStages.applyPaperOversizedPartClassification;
+  assert.equal(classify({}, { structureRole: "paper_oversized_part_caption" }).type, "caption");
+  assert.equal(classify({}, { structureRole: "paper_oversized_part_heading" }).type, "heading");
+  assert.equal(classify({}, { structureRole: "paper_oversized_part_body" }).type, "body");
+  assert.throws(
+    () => classify({}, { structureRole: "paper_oversized_part_unknown" }),
+    (error) => error && error.code === "SEMANTIC_PAPER_OVERSIZED_PART_ROLE_UNKNOWN",
+  );
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const splitStart = mainSource.indexOf("function splitOversizedPaperBodySegment(");
+  const splitEnd = mainSource.indexOf("\nfunction ", splitStart + 1);
+  const splitSource = mainSource.slice(splitStart, splitEnd);
+  assert.match(splitSource, /applyPaperOversizedPartClassification\(/);
+  assert.match(splitSource, /paper_oversized_part_caption/);
+  assert.doesNotMatch(splitSource, /const partType =/);
+  assert.doesNotMatch(splitSource, /makeSegmentFromParts\(segment, indexes, partType/);
+});
+
 test("paper heading-to-body continuation typing is written only by Structure Authority", () => {
   const stages = authority.semanticStructureProducerStages;
   const heading = { type: "heading", sourceText: "continues as prose" };

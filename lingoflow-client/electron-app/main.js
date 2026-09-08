@@ -3895,8 +3895,12 @@ function splitOversizedPaperBodySegment(segment, pageContext) {
   return chunks.map((chunk, index) => {
     const indexes = chunk.entries.map((entry) => entry.index);
     const firstText = getSegmentLineText(chunk.entries[0] && chunk.entries[0].line);
-    const partType = isCaptionMarkerText(firstText) ? "caption" : (isSectionHeadingText(firstText) ? "heading" : "body");
-    const part = makeSegmentFromParts(segment, indexes, partType, chunk.column);
+    const structureRole = isCaptionMarkerText(firstText)
+      ? "paper_oversized_part_caption"
+      : (isSectionHeadingText(firstText) ? "paper_oversized_part_heading" : "paper_oversized_part_body");
+    const typedCarrier = makeSegmentFromParts(segment, indexes, "", chunk.column);
+    const { type: _ignoredType, semanticType: _ignoredSemanticType, ...untypedCarrier } = typedCarrier;
+    const part = semanticStructureProducerStages.applyPaperOversizedPartClassification(untypedCarrier, { structureRole });
     part.splitFromSegmentId = segment.id || "";
     part.splitReason = "paper_oversized_body_second_pass";
     part.splitIndex = index + 1;
