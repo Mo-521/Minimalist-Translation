@@ -2531,16 +2531,16 @@ function makeBBoxFromLineBoxes(lineBoxes) {
   };
 }
 
-function makeSegmentFromParts(base, lineIndexes, type, column) {
+function makeSegmentFromParts(base, lineIndexes, column) {
   const lines = lineIndexes.map((index) => base.lines[index]).filter(Boolean);
   const lineBoxes = lineIndexes.map((index) => base.lineBoxes[index]).filter(Boolean).map((line) => ({ ...line, column: column || base.column || "single" }));
   const sourceText = makeParagraphSourceText(lines.map((line) => ({ text: getSegmentLineText(line) })));
+  const { type: _ignoredType, semanticType: _ignoredSemanticType, ...untypedBase } = base;
   return {
-    ...base,
+    ...untypedBase,
     id: "",
     pageNumber: base.pageNumber,
     column: column || base.column || "single",
-    ...(type ? { type } : {}),
     sourceText,
     previewText: makePreviewText(sourceText),
     lines,
@@ -2552,7 +2552,7 @@ function makeSegmentFromParts(base, lineIndexes, type, column) {
 
 function makeTopMatterSegmentFromParts(base, lineIndexes, structureRole, column) {
   return semanticStructureProducerStages.applyPaperTopMatterPartClassification(
-    makeSegmentFromParts(base, lineIndexes, "", column),
+    makeSegmentFromParts(base, lineIndexes, column),
     { structureRole },
   );
 }
@@ -2942,7 +2942,10 @@ function splitLongTextSegment(segment) {
   let currentChars = 0;
   const flush = () => {
     if (!current.length) return;
-    const part = makeSegmentFromParts(segment, current, segment.type, segment.column);
+    const part = semanticStructureProducerStages.applyPaperSplitSegmentClassification(
+      makeSegmentFromParts(segment, current, segment.column),
+      { structureRole: "paper_split_inherit", inheritedSemanticType: segment.type },
+    );
     part.mergeReason = "natural_paragraph_split";
     parts.push(part);
     current = [];
@@ -3003,7 +3006,7 @@ function splitTitleAuthorMixedText(text) {
   return { titleText, authorText };
 }
 
-function makeSingleLineSegmentFromText(base, lineIndex, type, text, reason, boxPart) {
+function makeSingleLineSegmentFromText(base, lineIndex, text, reason, boxPart) {
   const line = base.lines && base.lines[lineIndex] ? { ...base.lines[lineIndex], text } : { pageNumber: base.pageNumber, column: base.column, text };
   const sourceBox = base.lineBoxes && base.lineBoxes[lineIndex] ? base.lineBoxes[lineIndex] : line.bbox || base.bbox || {};
   const totalText = getSegmentLineText(base.lines && base.lines[lineIndex]) || normalizeExtractedPdfText(base.sourceText || "");
@@ -3018,10 +3021,10 @@ function makeSingleLineSegmentFromText(base, lineIndex, type, text, reason, boxP
   }
   line.bbox = lineBox;
   line.sourceLineText = text;
+  const { type: _ignoredType, semanticType: _ignoredSemanticType, ...untypedBase } = base;
   return {
-    ...base,
+    ...untypedBase,
     id: "",
-    type,
     sourceText: text,
     previewText: makePreviewText(text),
     lines: [line],
@@ -3033,7 +3036,7 @@ function makeSingleLineSegmentFromText(base, lineIndex, type, text, reason, boxP
 }
 
 function makeTitleZoneSingleLineSegmentFromText(base, lineIndex, structureRole, text, reason, boxPart) {
-  const typedCarrier = makeSingleLineSegmentFromText(base, lineIndex, "", text, reason, boxPart);
+  const typedCarrier = makeSingleLineSegmentFromText(base, lineIndex, text, reason, boxPart);
   const { type: _ignoredType, semanticType: _ignoredSemanticType, ...carrier } = typedCarrier;
   return semanticStructureProducerStages.applyPaperTitleZonePartClassification(carrier, {
     structureRole,
@@ -3042,7 +3045,7 @@ function makeTitleZoneSingleLineSegmentFromText(base, lineIndex, structureRole, 
 }
 
 function makeTitleZoneSegmentFromParts(base, lineIndexes, structureRole, column) {
-  const typedCarrier = makeSegmentFromParts(base, lineIndexes, "", column);
+  const typedCarrier = makeSegmentFromParts(base, lineIndexes, column);
   const { type: _ignoredType, semanticType: _ignoredSemanticType, ...carrier } = typedCarrier;
   return semanticStructureProducerStages.applyPaperTitleZonePartClassification(carrier, {
     structureRole,
@@ -3177,7 +3180,7 @@ function makePaperCaptionBoundaryPart(carrier, structureRole, inheritedSemanticT
 
 function makePaperCaptionBoundarySingleLinePart(base, lineIndex, structureRole, text, reason, boxPart) {
   return makePaperCaptionBoundaryPart(
-    makeSingleLineSegmentFromText(base, lineIndex, "", text, reason, boxPart),
+    makeSingleLineSegmentFromText(base, lineIndex, text, reason, boxPart),
     structureRole,
     base && base.type,
   );
@@ -3278,8 +3281,14 @@ function splitHeadingLeadSegment(segment) {
   }
   if (headingLineCount <= 0 || headingLineCount >= lines.length) return [segment];
   return [
-    makeSegmentFromParts(segment, lines.slice(0, headingLineCount).map((_, index) => index), "heading", segment.column),
-    makeSegmentFromParts(segment, lines.slice(headingLineCount).map((_, index) => index + headingLineCount), "body", segment.column),
+    semanticStructureProducerStages.applyPaperSplitSegmentClassification(
+      makeSegmentFromParts(segment, lines.slice(0, headingLineCount).map((_, index) => index), segment.column),
+      { structureRole: "paper_split_heading" },
+    ),
+    semanticStructureProducerStages.applyPaperSplitSegmentClassification(
+      makeSegmentFromParts(segment, lines.slice(headingLineCount).map((_, index) => index + headingLineCount), segment.column),
+      { structureRole: "paper_split_body" },
+    ),
   ].filter((part) => part.sourceText);
 }
 
@@ -3313,15 +3322,27 @@ function splitHeadingBodyMixedSegment(segment) {
     const mixed = findPaperHeadingBodyBoundary(getSegmentLineText(lines[0]) || segment.sourceText);
     if (!mixed) return [segment];
     return [
-      makeSingleLineSegmentFromText(segment, 0, "heading", mixed.headingText, "paper_heading_body_split", "title"),
-      makeSingleLineSegmentFromText(segment, 0, "body", mixed.bodyText, "paper_heading_body_split", "author"),
+      semanticStructureProducerStages.applyPaperSplitSegmentClassification(
+        makeSingleLineSegmentFromText(segment, 0, mixed.headingText, "paper_heading_body_split", "title"),
+        { structureRole: "paper_split_heading" },
+      ),
+      semanticStructureProducerStages.applyPaperSplitSegmentClassification(
+        makeSingleLineSegmentFromText(segment, 0, mixed.bodyText, "paper_heading_body_split", "author"),
+        { structureRole: "paper_split_body" },
+      ),
     ].filter((part) => part.sourceText);
   }
   const firstText = getSegmentLineText(lines[0]);
   const secondText = getSegmentLineText(lines[1]);
   if (isSectionHeadingText(firstText) && isSentenceLikeBodyText(secondText)) {
-    const heading = makeSegmentFromParts(segment, [0], "heading", segment.column);
-    const body = makeSegmentFromParts(segment, lines.slice(1).map((_, index) => index + 1), "body", segment.column);
+    const heading = semanticStructureProducerStages.applyPaperSplitSegmentClassification(
+      makeSegmentFromParts(segment, [0], segment.column),
+      { structureRole: "paper_split_heading" },
+    );
+    const body = semanticStructureProducerStages.applyPaperSplitSegmentClassification(
+      makeSegmentFromParts(segment, lines.slice(1).map((_, index) => index + 1), segment.column),
+      { structureRole: "paper_split_body" },
+    );
     heading.classificationReason = "paper_heading_body_split";
     body.classificationReason = "paper_heading_body_split";
     return [heading, body].filter((part) => part.sourceText);
@@ -3352,12 +3373,20 @@ function trimAbstractBoundarySegment(segment) {
   const splitIndex = getAbstractBoundarySplitIndex(segment);
   if (splitIndex <= 0) return [segment];
   const lines = segment.lines || [];
-  const abstractPart = makeSegmentFromParts(segment, lines.slice(0, splitIndex).map((_, index) => index), "abstract", segment.column);
+  const abstractPart = semanticStructureProducerStages.applyPaperSplitSegmentClassification(
+    makeSegmentFromParts(segment, lines.slice(0, splitIndex).map((_, index) => index), segment.column),
+    { structureRole: "paper_split_abstract" },
+  );
   abstractPart.classificationReason = "abstract_boundary_trim";
   const tailIndexes = lines.slice(splitIndex).map((_, index) => index + splitIndex);
   const firstTailText = getSegmentLineText(lines[splitIndex]);
-  const tailType = isPdfFooterOrWatermarkText(firstTailText) ? "licenseText" : (isSectionHeadingText(firstTailText) ? "heading" : "body");
-  const tailPart = makeSegmentFromParts(segment, tailIndexes, tailType, segment.column);
+  const tailStructureRole = isPdfFooterOrWatermarkText(firstTailText)
+    ? "paper_split_license_text"
+    : (isSectionHeadingText(firstTailText) ? "paper_split_heading" : "paper_split_body");
+  const tailPart = semanticStructureProducerStages.applyPaperSplitSegmentClassification(
+    makeSegmentFromParts(segment, tailIndexes, segment.column),
+    { structureRole: tailStructureRole },
+  );
   tailPart.classificationReason = "abstract_boundary_trim";
   return [abstractPart, tailPart].filter((part) => part.sourceText);
 }
@@ -3727,7 +3756,7 @@ function splitSegmentByImageCaptionRegions(segment, pageContext) {
     const captionBodyLikeReason = chunk.semanticType === "caption" ? getCaptionBodyLikeRiskReason(chunkText) : "";
     const imageTextBodyLike = chunk.semanticType === "imageText" && isBodyLikeImageTextChunk(segment, chunk.indexes);
     const part = makePaperImageCaptionRegionPart(
-      makeSegmentFromParts(segment, chunk.indexes, "", chunk.column),
+      makeSegmentFromParts(segment, chunk.indexes, chunk.column),
       {
         structureRole: chunk.structureRole,
         inheritedSemanticType: segment.type,
@@ -3908,7 +3937,7 @@ function splitOversizedPaperBodySegment(segment, pageContext) {
     const structureRole = isCaptionMarkerText(firstText)
       ? "paper_oversized_part_caption"
       : (isSectionHeadingText(firstText) ? "paper_oversized_part_heading" : "paper_oversized_part_body");
-    const typedCarrier = makeSegmentFromParts(segment, indexes, "", chunk.column);
+    const typedCarrier = makeSegmentFromParts(segment, indexes, chunk.column);
     const { type: _ignoredType, semanticType: _ignoredSemanticType, ...untypedCarrier } = typedCarrier;
     const part = semanticStructureProducerStages.applyPaperOversizedPartClassification(untypedCarrier, { structureRole });
     part.splitFromSegmentId = segment.id || "";

@@ -461,6 +461,34 @@ test("paper merge roles are mapped to semantic types only by Structure Authority
   assert.doesNotMatch(mergeSource, /base\.type\s*=/);
 });
 
+test("paper split roles are mapped to semantic types only by Structure Authority", () => {
+  const classify = authority.semanticStructureProducerStages.applyPaperSplitSegmentClassification;
+  const cases = [
+    ["paper_split_heading", "heading"],
+    ["paper_split_body", "body"],
+    ["paper_split_abstract", "abstract"],
+    ["paper_split_license_text", "licenseText"],
+  ];
+  cases.forEach(([structureRole, semanticType]) => {
+    assert.equal(classify({ sourceText: "candidate" }, { structureRole }).type, semanticType);
+  });
+  assert.equal(classify({}, { structureRole: "paper_split_inherit", inheritedSemanticType: "abstract" }).type, "abstract");
+  assert.throws(
+    () => classify({}, { structureRole: "paper_split_unknown" }),
+    (error) => error && error.code === "SEMANTIC_PAPER_SPLIT_ROLE_UNKNOWN",
+  );
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const segmentStart = mainSource.indexOf("function makeSegmentFromParts(");
+  const segmentEnd = mainSource.indexOf("\nfunction makeTopMatterSegmentFromParts(", segmentStart + 1);
+  const segmentSource = mainSource.slice(segmentStart, segmentEnd);
+  const singleStart = mainSource.indexOf("function makeSingleLineSegmentFromText(");
+  const singleEnd = mainSource.indexOf("\nfunction makeTitleZoneSingleLineSegmentFromText(", singleStart + 1);
+  const singleSource = mainSource.slice(singleStart, singleEnd);
+  assert.doesNotMatch(segmentSource, /\btype\b\s*[,)]/);
+  assert.doesNotMatch(segmentSource, /\.\.\.\(type \?/);
+  assert.doesNotMatch(singleSource, /\btype\b\s*[,)]/);
+});
+
 test("paper heading-to-body continuation typing is written only by Structure Authority", () => {
   const stages = authority.semanticStructureProducerStages;
   const heading = { type: "heading", sourceText: "continues as prose" };

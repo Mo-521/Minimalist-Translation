@@ -88,6 +88,12 @@ const PAPER_MERGE_ROLE_TYPES = Object.freeze({
   paper_merge_caption_fragment: "caption",
   paper_merge_abstract_accumulator: "abstract",
 });
+const PAPER_SPLIT_ROLE_TYPES = Object.freeze({
+  paper_split_heading: "heading",
+  paper_split_body: "body",
+  paper_split_abstract: "abstract",
+  paper_split_license_text: "licenseText",
+});
 
 const PAPER_TRANSLATE_TYPES = new Set([
   "title", "affiliation", "correspondence", "receivedDate", "funding", "abstract-title",
@@ -461,6 +467,20 @@ function applyPaperMergedSegmentClassification(segment, evidence = {}) {
   return { ...segment, type: semanticType };
 }
 
+function applyPaperSplitSegmentClassification(segment, evidence = {}) {
+  if (!segment || typeof segment !== "object") {
+    throw structureError("SEMANTIC_PAPER_SPLIT_SEGMENT_REQUIRED", "Split Paper segment candidate is required for role classification");
+  }
+  const structureRole = String(evidence.structureRole || "").trim();
+  const semanticType = structureRole === "paper_split_inherit"
+    ? normalizeCanonicalType(evidence.inheritedSemanticType).semanticType
+    : PAPER_SPLIT_ROLE_TYPES[structureRole];
+  if (!semanticType) {
+    throw structureError("SEMANTIC_PAPER_SPLIT_ROLE_UNKNOWN", `Unknown Paper split role: ${structureRole || "<empty>"}`, { structureRole });
+  }
+  return { ...segment, type: semanticType };
+}
+
 function applyPaperBodyContinuationSegmentClassification(segment, evidence = {}) {
   if (!segment || typeof segment !== "object") {
     throw structureError("SEMANTIC_PAPER_BODY_CONTINUATION_SEGMENT_REQUIRED", "Paper body-continuation segment candidate is required");
@@ -530,6 +550,7 @@ const semanticStructureProducerStages = Object.freeze({
   applyPaperReferenceChainClassification,
   applyPaperRecoveryClassification,
   applyPaperMergedSegmentClassification,
+  applyPaperSplitSegmentClassification,
   applyPaperBodyContinuationSegmentClassification,
   applyPaperBodyContinuationMergedClassification,
   materializePaperClassifiedCarrier,
