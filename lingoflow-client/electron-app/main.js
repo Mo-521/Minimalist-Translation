@@ -4488,9 +4488,8 @@ function buildRecoveryBodySegment(lines, segId) {
   const bbox = makeBBoxFromLineBoxes(lineBoxes);
   const sourceText = makeParagraphSourceText(lines);
   const sourceLineIds = (lines || []).map((line) => makeSourceLineId(line)).filter(Boolean);
-  return {
+  return semanticStructureProducerStages.applyPaperRecoveryClassification({
     id: segId,
-    type: "body",
     status: "pending",
     pageNumber,
     firstLinePageNumber: pageNumber,
@@ -4519,7 +4518,7 @@ function buildRecoveryBodySegment(lines, segId) {
     imageRegionOverlap: false,
     referenceModeApplied: false,
     warnings: ["recovered_from_coverage_audit"],
-  };
+  }, { structureRole: "paper_recovery_body" });
 }
 
 function createSegmentIdAllocator(existingSegments) {

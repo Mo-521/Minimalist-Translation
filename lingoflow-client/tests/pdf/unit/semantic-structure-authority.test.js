@@ -421,6 +421,22 @@ test("paper Reference chain roles are mapped to semantic types only by Structure
   assert.doesNotMatch(retagSource, /type: "reference"/);
 });
 
+test("paper coverage recovery roles are mapped to semantic types only by Structure Authority", () => {
+  const classify = authority.semanticStructureProducerStages.applyPaperRecoveryClassification;
+  assert.equal(classify({}, { structureRole: "paper_recovery_body" }).type, "body");
+  assert.throws(
+    () => classify({}, { structureRole: "paper_recovery_unknown" }),
+    (error) => error && error.code === "SEMANTIC_PAPER_RECOVERY_ROLE_UNKNOWN",
+  );
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const recoveryStart = mainSource.indexOf("function buildRecoveryBodySegment(");
+  const recoveryEnd = mainSource.indexOf("\nfunction createSegmentIdAllocator(", recoveryStart + 1);
+  const recoverySource = mainSource.slice(recoveryStart, recoveryEnd);
+  assert.match(recoverySource, /applyPaperRecoveryClassification\(/);
+  assert.match(recoverySource, /structureRole: "paper_recovery_body"/);
+  assert.doesNotMatch(recoverySource, /type: "body"/);
+});
+
 test("paper heading-to-body continuation typing is written only by Structure Authority", () => {
   const stages = authority.semanticStructureProducerStages;
   const heading = { type: "heading", sourceText: "continues as prose" };

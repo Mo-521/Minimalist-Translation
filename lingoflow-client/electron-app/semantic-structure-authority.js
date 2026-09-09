@@ -78,6 +78,9 @@ const PAPER_REFERENCE_CHAIN_ROLE_TYPES = Object.freeze({
   paper_reference_chain_entry: "reference",
   paper_reference_mode_retag: "reference",
 });
+const PAPER_RECOVERY_ROLE_TYPES = Object.freeze({
+  paper_recovery_body: "body",
+});
 
 const PAPER_TRANSLATE_TYPES = new Set([
   "title", "affiliation", "correspondence", "receivedDate", "funding", "abstract-title",
@@ -427,6 +430,18 @@ function applyPaperReferenceChainClassification(segment, evidence = {}) {
   return { ...segment, type: semanticType };
 }
 
+function applyPaperRecoveryClassification(segment, evidence = {}) {
+  if (!segment || typeof segment !== "object") {
+    throw structureError("SEMANTIC_PAPER_RECOVERY_SEGMENT_REQUIRED", "Paper recovery candidate is required for role classification");
+  }
+  const structureRole = String(evidence.structureRole || "").trim();
+  const semanticType = PAPER_RECOVERY_ROLE_TYPES[structureRole];
+  if (!semanticType) {
+    throw structureError("SEMANTIC_PAPER_RECOVERY_ROLE_UNKNOWN", `Unknown Paper recovery role: ${structureRole || "<empty>"}`, { structureRole });
+  }
+  return { ...segment, type: semanticType };
+}
+
 function applyPaperBodyContinuationSegmentClassification(segment, evidence = {}) {
   if (!segment || typeof segment !== "object") {
     throw structureError("SEMANTIC_PAPER_BODY_CONTINUATION_SEGMENT_REQUIRED", "Paper body-continuation segment candidate is required");
@@ -494,6 +509,7 @@ const semanticStructureProducerStages = Object.freeze({
   applyPaperOversizedPartClassification,
   applyPaperAbstractFinalizerClassification,
   applyPaperReferenceChainClassification,
+  applyPaperRecoveryClassification,
   applyPaperBodyContinuationSegmentClassification,
   applyPaperBodyContinuationMergedClassification,
   materializePaperClassifiedCarrier,
