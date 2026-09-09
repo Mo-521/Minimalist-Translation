@@ -76,6 +76,7 @@ const PAPER_ABSTRACT_FINALIZER_ROLE_TYPES = Object.freeze({
 const PAPER_REFERENCE_CHAIN_ROLE_TYPES = Object.freeze({
   paper_reference_chain_heading: "reference",
   paper_reference_chain_entry: "reference",
+  paper_reference_mode_retag: "reference",
 });
 
 const PAPER_TRANSLATE_TYPES = new Set([

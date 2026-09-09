@@ -4030,11 +4030,11 @@ function isReferenceModeExemptSegment(segment) {
 function retagSegmentAsReference(segment, trigger) {
   if (!segment || isReferenceModeExemptSegment(segment)) return segment;
   if (segment.type === "reference" && segment.referenceModeApplied) return segment;
-  return {
-    ...segment,
+  const { type: _ignoredType, semanticType: _ignoredSemanticType, ...untypedSegment } = segment;
+  return semanticStructureProducerStages.applyPaperReferenceChainClassification({
+    ...untypedSegment,
     retaggedFromType: String(segment.type || ""),
     retaggedFromStatus: String(segment.status || ""),
-    type: "reference",
     status: "preserved",
     translatedText: "",
     translatedPreview: "",
@@ -4043,7 +4043,7 @@ function retagSegmentAsReference(segment, trigger) {
     referenceModeTriggerSegmentId: String(trigger && trigger.id || `reference-start-p${Number(trigger && trigger.pageNumber || 0)}-y${Math.round(Number(trigger && trigger.bbox && trigger.bbox.y || 0))}`),
     referenceModeTriggerY: Number(trigger && trigger.bbox && trigger.bbox.y || 0),
     classificationReason: segment.referenceHeading || isPaperReferenceHeadingText(segment.sourceText || "") ? "reference_mode_heading" : "reference_mode_page_y_coordinate",
-  };
+  }, { structureRole: "paper_reference_mode_retag" });
 }
 
 function applyReferenceMode(segments, config) {

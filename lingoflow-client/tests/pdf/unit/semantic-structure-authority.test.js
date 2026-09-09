@@ -399,6 +399,7 @@ test("paper Reference chain roles are mapped to semantic types only by Structure
   const classify = authority.semanticStructureProducerStages.applyPaperReferenceChainClassification;
   assert.equal(classify({}, { structureRole: "paper_reference_chain_heading" }).type, "reference");
   assert.equal(classify({}, { structureRole: "paper_reference_chain_entry" }).type, "reference");
+  assert.equal(classify({}, { structureRole: "paper_reference_mode_retag" }).type, "reference");
   assert.throws(
     () => classify({}, { structureRole: "paper_reference_chain_unknown" }),
     (error) => error && error.code === "SEMANTIC_PAPER_REFERENCE_CHAIN_ROLE_UNKNOWN",
@@ -412,6 +413,12 @@ test("paper Reference chain roles are mapped to semantic types only by Structure
   assert.match(chainSource, /paper_reference_chain_entry/);
   assert.doesNotMatch(chainSource, /return \{ \.\.\.segment, type: "reference"/);
   assert.doesNotMatch(chainSource, /type: "reference",/);
+  const retagStart = mainSource.indexOf("function retagSegmentAsReference(");
+  const retagEnd = mainSource.indexOf("\nfunction applyReferenceMode(", retagStart + 1);
+  const retagSource = mainSource.slice(retagStart, retagEnd);
+  assert.match(retagSource, /applyPaperReferenceChainClassification\(/);
+  assert.match(retagSource, /structureRole: "paper_reference_mode_retag"/);
+  assert.doesNotMatch(retagSource, /type: "reference"/);
 });
 
 test("paper heading-to-body continuation typing is written only by Structure Authority", () => {
