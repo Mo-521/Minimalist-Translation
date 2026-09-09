@@ -489,6 +489,21 @@ test("paper split roles are mapped to semantic types only by Structure Authority
   assert.doesNotMatch(singleSource, /\btype\b\s*[,)]/);
 });
 
+test("first-page Abstract continuation is typed only by Structure Authority", () => {
+  const classify = authority.semanticStructureProducerStages.applyPaperFirstPageAbstractClassification;
+  assert.equal(classify({}, { structureRole: "paper_first_page_abstract_continuation" }).type, "abstract");
+  assert.throws(
+    () => classify({}, { structureRole: "paper_first_page_abstract_unknown" }),
+    (error) => error && error.code === "SEMANTIC_PAPER_FIRST_PAGE_ABSTRACT_ROLE_UNKNOWN",
+  );
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const repairStart = mainSource.indexOf("function applyFirstPageAbstractContinuationRepair(");
+  const repairEnd = mainSource.indexOf("\nfunction repairPaperSourceTextSpacingValue(", repairStart + 1);
+  const repairSource = mainSource.slice(repairStart, repairEnd);
+  assert.match(repairSource, /applyPaperFirstPageAbstractClassification\(/);
+  assert.doesNotMatch(repairSource, /type: "abstract"/);
+});
+
 test("paper heading-to-body continuation typing is written only by Structure Authority", () => {
   const stages = authority.semanticStructureProducerStages;
   const heading = { type: "heading", sourceText: "continues as prose" };

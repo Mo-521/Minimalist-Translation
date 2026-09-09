@@ -94,6 +94,9 @@ const PAPER_SPLIT_ROLE_TYPES = Object.freeze({
   paper_split_abstract: "abstract",
   paper_split_license_text: "licenseText",
 });
+const PAPER_FIRST_PAGE_ABSTRACT_ROLE_TYPES = Object.freeze({
+  paper_first_page_abstract_continuation: "abstract",
+});
 
 const PAPER_TRANSLATE_TYPES = new Set([
   "title", "affiliation", "correspondence", "receivedDate", "funding", "abstract-title",
@@ -481,6 +484,18 @@ function applyPaperSplitSegmentClassification(segment, evidence = {}) {
   return { ...segment, type: semanticType };
 }
 
+function applyPaperFirstPageAbstractClassification(segment, evidence = {}) {
+  if (!segment || typeof segment !== "object") {
+    throw structureError("SEMANTIC_PAPER_FIRST_PAGE_ABSTRACT_SEGMENT_REQUIRED", "First-page Abstract continuation candidate is required for role classification");
+  }
+  const structureRole = String(evidence.structureRole || "").trim();
+  const semanticType = PAPER_FIRST_PAGE_ABSTRACT_ROLE_TYPES[structureRole];
+  if (!semanticType) {
+    throw structureError("SEMANTIC_PAPER_FIRST_PAGE_ABSTRACT_ROLE_UNKNOWN", `Unknown first-page Abstract role: ${structureRole || "<empty>"}`, { structureRole });
+  }
+  return { ...segment, type: semanticType };
+}
+
 function applyPaperBodyContinuationSegmentClassification(segment, evidence = {}) {
   if (!segment || typeof segment !== "object") {
     throw structureError("SEMANTIC_PAPER_BODY_CONTINUATION_SEGMENT_REQUIRED", "Paper body-continuation segment candidate is required");
@@ -551,6 +566,7 @@ const semanticStructureProducerStages = Object.freeze({
   applyPaperRecoveryClassification,
   applyPaperMergedSegmentClassification,
   applyPaperSplitSegmentClassification,
+  applyPaperFirstPageAbstractClassification,
   applyPaperBodyContinuationSegmentClassification,
   applyPaperBodyContinuationMergedClassification,
   materializePaperClassifiedCarrier,

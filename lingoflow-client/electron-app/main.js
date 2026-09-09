@@ -3416,13 +3416,13 @@ function applyFirstPageAbstractContinuationRepair(segments, config) {
     const text = normalizeExtractedPdfText(segment.sourceText || "");
     if (!text || isCaptionMarkerText(text) || isReferencesHeadingText(text)) return segment;
     if (y <= abstractStartY || y >= abstractStopY) return segment;
-    return {
-      ...segment,
-      type: "abstract",
+    const { type: _ignoredType, semanticType: _ignoredSemanticType, ...untypedSegment } = segment;
+    return semanticStructureProducerStages.applyPaperFirstPageAbstractClassification({
+      ...untypedSegment,
       column: "single",
       zoneType: segment.zoneType || "abstractZone",
       classificationReason: [segment.classificationReason, "first_page_abstract_continuation"].filter(Boolean).join("|"),
-    };
+    }, { structureRole: "paper_first_page_abstract_continuation" });
   });
 }
 
