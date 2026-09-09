@@ -90,9 +90,9 @@ test('source merge entry points are guarded and rejected merges preserve incomin
   assert.match(genericMerge, /finalizePaperSourceMergeContract\(base, incoming\)/);
   assert.match(genericMerge, /status !== 'ok'\) return null/);
   assert.match(danglingMerge, /finalizePaperSourceMergeContract\(previous, next\)/);
-  assert.match(headingFlow, /if \(mergeSegments\(/);
-  assert.match(bodyFlow, /if \(mergeSegments\(/);
-  assert.match(captionFlow, /if \(mergeSegments\(/);
+  assert.match(headingFlow, /const merged = mergeSegments\([\s\S]+?if \(merged\)/);
+  assert.match(bodyFlow, /const merged = mergeSegments\([\s\S]+?if \(merged\)/);
+  assert.match(captionFlow, /const merged = mergeSegments\([\s\S]+?if \(merged\)/);
   assert.doesNotMatch(mainSource, /function mergeSimpleCrossPageParagraphs\(/);
   assert.match(inlineMerge, /finalizePaperSourceMergeContract\(body, caption\)/);
   assert.match(paragraphMerge, /finalizePaperSourceMergeContract\(previous, classifiedParagraph\)/);

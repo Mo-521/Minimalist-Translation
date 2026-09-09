@@ -437,6 +437,30 @@ test("paper coverage recovery roles are mapped to semantic types only by Structu
   assert.doesNotMatch(recoverySource, /type: "body"/);
 });
 
+test("paper merge roles are mapped to semantic types only by Structure Authority", () => {
+  const classify = authority.semanticStructureProducerStages.applyPaperMergedSegmentClassification;
+  const cases = [
+    ["paper_merge_title_continuation", "title"],
+    ["paper_merge_heading_continuation", "heading"],
+    ["paper_merge_body_continuation", "body"],
+    ["paper_merge_caption_fragment", "caption"],
+    ["paper_merge_abstract_accumulator", "abstract"],
+  ];
+  cases.forEach(([structureRole, semanticType]) => {
+    assert.equal(classify({ sourceText: "candidate" }, { structureRole }).type, semanticType);
+  });
+  assert.throws(
+    () => classify({ sourceText: "candidate" }, { structureRole: "paper_merge_unknown" }),
+    (error) => error && error.code === "SEMANTIC_PAPER_MERGE_ROLE_UNKNOWN",
+  );
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const mergeStart = mainSource.indexOf("function mergeSegments(");
+  const mergeEnd = mainSource.indexOf("\nfunction segmentStartsWithBodyText(", mergeStart + 1);
+  const mergeSource = mainSource.slice(mergeStart, mergeEnd);
+  assert.match(mergeSource, /applyPaperMergedSegmentClassification\(/);
+  assert.doesNotMatch(mergeSource, /base\.type\s*=/);
+});
+
 test("paper heading-to-body continuation typing is written only by Structure Authority", () => {
   const stages = authority.semanticStructureProducerStages;
   const heading = { type: "heading", sourceText: "continues as prose" };

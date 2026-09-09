@@ -2849,14 +2849,18 @@ function applyHeadingContinuationMerges(segments) {
   (segments || []).forEach((segment) => {
     const previous = output[output.length - 1];
     if (canMergeTitleContinuation(previous, segment)) {
-      if (mergeSegments(previous, segment, "title", "single")) {
-        previous.mergeReason = previous.mergeReason || "title_continuation";
+      const merged = mergeSegments(previous, segment, "paper_merge_title_continuation", "single");
+      if (merged) {
+        merged.mergeReason = merged.mergeReason || "title_continuation";
+        output[output.length - 1] = merged;
         return;
       }
     }
     if (canMergeSectionHeadingContinuation(previous, segment)) {
-      if (mergeSegments(previous, segment, "heading", previous.column || segment.column || "single")) {
-        previous.mergeReason = previous.mergeReason || "heading_continuation";
+      const merged = mergeSegments(previous, segment, "paper_merge_heading_continuation", previous.column || segment.column || "single");
+      if (merged) {
+        merged.mergeReason = merged.mergeReason || "heading_continuation";
+        output[output.length - 1] = merged;
         return;
       }
     }
@@ -2911,8 +2915,9 @@ function applyBodyContinuationMerges(segments) {
     });
     if (previous && previous.type === "body" && reason && (segment.type === "heading" || segment.type === "body")) {
       const wasHeading = segment.type === "heading";
-      if (mergeSegments(previous, classifiedSegment, previous.type, previous.column || segment.column)) {
-        output[output.length - 1] = semanticStructureProducerStages.applyPaperBodyContinuationMergedClassification(previous, {
+      const merged = mergeSegments(previous, classifiedSegment, "paper_merge_body_continuation", previous.column || segment.column);
+      if (merged) {
+        output[output.length - 1] = semanticStructureProducerStages.applyPaperBodyContinuationMergedClassification(merged, {
           continuationReason: reason,
           incomingWasHeading: wasHeading,
         });
@@ -3138,18 +3143,23 @@ function getSegmentNoiseEvidence(segment, segmentIndex) {
   };
 }
 
-function mergeSegments(base, incoming, type, column) {
+function mergeSegments(base, incoming, structureRole, column) {
   const sourcePageContract = finalizePaperSourceMergeContract(base, incoming);
   if (sourcePageContract.status !== 'ok') return null;
-  base.lines.push(...(incoming.lines || []));
-  base.lineBoxes.push(...(incoming.lineBoxes || []).map((line) => ({ ...line, column: column || base.column || "single" })));
-  base.items.push(...(incoming.items || []));
-  base.sourceText = makeParagraphSourceText(base.lines.map((line) => ({ text: getSegmentLineText(line) })));
-  base.previewText = makePreviewText(base.sourceText);
-  base.bbox = makeBBoxFromLineBoxes(base.lineBoxes);
-  base.type = type || base.type;
-  base.column = column || base.column;
-  return base;
+  const { type: _ignoredType, semanticType: _ignoredSemanticType, ...untypedBase } = base;
+  const lines = [...(base.lines || []), ...(incoming.lines || [])];
+  const lineBoxes = [...(base.lineBoxes || []), ...(incoming.lineBoxes || []).map((line) => ({ ...line, column: column || base.column || "single" }))];
+  const sourceText = makeParagraphSourceText(lines.map((line) => ({ text: getSegmentLineText(line) })));
+  return semanticStructureProducerStages.applyPaperMergedSegmentClassification({
+    ...untypedBase,
+    lines,
+    lineBoxes,
+    items: [...(base.items || []), ...(incoming.items || [])],
+    sourceText,
+    previewText: makePreviewText(sourceText),
+    bbox: makeBBoxFromLineBoxes(lineBoxes),
+    column: column || base.column,
+  }, { structureRole });
 }
 
 function segmentStartsWithBodyText(segment) {
@@ -4117,7 +4127,11 @@ function applyCaptionFragmentMerges(segments) {
     }
     const previous = output[output.length - 1];
     if (canMergeBodyIntoCaption(previous, segment)) {
-      if (mergeSegments(previous, segment, "caption", previous.column)) return;
+      const merged = mergeSegments(previous, segment, "paper_merge_caption_fragment", previous.column);
+      if (merged) {
+        output[output.length - 1] = merged;
+        return;
+      }
     }
     output.push(segment);
   });
@@ -5006,10 +5020,13 @@ function postProcessPdfSegments(segments, pipelineConfig) {
         abstractBuffer = null;
         output.push(segment);
       } else {
-        if (!mergeSegments(abstractBuffer, segment, "", "single")) {
+        const merged = mergeSegments(abstractBuffer, segment, "paper_merge_abstract_accumulator", "single");
+        if (!merged) {
           if (abstractBuffer.lines.length) output.push(abstractBuffer);
           abstractBuffer = null;
           output.push(segment);
+        } else {
+          abstractBuffer = merged;
         }
       }
       return;
