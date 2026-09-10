@@ -8109,7 +8109,7 @@ function paperRenderedBoxesOverlap(a, b, minGap) {
 }
 
 function detectPaperParagraphCollision(currentRenderedBox, previousRenderedBoxes, segmentType) {
-  const type = String(segmentType || "body");
+  const type = requireSemanticConsumerType(segmentType, "paper paragraph collision detection");
   const minGap = type === "heading" ? 2.5 : (type === "metadata" || type === "correspondence" || type === "funding" || type === "receivedDate" ? 1 : 1.5);
   const currentSourceY = Number(currentRenderedBox && currentRenderedBox._sourceY != null ? currentRenderedBox._sourceY : -1);
   return (previousRenderedBoxes || []).some((box) => {
