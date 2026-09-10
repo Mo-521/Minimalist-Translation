@@ -3602,7 +3602,7 @@ function getPaperPageHeightFromSegment(segment, fallbackHeight) {
 function inferPaperColumnFromBbox(segment, pageWidth) {
   if (!segment || !segment.bbox) return String(segment && segment.column || "single");
   if (isPaperFullWidthSegmentType(segment)) return "single";
-  const type = String(segment.type || "body");
+  const type = requireSemanticConsumerType(segment, "paper column inference from bbox");
   if (!["body", "heading", "caption"].includes(type)) return String(segment.column || "single");
   const width = getPaperPageWidthFromSegment(segment, pageWidth);
   const geometry = getPaperColumnGeometry(width);
