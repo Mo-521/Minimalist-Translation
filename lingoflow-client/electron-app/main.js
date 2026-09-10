@@ -3317,7 +3317,9 @@ function findPaperHeadingBodyBoundary(text) {
 }
 
 function splitHeadingBodyMixedSegment(segment) {
-  if (!segment || !["body", "heading"].includes(segment.type || "body")) return [segment];
+  if (!segment) return [segment];
+  const type = requireSemanticConsumerType(segment, "paper heading-body mixed split");
+  if (!["body", "heading"].includes(type)) return [segment];
   const lines = segment.lines || [];
   if (lines.length === 1) {
     const mixed = findPaperHeadingBodyBoundary(getSegmentLineText(lines[0]) || segment.sourceText);

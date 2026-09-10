@@ -241,6 +241,7 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.match(mainSource, /requireSemanticConsumerType\(candidate, "paper caption continuation body candidate"\)/);
   assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper segment zone assignment"\)/);
   assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper image-region body counter-proof"\)/);
+  assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper heading-body mixed split"\)/);
   assert.match(mainSource, /hasPdfExportReportDisposition\(report, "translate", "visual mask fallback"\)/);
   assert.match(mainSource, /assertSemanticConsumerTypeProjection\(segment, rawType, "export_report"\)/);
   assert.match(rendererSource, /semanticStructureConsumerReports:\s*state\.semanticStructureConsumerReports\.slice\(\)/);
@@ -395,5 +396,16 @@ test("paper image-region body counter-proof rejects missing semantic type instea
   assert.notEqual(end, -1);
   const source = mainSource.slice(start, end);
   assert.match(source, /requireSemanticConsumerType\(segment, "paper image-region body counter-proof"\)/);
+  assert.doesNotMatch(source, /segment\.type \|\| ["']body["']/);
+});
+
+test("paper heading-body mixed split rejects missing semantic type instead of defaulting to Body", () => {
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const start = mainSource.indexOf("function splitHeadingBodyMixedSegment(");
+  const end = mainSource.indexOf("\nfunction ", start + 1);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const source = mainSource.slice(start, end);
+  assert.match(source, /requireSemanticConsumerType\(segment, "paper heading-body mixed split"\)/);
   assert.doesNotMatch(source, /segment\.type \|\| ["']body["']/);
 });
