@@ -3675,7 +3675,9 @@ function bboxCrossesRegionY(box, region) {
 }
 
 function shouldSplitByImageRegion(segment, imageRegions, captionRegions) {
-  if (!segment || !["body", "heading"].includes(String(segment.type || "body"))) return false;
+  if (!segment) return false;
+  const type = requireSemanticConsumerType(segment, "paper image-region split eligibility");
+  if (!["body", "heading"].includes(type)) return false;
   const box = segment.bbox || {};
   const regions = [...(imageRegions || []), ...(captionRegions || [])].filter(Boolean);
   return regions.some((region) => {
