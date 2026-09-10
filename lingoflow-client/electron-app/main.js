@@ -15,6 +15,7 @@ const {
   bindSemanticStructureConsumerPayload,
   bindSemanticStructureConsumerSegments,
   assertSemanticConsumerTypeProjection,
+  requireSemanticConsumerType,
 } = require("./semantic-structure-consumer-authority");
 
 console.log("[LINGOFLOW][REAL MAIN LOADED]", __filename);
@@ -7625,7 +7626,7 @@ function getReadablePaperFontSizeRangeByVisualRole(role) {
 }
 
 function getPaperReadableFontRange(segment) {
-  const type = typeof segment === "string" ? segment : String(segment && segment.type || "body");
+  const type = requireSemanticConsumerType(segment, "paper readable font range");
   return getReadablePaperFontSizeRange(type);
 }
 
@@ -7634,7 +7635,7 @@ function getPaperLineHeight(fontSize, segmentType, text = "", visualRole = "") {
 }
 
 function getMinimumPaperWritableHeight(segment, style, visualEqualZhFontSizeScale, targetLanguage, layoutAuthority = null) {
-  const type = String(segment && segment.type || "body");
+  const type = requireSemanticConsumerType(segment, "paper minimum writable height");
   const authority = layoutAuthority || paperLayoutAuthority.resolvePaperLayoutAuthority({
     segment, segmentType: type, kind: getPdfSegmentWriteKind(segment, []), averageFontSize: Number(style && style.preferredFontSize || 9),
     targetLanguage, visualEqualZhFontSizeScale, text: String(segment && segment.translatedText || ""), isCjkTextFn: isCjkText,
@@ -7708,7 +7709,7 @@ function getSegmentSourceFontStats(segment, pageBodyMedianFontSize) {
   const sourceMinFontSize = sizes.length ? Math.min(...sizes) : sourceDominantFontSize;
   const ratio = sourceDominantFontSize / Math.max(1, fallback);
   const text = normalizeExtractedPdfText(segment && segment.sourceText || "");
-  const type = String(segment && segment.type || "body");
+  const type = requireSemanticConsumerType(segment, "paper source font stats");
   const sourceBoldLike = segmentHasBoldLikeFont(segment) ||
     (sourceDominantFontSize >= fallback * 1.18 && text.length > 0 && text.length <= 160) ||
     (["title", "heading"].includes(type) && sourceDominantFontSize >= fallback * 1.1);
@@ -15663,7 +15664,7 @@ function isEnglishTargetLanguage(targetLanguage) {
 
 function getPaperWriteStrategy(segment, _targetLanguage, pipelineConfig) {
   if (!isPaperPdfConfig(pipelineConfig)) return "";
-  const type = String(segment && segment.type || "body");
+  const type = requireSemanticConsumerType(segment, "paper write strategy");
   if (type === "title") return "paper_full_width_title";
   if (type === "abstract" || type === "abstract-title") return "paper_full_width_abstract";
   if (type === "keywords") return "paper_full_width_keywords";
@@ -15696,7 +15697,7 @@ function makeColumnClippedWriteBox(writeBox, column, pageWidth) {
 
 function getColumnLocalWriteBox(writeBox, segment, pageSize, pipelineConfig) {
   if (!isPaperPdfConfig(pipelineConfig) || !writeBox || !pageSize) return writeBox;
-  const type = String(segment && segment.type || "body");
+  const type = requireSemanticConsumerType(segment, "paper column-local write box");
   if (!["body", "heading"].includes(type)) return writeBox;
   const pageWidth = Number(pageSize.width || 0) || getPaperPageWidthFromSegment(segment, 612);
   const inferredColumn = inferPaperColumnFromBbox(segment, pageWidth);

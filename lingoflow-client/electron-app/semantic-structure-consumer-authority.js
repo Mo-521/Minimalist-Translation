@@ -63,6 +63,18 @@ function assertSemanticConsumerTypeProjection(segment, projectedType, stage = "c
   return segment && segment.semanticStructureArtifactId ? canonicalType : projected;
 }
 
+function requireSemanticConsumerType(segmentOrType, stage = "semantic_consumer") {
+  const canonicalType = typeof segmentOrType === "string"
+    ? String(segmentOrType).trim()
+    : String(segmentOrType && (segmentOrType.semanticType || segmentOrType.type) || "").trim();
+  if (!canonicalType) {
+    throw consumerError("SEMANTIC_CONSUMER_TYPE_REQUIRED", `Canonical semantic type is required at ${stage}`, { stage });
+  }
+  return typeof segmentOrType === "string"
+    ? canonicalType
+    : assertSemanticConsumerTypeProjection(segmentOrType, canonicalType, stage);
+}
+
 function artifactHashBody(artifact) {
   return {
     schemaVersion: artifact.schemaVersion,
@@ -292,6 +304,7 @@ module.exports = {
   validateAndRefreezeArtifact,
   compareConsumerCarrierSegments,
   assertSemanticConsumerTypeProjection,
+  requireSemanticConsumerType,
   bindSemanticStructureConsumerSegments,
   bindSemanticStructureConsumerPayload,
 };

@@ -11,6 +11,7 @@ const {
   validateAndRefreezeArtifact,
   compareConsumerCarrierSegments,
   assertSemanticConsumerTypeProjection,
+  requireSemanticConsumerType,
   bindSemanticStructureConsumerSegments,
   bindSemanticStructureConsumerPayload,
 } = require("../../../electron-app/semantic-structure-consumer-authority");
@@ -125,6 +126,11 @@ test("post-freeze flow or export reclassification fails instead of repairing can
     semanticStructureArtifactId: "semantic-structure-sha256:test",
   };
   assert.equal(assertSemanticConsumerTypeProjection(segment, "body", "layout"), "body");
+  assert.equal(requireSemanticConsumerType(segment, "layout"), "body");
+  assert.equal(requireSemanticConsumerType("heading", "layout"), "heading");
+  assert.throws(() => requireSemanticConsumerType(null, "layout"), {
+    code: "SEMANTIC_CONSUMER_TYPE_REQUIRED",
+  });
   assert.throws(() => assertSemanticConsumerTypeProjection(segment, "formula", "flow"), {
     code: "SEMANTIC_CONSUMER_RECLASSIFICATION",
   });
@@ -215,6 +221,11 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.match(mainSource, /requirePdfExportSemanticDisposition\(segment, "source mask preserve boxes"\)/);
   assert.match(mainSource, /requirePdfExportSemanticDisposition\(seg, 'pre-text source mask preserve boxes'\)/);
   assert.doesNotMatch(mainSource, /_prePreserveTypeSet/);
+  assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper readable font range"\)/);
+  assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper minimum writable height"\)/);
+  assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper source font stats"\)/);
+  assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper write strategy"\)/);
+  assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper column-local write box"\)/);
   assert.match(mainSource, /hasPdfExportReportDisposition\(report, "translate", "visual mask fallback"\)/);
   assert.match(mainSource, /assertSemanticConsumerTypeProjection\(segment, rawType, "export_report"\)/);
   assert.match(rendererSource, /semanticStructureConsumerReports:\s*state\.semanticStructureConsumerReports\.slice\(\)/);
