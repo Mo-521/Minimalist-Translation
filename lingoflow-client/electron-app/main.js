@@ -3727,7 +3727,9 @@ function makePaperImageCaptionRegionPart(carrier, evidence) {
 }
 
 function splitSegmentByImageCaptionRegions(segment, pageContext) {
-  if (!segment || !["body", "heading"].includes(String(segment.type || "body"))) return [segment];
+  if (!segment) return [segment];
+  const type = requireSemanticConsumerType(segment, "paper image-caption region split");
+  if (!["body", "heading"].includes(type)) return [segment];
   const imageRegions = pageContext && pageContext.imageRegions || [];
   const captionRegions = pageContext && pageContext.captionRegions || [];
   if (!imageRegions.length && !captionRegions.length) return [segment];
@@ -3780,7 +3782,7 @@ function splitSegmentByImageCaptionRegions(segment, pageContext) {
     part.splitIndex = index + 1;
     part.splitCount = chunks.length;
     part.imageRegionSegmentationApplied = true;
-    part.bodySplitByImageRegion = safeType !== String(segment.type || "body") || chunks.length > 1;
+    part.bodySplitByImageRegion = safeType !== type || chunks.length > 1;
     part.imageRegionSplitReason = "body_split_by_image_or_caption_region";
     part.classificationReason = safeType === "caption" ? "caption_boundary_split" : (safeType === "imageText" ? "image_region_preserve_split" : (part.classificationReason || "image_caption_region_boundary_split"));
     if (chunk.semanticType === "imageText" && safeType !== "imageText") {
@@ -3843,7 +3845,9 @@ function makeFallbackPaperOversizedChunks(entries, segment, reasons) {
 
 function getPaperOversizedSplitReasons(segment, pageContext) {
   const reasons = [];
-  if (!segment || !["body", "heading"].includes(String(segment.type || "body"))) return reasons;
+  if (!segment) return reasons;
+  const type = requireSemanticConsumerType(segment, "paper oversized split reasons");
+  if (!["body", "heading"].includes(type)) return reasons;
   const lineCount = Array.isArray(segment.lineBoxes) ? segment.lineBoxes.length : (segment.lines || []).length;
   const text = cleanPdfText(segment.sourceText || "");
   const bbox = segment.bbox || {};
