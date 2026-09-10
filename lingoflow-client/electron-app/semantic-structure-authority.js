@@ -86,6 +86,7 @@ const PAPER_MERGE_ROLE_TYPES = Object.freeze({
   paper_merge_heading_continuation: "heading",
   paper_merge_body_continuation: "body",
   paper_merge_caption_fragment: "caption",
+  paper_merge_caption_continuation: "caption",
   paper_merge_abstract_accumulator: "abstract",
 });
 const PAPER_SPLIT_ROLE_TYPES = Object.freeze({

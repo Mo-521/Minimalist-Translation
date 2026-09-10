@@ -444,6 +444,7 @@ test("paper merge roles are mapped to semantic types only by Structure Authority
     ["paper_merge_heading_continuation", "heading"],
     ["paper_merge_body_continuation", "body"],
     ["paper_merge_caption_fragment", "caption"],
+    ["paper_merge_caption_continuation", "caption"],
     ["paper_merge_abstract_accumulator", "abstract"],
   ];
   cases.forEach(([structureRole, semanticType]) => {
@@ -459,6 +460,12 @@ test("paper merge roles are mapped to semantic types only by Structure Authority
   const mergeSource = mainSource.slice(mergeStart, mergeEnd);
   assert.match(mergeSource, /applyPaperMergedSegmentClassification\(/);
   assert.doesNotMatch(mergeSource, /base\.type\s*=/);
+
+  const captionContinuationStart = mainSource.indexOf("function mergeImageAdjacentCaptionContinuations(");
+  const captionContinuationEnd = mainSource.indexOf("\nfunction buildPaperParagraphRunWriteGroups(", captionContinuationStart + 1);
+  const captionContinuationSource = mainSource.slice(captionContinuationStart, captionContinuationEnd);
+  assert.match(captionContinuationSource, /structureRole: 'paper_merge_caption_continuation'/);
+  assert.doesNotMatch(captionContinuationSource, /type:\s*['"]caption['"]/);
 });
 
 test("paper split roles are mapped to semantic types only by Structure Authority", () => {

@@ -12408,9 +12408,9 @@ function mergeImageAdjacentCaptionContinuations(segments, imageRegionsByPage, pi
     const mergedText = makeParagraphSourceText(uniqueMemberTexts.map((entry) => ({ text: entry.text })));
     const lineBoxes = members.flatMap((member) => member.lineBoxes || []).map((line) => ({ ...line, segmentId: String(segment.id || line.segmentId || '') }));
     const lines = members.flatMap((member) => member.lines || []);
-    output.push({
-      ...segment,
-      type: 'caption',
+    const { type: _ignoredType, semanticType: _ignoredSemanticType, ...untypedSegment } = segment;
+    output.push(semanticStructureProducerStages.applyPaperMergedSegmentClassification({
+      ...untypedSegment,
       zoneType: 'captionZone',
       sourceText: mergedText,
       previewText: makePreviewText(mergedText),
@@ -12424,7 +12424,7 @@ function mergeImageAdjacentCaptionContinuations(segments, imageRegionsByPage, pi
       captionContinuationRecoveredSegmentIds: members.slice(1).map((member) => String(member.id || '')).filter(Boolean),
       classificationReason: 'image_adjacent_caption_continuation_recovered',
       warnings: Array.from(new Set([...(segment.warnings || []), 'caption_continuation_recovered_before_layout'])),
-    });
+    }, { structureRole: 'paper_merge_caption_continuation' }));
   });
   return output;
 }
