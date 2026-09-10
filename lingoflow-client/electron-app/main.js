@@ -5129,7 +5129,7 @@ function postProcessPdfSegments(segments, pipelineConfig) {
 
 function logPdfSegmentationDebug(totalPages, lines, segments, marginIgnoredLines, ignoredNoiseLines, ignoredPageNumberLines, imageRegionsByPage, ignoredImageTextLines, ignoredImageTextPreviews) {
   const perPage = {};
-  const bodySegments = segments.filter((segment) => (segment.type || "body") === "body");
+  const bodySegments = segments.filter((segment) => requireSemanticConsumerType(segment, "PDF segmentation diagnostics") === "body");
   const headerSegments = segments.filter((segment) => segment.type === "header").length;
   const titleSegments = segments.filter((segment) => segment.type === "title").length;
   const authorSegments = segments.filter((segment) => segment.type === "author").length;
@@ -5194,7 +5194,7 @@ function logPdfSegmentationDebug(totalPages, lines, segments, marginIgnoredLines
       id: segment.id,
       pageNumber: segment.pageNumber,
       column: segment.column,
-      type: segment.type || "body",
+      type: requireSemanticConsumerType(segment, "PDF segment diagnostic record"),
       preview: String(segment.sourceText || "").slice(0, 80),
       lineBoxes: Array.isArray(segment.lineBoxes) ? segment.lineBoxes.length : 0,
       sourceTextLength: String(segment.sourceText || "").length,
@@ -5219,7 +5219,7 @@ function logPdfSegmentationDebug(totalPages, lines, segments, marginIgnoredLines
         id: segment.id,
         pageNumber: segment.pageNumber,
         column: segment.column,
-        type: segment.type || "body",
+        type: requireSemanticConsumerType(segment, "PDF focus diagnostic record"),
         lineBoxes: Array.isArray(segment.lineBoxes) ? segment.lineBoxes.length : 0,
         preview: String(segment.sourceText || "").slice(0, 100),
       }));
@@ -10848,7 +10848,7 @@ function makePaperLayoutWritePlanItem(input) {
   ).slice(0, 180);
   return {
     segmentId: String(segment.id || ""),
-    type: String(segment.type || "body"),
+    type: requireSemanticConsumerType(segment, "paper layout write plan item"),
     semanticDecisionId: String(segment.semanticDecisionId || ""),
     semanticStructureArtifactId: String(segment.semanticStructureArtifactId || ""),
     semanticSourceOwnership: segment.semanticSourceOwnership || null,
@@ -12542,7 +12542,7 @@ function buildPaperParagraphRunWriteGroups(segments, paragraphRunResult, mergeSt
 }
 
 function isPaperReportFontSizeBelowReadable(report) {
-  const type = String(report && report.type || "body");
+  const type = requireSemanticConsumerType(report, "paper readable-font audit");
   const kind = ["correspondence", "funding", "receivedDate", "affiliation", "keywords"].includes(type) ? "metadata" : type;
   const range = report && report.cjkFontScaleApplied && report.sourceVisualRole
     ? getReadablePaperFontSizeRangeByVisualRole(report.sourceVisualRole)
@@ -12552,7 +12552,7 @@ function isPaperReportFontSizeBelowReadable(report) {
 }
 
 function isPaperReportHighDensity(report) {
-  const type = String(report && report.type || "body");
+  const type = requireSemanticConsumerType(report, "paper density audit");
   const density = Number(report && report.writeBoxTextDensityRatio || 0);
   if (!density) return false;
   if (["body", "abstract", "abstract-title"].includes(type)) return density > 0.98;

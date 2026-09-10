@@ -226,6 +226,12 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper source font stats"\)/);
   assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper write strategy"\)/);
   assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper column-local write box"\)/);
+  assert.match(mainSource, /requireSemanticConsumerType\(segment, "PDF segmentation diagnostics"\)/);
+  assert.match(mainSource, /requireSemanticConsumerType\(segment, "PDF segment diagnostic record"\)/);
+  assert.match(mainSource, /requireSemanticConsumerType\(segment, "PDF focus diagnostic record"\)/);
+  assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper layout write plan item"\)/);
+  assert.match(mainSource, /requireSemanticConsumerType\(report, "paper readable-font audit"\)/);
+  assert.match(mainSource, /requireSemanticConsumerType\(report, "paper density audit"\)/);
   assert.match(mainSource, /hasPdfExportReportDisposition\(report, "translate", "visual mask fallback"\)/);
   assert.match(mainSource, /assertSemanticConsumerTypeProjection\(segment, rawType, "export_report"\)/);
   assert.match(rendererSource, /semanticStructureConsumerReports:\s*state\.semanticStructureConsumerReports\.slice\(\)/);
