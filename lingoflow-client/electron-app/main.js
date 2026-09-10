@@ -12381,7 +12381,7 @@ function mergeImageAdjacentCaptionContinuations(segments, imageRegionsByPage, pi
       if (!candidate || !candidate.bbox) break;
       const candidatePage = Number(resolveSegmentSourcePage(candidate).sourcePage || candidate.pageNumber || 0);
       if (candidatePage !== pageNumber || String(candidate.column || 'single') !== column) continue;
-      if (String(candidate.type || 'body') !== 'body') break;
+      if (requireSemanticConsumerType(candidate, "paper caption continuation body candidate") !== "body") break;
       if (finalizePaperSourceMergeContract(segment, candidate).status !== 'ok') continue;
       const candidateTop = Number(candidate.bbox.y || 0);
       const candidateBottom = candidateTop + Number(candidate.bbox.height || 0);
