@@ -45,6 +45,9 @@ test('ordinary PDF flow types are unchanged', () => {
 test('paragraph reconstruction consumes the canonical flow type before forming runs', () => {
   const builder = extractFunction(mainSource, 'buildPaperParagraphRuns');
   assert.match(builder, /resolvePaperParagraphFlowType\(segment, pipelineConfig\)/);
+  assert.match(builder, /currentType = effectiveType;/);
+  assert.doesNotMatch(builder, /effectiveType \|\| String\(segment\.type \|\| "body"\)/);
+  assert.doesNotMatch(builder, /const rawType = String\(segment\.type \|\| "body"\)/);
   assert.match(mainSource, /buildPaperParagraphRuns\(allSegments, paperPageBodyFontStats, pipelineConfig\)/);
 });
 

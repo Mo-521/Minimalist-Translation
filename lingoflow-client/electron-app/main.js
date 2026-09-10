@@ -11340,14 +11340,13 @@ function buildPaperParagraphRuns(allSegments, pageBodyFontStats, pipelineConfig 
   const startNewRun = (segment, breakBeforeReason, effectiveType) => {
     currentPage = Number(segment.pageNumber || 0);
     currentColumn = String(segment.column || "single");
-    currentType = effectiveType || String(segment.type || "body");
+    currentType = effectiveType;
     currentBreakBefore = breakBeforeReason;
     currentSegments = [segment];
     currentReclassifiedCount = 0;
   };
   sorted.forEach((segment) => {
     if (!segment) return;
-    const rawType = String(segment.type || "body");
     const pageNumber = Number(segment.pageNumber || 0);
     const column = String(segment.column || "single");
     // Reclassify caption-tagged segments that are actually inline body references
