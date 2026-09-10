@@ -232,6 +232,9 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper layout write plan item"\)/);
   assert.match(mainSource, /requireSemanticConsumerType\(report, "paper readable-font audit"\)/);
   assert.match(mainSource, /requireSemanticConsumerType\(report, "paper density audit"\)/);
+  assert.match(mainSource, /requireSemanticConsumerType\(segment, 'paper image-region write box clipping'\)/);
+  assert.match(mainSource, /requireSemanticConsumerType\(segment, 'paper blocking-zone write box planning'\)/);
+  assert.match(mainSource, /requireSemanticConsumerType\(report, 'paper image\/caption layout audit'\)/);
   assert.match(mainSource, /hasPdfExportReportDisposition\(report, "translate", "visual mask fallback"\)/);
   assert.match(mainSource, /assertSemanticConsumerTypeProjection\(segment, rawType, "export_report"\)/);
   assert.match(rendererSource, /semanticStructureConsumerReports:\s*state\.semanticStructureConsumerReports\.slice\(\)/);
@@ -276,4 +279,40 @@ test("unreachable legacy structure producers and registry aliases stay retired",
   assert.doesNotMatch(mainSource, /line\.type\s*=\s*["']imageText["']/);
   assert.doesNotMatch(mainSource, /const pageLines = columnLines\.flatMap/);
   assert.doesNotMatch(mainSource, /current\.type\s*=\s*lineType/);
+});
+
+test("paper image and caption region layout consumers reject missing semantic type instead of defaulting to Body", () => {
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const slice = (name) => {
+    const start = mainSource.indexOf(`function ${name}(`);
+    assert.notEqual(start, -1, `${name} must exist`);
+    const bodyStart = mainSource.indexOf("{", mainSource.indexOf(")", start));
+    let depth = 0;
+    for (let index = bodyStart; index < mainSource.length; index += 1) {
+      if (mainSource[index] === "{") depth += 1;
+      if (mainSource[index] === "}") depth -= 1;
+      if (depth === 0) return mainSource.slice(start, index + 1);
+    }
+    throw new Error(`Unable to extract ${name}`);
+  };
+
+  [
+    ["clipPaperWriteBoxByImageRegions", /requireSemanticConsumerType\(segment, 'paper image-region write box clipping'\)/],
+    ["applyPaperImageCaptionBlockingZonesToWriteBox", /requireSemanticConsumerType\(segment, 'paper blocking-zone write box planning'\)/],
+    ["buildPaperImageCaptionLayoutAudit", /requireSemanticConsumerType\(report, 'paper image\/caption layout audit'\)/],
+  ].forEach(([name, guard]) => {
+    const source = slice(name);
+    assert.match(source, guard, `${name} must read the canonical type through Consumer Authority`);
+    assert.doesNotMatch(source, /\.type\s*\|\|\s*['"]body['"]/, `${name} must not default a missing semantic type to Body`);
+  });
+
+  assert.throws(
+    () => requireSemanticConsumerType({ id: "seg-untyped" }, "paper image-region write box clipping"),
+    (error) => error.code === "SEMANTIC_CONSUMER_TYPE_REQUIRED",
+  );
+  assert.throws(
+    () => requireSemanticConsumerType({ id: "report-untyped", writeApplied: true }, "paper image/caption layout audit"),
+    (error) => error.code === "SEMANTIC_CONSUMER_TYPE_REQUIRED",
+  );
+  assert.equal(requireSemanticConsumerType({ id: "seg-caption", type: "caption" }, "paper image/caption layout audit"), "caption");
 });

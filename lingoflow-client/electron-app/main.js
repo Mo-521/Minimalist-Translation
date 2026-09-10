@@ -15781,7 +15781,7 @@ function resolvePaperCaptionOwnRegionBox(segment, pageSize, blockingZonesByPageC
 
 function clipPaperWriteBoxByImageRegions(segment, writeBox, pipelineConfig) {
   if (!isPaperPdfConfig(pipelineConfig) || !segment || !writeBox) return writeBox;
-  if (!['body', 'heading'].includes(String(segment.type || 'body'))) return writeBox;
+  if (!['body', 'heading'].includes(requireSemanticConsumerType(segment, 'paper image-region write box clipping'))) return writeBox;
   const pageRegions = currentPdfImageRegionsByPage[String(segment.pageNumber || '')] || [];
   const captionRegions = String(segment.zoneType || '') === 'captionZone' ? [] : [];
   const regions = [...pageRegions, ...captionRegions].filter(Boolean);
@@ -15858,7 +15858,7 @@ function clipPaperWriteBoxByImageRegions(segment, writeBox, pipelineConfig) {
 // but it never silently moves or truncates already-fitted text.
 function applyPaperImageCaptionBlockingZonesToWriteBox(segment, writeBox, blockingZonesByPageColumn, minWritableHeight = 14) {
   if (!segment || !writeBox || !(blockingZonesByPageColumn instanceof Map)) return writeBox;
-  if (!['body', 'heading', 'abstract'].includes(String(segment.type || 'body'))) return writeBox;
+  if (!['body', 'heading', 'abstract'].includes(requireSemanticConsumerType(segment, 'paper blocking-zone write box planning'))) return writeBox;
   const pageNumber = Number(resolveSegmentSourcePage(segment).sourcePage || segment.pageNumber || 0);
   const column = String(segment.column || 'single');
   const segmentId = String(segment.id || '');
@@ -15919,7 +15919,7 @@ function buildPaperImageCaptionLayoutAudit(segmentReports, imageRegionsByPage, c
   const captionWriteIntoBodyRegionDetails = [];
   (segmentReports || []).forEach((report) => {
     if (!report || !report.writeApplied) return;
-    const type = String(report.type || 'body');
+    const type = requireSemanticConsumerType(report, 'paper image/caption layout audit');
     const pageNumber = Number(report.resolvedSourcePage || report.pageNumber || 0);
     const writeBox = report.finalWriteBox || report.writeBbox || report.writeBox;
     if (!writeBox) return;
