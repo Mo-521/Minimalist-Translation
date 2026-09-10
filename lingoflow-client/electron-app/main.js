@@ -12226,10 +12226,11 @@ function buildPaperParagraphLayoutCommits(maskOps, writeOps, layoutItems, report
 }
 
 function buildPaperCaptionBodyOwnershipValue(segment) {
+  const type = segment ? requireSemanticConsumerType(segment, "paper caption-body ownership value") : "";
   return {
     segmentId: String(segment && segment.id || ''),
     pageNumber: Number(segment && segment.pageNumber || 0),
-    type: String(segment && segment.type || 'body'),
+    type: String(type),
     zoneType: String(segment && segment.zoneType || ''),
     classificationReason: String(segment && segment.classificationReason || segment && segment.type || 'body'),
   };

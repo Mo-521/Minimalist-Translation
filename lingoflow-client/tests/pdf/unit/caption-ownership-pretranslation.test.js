@@ -36,9 +36,11 @@ function extractFunction(source, name) {
 }
 
 function makeContext() {
+  const { requireSemanticConsumerType } = require(path.join(projectRoot, 'electron-app', 'semantic-structure-consumer-authority.js'));
   const context = {
     crypto,
     console,
+    requireSemanticConsumerType,
     resolveSegmentSourcePage(segment) { return { sourcePage: Number(segment.pageNumber || 0) }; },
   };
   vm.createContext(context);
