@@ -2485,7 +2485,7 @@ function bboxOverlapRatio(a, b) {
 
 function assignSegmentZone(segment, pageZones) {
   if (!segment || !Array.isArray(pageZones)) return "";
-  const type = String(segment.type || "body");
+  const type = requireSemanticConsumerType(segment, "paper segment zone assignment");
   if (type === "reference") return "referenceZone";
   if (type === "caption") return "captionZone";
   if (["header", "footer", "pageNumber", "licenseText", "margin", "noise", "watermark"].includes(type)) return `${type}Zone`;

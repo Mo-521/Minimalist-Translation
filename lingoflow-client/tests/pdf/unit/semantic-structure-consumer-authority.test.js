@@ -239,6 +239,7 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.match(mainSource, /requireSemanticConsumerType\(segment, "single zh-to-en document flow"\)/);
   assert.match(mainSource, /requireSemanticConsumerType\(segmentType, "paper paragraph collision detection"\)/);
   assert.match(mainSource, /requireSemanticConsumerType\(candidate, "paper caption continuation body candidate"\)/);
+  assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper segment zone assignment"\)/);
   assert.match(mainSource, /hasPdfExportReportDisposition\(report, "translate", "visual mask fallback"\)/);
   assert.match(mainSource, /assertSemanticConsumerTypeProjection\(segment, rawType, "export_report"\)/);
   assert.match(rendererSource, /semanticStructureConsumerReports:\s*state\.semanticStructureConsumerReports\.slice\(\)/);
@@ -372,4 +373,15 @@ test("paper caption continuation body candidate rejects missing semantic type in
   const source = mainSource.slice(start, end);
   assert.match(source, /requireSemanticConsumerType\(candidate, "paper caption continuation body candidate"\)/);
   assert.doesNotMatch(source, /candidate\.type \|\| ['"]body['"]/);
+});
+
+test("paper segment zone assignment rejects missing semantic type instead of defaulting to Body", () => {
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const start = mainSource.indexOf("function assignSegmentZone(");
+  const end = mainSource.indexOf("\nfunction ", start + 1);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const source = mainSource.slice(start, end);
+  assert.match(source, /requireSemanticConsumerType\(segment, "paper segment zone assignment"\)/);
+  assert.doesNotMatch(source, /segment\.type \|\| "body"/);
 });
