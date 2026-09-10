@@ -3563,7 +3563,8 @@ function inferPaperPageContextsFromSegments(segments) {
 }
 
 function isPaperFullWidthSegmentType(segment) {
-  const type = String(segment && segment.type || "body");
+  if (!segment) return false;
+  const type = requireSemanticConsumerType(segment, "paper full-width segment type");
   return ["title", "abstract", "abstract-title", "keywords"].includes(type) || (type === "caption" && Number(segment && segment.bbox && segment.bbox.width || 0) > 420);
 }
 
