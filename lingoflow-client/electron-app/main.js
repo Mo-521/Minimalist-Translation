@@ -2259,7 +2259,7 @@ function applyBodySegmentImageRegionCounterProof(segments, pipelineConfig) {
       let rejectedByNoOverlap = 0;
       let rejectedByTextPattern = 0;
       (segments || [])
-        .filter((segment) => segment && String(segment.type || "body") === "body" && Number(segment.pageNumber || 0) === pageNumber)
+        .filter((segment) => segment && requireSemanticConsumerType(segment, "paper image-region body counter-proof") === "body" && Number(segment.pageNumber || 0) === pageNumber)
         .forEach((segment) => {
           const segmentId = String(segment.id || "");
           const decision = { segmentId, bbox: segment.bbox || null, lineBoxCount: Array.isArray(segment.lines) ? segment.lines.length : 0 };
