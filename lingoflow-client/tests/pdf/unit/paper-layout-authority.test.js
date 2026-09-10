@@ -92,6 +92,16 @@ test('write kind consumes canonical semantic type and never guesses from text', 
     () => authority.resolveWriteKind({ type: 'formula', sourceText: 'x = 1' }, [{}]),
     (error) => error && error.code === 'LAYOUT_SEMANTIC_TYPE_NOT_WRITABLE'
   );
+  assert.throws(
+    () => authority.resolvePaperLayoutAuthority({ kind: 'body' }),
+    (error) => error && error.code === 'LAYOUT_SEMANTIC_TYPE_REQUIRED'
+  );
+  assert.throws(
+    () => authority.getReadableFontSizeRange(),
+    (error) => error && error.code === 'LAYOUT_SEMANTIC_TYPE_REQUIRED'
+  );
+  const source = require('node:fs').readFileSync(path.join(root, 'electron-app/paper-layout-authority.js'), 'utf8');
+  assert.doesNotMatch(source, /(?:segmentType|segment[^\n]*type)[^\n]*\|\|\s*["']body["']/);
 });
 
 test('authority decisions are input-driven and do not contain sample identities', () => {

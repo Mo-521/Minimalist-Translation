@@ -94,8 +94,20 @@ function getZhFontVisualScale(fontFamily) {
   return 0.86;
 }
 
+function requireCanonicalSemanticType(value, consumerName) {
+  const semanticType = typeof value === "string"
+    ? String(value).trim()
+    : String(value && (value.semanticType || value.type) || "").trim();
+  if (!semanticType) {
+    const error = new Error(`Canonical semantic type is required before ${String(consumerName || "paper layout")}`);
+    error.code = "LAYOUT_SEMANTIC_TYPE_REQUIRED";
+    throw error;
+  }
+  return semanticType;
+}
+
 function getReadableFontSizeRange(segmentType) {
-  const type = String(segmentType || "body");
+  const type = requireCanonicalSemanticType(segmentType, "resolving readable font range");
   if (type === "title") return { min: 10.5, max: 14 };
   if (type === "abstract" || type === "abstract-title" || type === "keywords") return { min: 8.5, max: 11 };
   if (type === "caption") return { min: 7.5, max: 9.5 };
@@ -118,7 +130,7 @@ function getReadableFontSizeRangeByVisualRole(role) {
 }
 
 function getSourceVisualRole(segment, fontStats) {
-  const type = String(segment && segment.type || "body");
+  const type = requireCanonicalSemanticType(segment, "resolving source visual role");
   const ratio = Number(fontStats && fontStats.sourceFontSizeRatioToPageBody || 1);
   const bold = Boolean(fontStats && fontStats.sourceBoldLike);
   if (type === "title") return ratio >= 1.25 || bold ? "title_large" : "title_normal";
@@ -131,7 +143,7 @@ function getSourceVisualRole(segment, fontStats) {
 }
 
 function getVisualEquivalentZhFontSize(segment, effectiveEnglishBodyFontSize, visualRole) {
-  const type = String(segment && segment.type || "body");
+  const type = requireCanonicalSemanticType(segment, "resolving visual-equivalent font size");
   const role = String(visualRole || "body_normal");
   const base = Math.max(6, Number(effectiveEnglishBodyFontSize || 0) || 9.5);
   let spec;
@@ -154,7 +166,7 @@ function getVisualEquivalentZhFontSize(segment, effectiveEnglishBodyFontSize, vi
 }
 
 function resolveLineHeight(fontSize, segmentType, text = "", visualRole = "", isCjkTextFn = null) {
-  const type = String(segmentType || "body");
+  const type = requireCanonicalSemanticType(segmentType, "resolving line height");
   const role = String(visualRole || "");
   const roleMultiplier = role === "title_large" || role === "title_normal"
     ? 1.15
@@ -180,12 +192,7 @@ function resolveLineHeight(fontSize, segmentType, text = "", visualRole = "", is
 }
 
 function resolveWriteKind(segment, lineMasks = [], cleanTextFn = null) {
-  const semanticType = String(segment && (segment.semanticType || segment.type) || "");
-  if (!semanticType) {
-    const error = new Error("Canonical semantic type is required before resolving layout write kind");
-    error.code = "LAYOUT_SEMANTIC_TYPE_REQUIRED";
-    throw error;
-  }
+  const semanticType = requireCanonicalSemanticType(segment, "resolving layout write kind");
   if (semanticType === "caption") return "caption";
   if (semanticType === "heading") return "heading";
   if (semanticType === "title") return "title";
@@ -267,7 +274,7 @@ function buildPaperLayoutAuthorityContext(context = {}) {
 
 function resolvePaperLayoutAuthority(input = {}) {
   const segment = input.segment || null;
-  const segmentType = String(segment && segment.type || input.segmentType || "body");
+  const segmentType = requireCanonicalSemanticType(segment || input.segmentType, "resolving paper layout authority");
   const kind = input.kind || resolveWriteKind(segment, input.lineMasks || [], input.cleanTextFn);
   const style = resolveWriteStyle(kind, input.averageFontSize, input.strategy);
   const targetLanguage = String(input.targetLanguage || "");
