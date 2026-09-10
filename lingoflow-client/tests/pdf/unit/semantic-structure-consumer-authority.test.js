@@ -243,6 +243,7 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper image-region body counter-proof"\)/);
   assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper heading-body mixed split"\)/);
   assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper full-width segment type"\)/);
+  assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper column inference from bbox"\)/);
   assert.match(mainSource, /hasPdfExportReportDisposition\(report, "translate", "visual mask fallback"\)/);
   assert.match(mainSource, /assertSemanticConsumerTypeProjection\(segment, rawType, "export_report"\)/);
   assert.match(rendererSource, /semanticStructureConsumerReports:\s*state\.semanticStructureConsumerReports\.slice\(\)/);
@@ -419,5 +420,16 @@ test("paper full-width segment type rejects missing semantic type instead of def
   assert.notEqual(end, -1);
   const source = mainSource.slice(start, end);
   assert.match(source, /requireSemanticConsumerType\(segment, "paper full-width segment type"\)/);
+  assert.doesNotMatch(source, /segment\.type \|\| ["']body["']/);
+});
+
+test("paper column inference from bbox rejects missing semantic type instead of defaulting to Body", () => {
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const start = mainSource.indexOf("function inferPaperColumnFromBbox(");
+  const end = mainSource.indexOf("\nfunction ", start + 1);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const source = mainSource.slice(start, end);
+  assert.match(source, /requireSemanticConsumerType\(segment, "paper column inference from bbox"\)/);
   assert.doesNotMatch(source, /segment\.type \|\| ["']body["']/);
 });
