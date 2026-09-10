@@ -12893,8 +12893,8 @@ function stripLeadingPreservedFormulaFromTranslation(segment, translatedText, pi
 function isPureFormulaSegment(segment, pipelineConfig) {
   if (!pipelineConfig || pipelineConfig.mode !== "paper_pdf" || !pipelineConfig.enableEquationBlockPreserve) return false;
   if (!segment) return false;
-  if (segment.type === "formula") return true;
-  const type = segment.type || "body";
+  const type = requireSemanticConsumerType(segment, "paper formula purity evaluation");
+  if (type === "formula") return true;
   if (type === "caption" || type === "reference") return false;
   const { lines, formulaLines, proseLines } = getFormulaSegmentLineGroups(segment, pipelineConfig);
   if (!lines.length) {

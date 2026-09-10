@@ -235,6 +235,7 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.match(mainSource, /requireSemanticConsumerType\(segment, 'paper image-region write box clipping'\)/);
   assert.match(mainSource, /requireSemanticConsumerType\(segment, 'paper blocking-zone write box planning'\)/);
   assert.match(mainSource, /requireSemanticConsumerType\(report, 'paper image\/caption layout audit'\)/);
+  assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper formula purity evaluation"\)/);
   assert.match(mainSource, /hasPdfExportReportDisposition\(report, "translate", "visual mask fallback"\)/);
   assert.match(mainSource, /assertSemanticConsumerTypeProjection\(segment, rawType, "export_report"\)/);
   assert.match(rendererSource, /semanticStructureConsumerReports:\s*state\.semanticStructureConsumerReports\.slice\(\)/);
@@ -315,4 +316,15 @@ test("paper image and caption region layout consumers reject missing semantic ty
     (error) => error.code === "SEMANTIC_CONSUMER_TYPE_REQUIRED",
   );
   assert.equal(requireSemanticConsumerType({ id: "seg-caption", type: "caption" }, "paper image/caption layout audit"), "caption");
+});
+
+test("paper formula purity consumes canonical type instead of defaulting to Body", () => {
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const start = mainSource.indexOf("function isPureFormulaSegment(");
+  const end = mainSource.indexOf("\nfunction isStrictPureEquationBlock(", start);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const source = mainSource.slice(start, end);
+  assert.match(source, /requireSemanticConsumerType\(segment, "paper formula purity evaluation"\)/);
+  assert.doesNotMatch(source, /segment\.type \|\| "body"/);
 });
