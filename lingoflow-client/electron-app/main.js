@@ -19557,11 +19557,10 @@ async function exportTranslatedPdf(payload) {
     // written in the forEach below is always on top. Rule 0 (skip-by-writeBox) is intentionally
     // absent here: Chinese text draws over these masks, so no skip is needed or safe.
     if (isPaperPdfConfig(pipelineConfig) && extractionPipelineDebug) {
-      const _prePreserveTypeSet = new Set(['reference', 'license', 'licenseText', 'header', 'footer', 'pageNumber', 'doi', 'preserve']);
       const _prePreserveBoxesByPage = new Map();
       const _prePreserveColumnHullByPage = new Map();
       allSegments.forEach((seg) => {
-        if (!_prePreserveTypeSet.has(String(seg.type || ''))) return;
+        if (requirePdfExportSemanticDisposition(seg, 'pre-text source mask preserve boxes') !== 'preserve') return;
         const pg = Number(seg.pageNumber || 0);
         if (!pg || !seg.bbox || !Number(seg.bbox.width || 0)) return;
         if (!_prePreserveBoxesByPage.has(pg)) _prePreserveBoxesByPage.set(pg, []);
