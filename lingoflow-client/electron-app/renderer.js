@@ -38,6 +38,16 @@ function requireSemanticTranslationDisposition(segment, consumerName) {
   return disposition;
 }
 
+function requireCanonicalSemanticType(segment, consumerName) {
+  var semanticType = String(segment && (segment.semanticType || segment.type) || "");
+  if (!semanticType) {
+    var missingTypeError = new Error("Canonical semantic type is required by " + consumerName);
+    missingTypeError.code = "SEMANTIC_CONSUMER_TYPE_REQUIRED";
+    throw missingTypeError;
+  }
+  return semanticType;
+}
+
   var PDF_TRANSLATION_MODE_DEFS = {
     simple_pdf: {
       label: "普通版 PDF",
@@ -94,7 +104,7 @@ function getPaperExportCompletenessStrict() {
   var pending = candidates.filter(function(segment) { return segment.status !== "failed" && (segment.status === "pending" || segment.status === "translating" || !isPdfSegmentTranslated(segment)); }).length;
   var failed = candidates.filter(function(segment) { return segment.status === "failed"; }).length;
   var bodyHeadingNotDone = candidates.filter(function(segment) {
-    var t = String(segment.type || "body");
+    var t = requireCanonicalSemanticType(segment, "getPaperExportCompletenessStrict");
     return (t === "body" || t === "heading") && !isPdfSegmentTranslated(segment);
   }).length;
   return { totalSegments: candidates.length, doneSegments: done, pendingSegments: pending, failedSegments: failed, bodyHeadingNotDone: bodyHeadingNotDone };
@@ -1848,7 +1858,7 @@ function isPdfOverlayCandidate(segment) {
         crossedPageBoundary: Boolean(segment.crossedPageBoundary),
         crossedColumnBoundary: Boolean(segment.crossedColumnBoundary),
         mergeReason: segment.mergeReason || segment.splitReason || "",
-        classificationReason: segment.classificationReason || segment.type || "body",
+        classificationReason: segment.classificationReason || requireCanonicalSemanticType(segment, "PDF export payload classification evidence"),
         previousSegmentId: segment.previousSegmentId || "",
         nextSegmentId: segment.nextSegmentId || "",
         partialRegressionNotTranslated: Boolean(segment.partialRegressionNotTranslated),
@@ -3267,7 +3277,7 @@ function resetPdfDocumentState(fileId) {
       producer: "renderer.startPaperPdfSegmentTranslation",
       observedAt: new Date().toISOString(),
       segmentId: String(segment.id || ""),
-      segmentType: String(segment.type || "body"),
+      segmentType: requireCanonicalSemanticType(segment, "paper translation lifecycle event"),
       pageNumber: Number(segment.pageNumber || 0),
       groupIdentityAtEvent: {
         known: Boolean(captionGroupId),

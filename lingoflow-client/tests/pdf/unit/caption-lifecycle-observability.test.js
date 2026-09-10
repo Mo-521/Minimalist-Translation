@@ -39,6 +39,7 @@ function makeRendererAuditContext() {
   };
   vm.createContext(context);
   vm.runInContext([
+    extractFunction(rendererSource, 'requireCanonicalSemanticType'),
     extractFunction(rendererSource, 'sha256HexForPaperTranslationAudit'),
     extractFunction(rendererSource, 'makePaperTranslationLifecycleEvent'),
     extractFunction(rendererSource, 'appendPaperTranslationLifecycleEvent'),

@@ -217,7 +217,9 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.match(mainSource, /assertSemanticConsumerTypeProjection\(segment, rawType, "export_report"\)/);
   assert.match(rendererSource, /semanticStructureConsumerReports:\s*state\.semanticStructureConsumerReports\.slice\(\)/);
   assert.match(rendererSource, /function requireSemanticTranslationDisposition\(segment, consumerName\)/);
+  assert.match(rendererSource, /function requireCanonicalSemanticType\(segment, consumerName\)/);
   assert.match(rendererSource, /SEMANTIC_CONSUMER_POLICY_REQUIRED/);
+  assert.match(rendererSource, /SEMANTIC_CONSUMER_TYPE_REQUIRED/);
   assert.match(rendererSource, /requireSemanticTranslationDisposition\(segment, "isPaperOverlayCandidateStrict"\) === "translate"/);
   assert.match(rendererSource, /requireSemanticTranslationDisposition\(segment, "isPaperPreserveSegmentStrict"\) === "preserve"/);
   assert.match(rendererSource, /requireSemanticTranslationDisposition\(segment, "isSimplePdfTranslatableSegment"\) === "translate"/);
@@ -231,7 +233,7 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.doesNotMatch(rendererSource, /function normalizeSimplePdfSegmentType\(/);
   assert.doesNotMatch(rendererSource, /simple-fallback-/);
   assert.doesNotMatch(rendererSource, /function splitPdfTextIntoSegments\(/);
-  assert.doesNotMatch(rendererSource, /type:\s*segment\.type\s*\|\|\s*"body"/);
+  assert.doesNotMatch(rendererSource, /segment\.type\s*\|\|\s*"body"/);
 });
 
 test("unreachable legacy structure producers and registry aliases stay retired", () => {
