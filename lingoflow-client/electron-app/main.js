@@ -18204,7 +18204,7 @@ function drawSingleZhToEnDocumentFlow(sortedSegments, pages, font, targetLanguag
   const titleSegments = [];
   const flowSegments = [];
   sortedSegments.forEach((segment) => {
-    const type = String(segment.type || "body");
+    const type = requireSemanticConsumerType(segment, "single zh-to-en document flow");
     if (titleTypes.has(type)) titleSegments.push(segment);
     else if (flowTypes.has(type)) flowSegments.push(segment);
     else flowSegments.push(segment);

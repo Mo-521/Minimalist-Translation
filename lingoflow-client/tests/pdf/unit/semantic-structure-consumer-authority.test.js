@@ -236,6 +236,7 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.match(mainSource, /requireSemanticConsumerType\(segment, 'paper blocking-zone write box planning'\)/);
   assert.match(mainSource, /requireSemanticConsumerType\(report, 'paper image\/caption layout audit'\)/);
   assert.match(mainSource, /requireSemanticConsumerType\(segment, "paper formula purity evaluation"\)/);
+  assert.match(mainSource, /requireSemanticConsumerType\(segment, "single zh-to-en document flow"\)/);
   assert.match(mainSource, /hasPdfExportReportDisposition\(report, "translate", "visual mask fallback"\)/);
   assert.match(mainSource, /assertSemanticConsumerTypeProjection\(segment, rawType, "export_report"\)/);
   assert.match(rendererSource, /semanticStructureConsumerReports:\s*state\.semanticStructureConsumerReports\.slice\(\)/);
@@ -327,4 +328,19 @@ test("paper formula purity consumes canonical type instead of defaulting to Body
   const source = mainSource.slice(start, end);
   assert.match(source, /requireSemanticConsumerType\(segment, "paper formula purity evaluation"\)/);
   assert.doesNotMatch(source, /segment\.type \|\| "body"/);
+});
+
+test("single zh-to-en document flow rejects missing semantic type instead of defaulting to Body", () => {
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const start = mainSource.indexOf("function drawSingleZhToEnDocumentFlow(");
+  const end = mainSource.indexOf("\nfunction ", start + 1);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const source = mainSource.slice(start, end);
+  assert.match(source, /requireSemanticConsumerType\(segment, "single zh-to-en document flow"\)/);
+  assert.doesNotMatch(source, /segment\.type \|\| "body"/);
+  assert.throws(
+    () => requireSemanticConsumerType({ id: "seg-untyped" }, "single zh-to-en document flow"),
+    (error) => error.code === "SEMANTIC_CONSUMER_TYPE_REQUIRED",
+  );
 });
