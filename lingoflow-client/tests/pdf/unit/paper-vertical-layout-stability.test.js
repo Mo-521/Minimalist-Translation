@@ -55,9 +55,41 @@ function loadPaperTextWrapper() {
   });
   vm.runInContext(extractFunction(mainSource, 'cleanPdfText'), context);
   vm.runInContext(extractFunction(mainSource, 'tokenizePaperWrapText'), context);
+  vm.runInContext(extractFunction(mainSource, 'composePaperWrapTokens'), context);
+  vm.runInContext(extractFunction(mainSource, 'balancePaperParagraphTailLines'), context);
   vm.runInContext(extractFunction(mainSource, 'wrapTranslatedTextForPaperBox'), context);
   return context.wrapTranslatedTextForPaperBox;
 }
+
+test('column flow consumes verified local placement without changing vertical flow or later owners', () => {
+  const buildPlan = loadColumnFlowPlanner();
+  const makeOp = (id, y) => ({ opType: 'write', meta: {
+    writeKind: 'paragraphRun', paragraphRunId: `run-${id}`, segmentId: id,
+    groupSegmentIds: [id], pageNumber: 1, column: 'left', type: 'body',
+    renderedHeight: 40, writeBox: { x: 60, y, width: 200, height: 80 },
+  } });
+  const ops = [makeOp('a', 100), makeOp('b', 220)];
+  const placement = { decision: 'correct', fitVerified: true, paragraphId: 'run-a',
+    pageNumber: 1, column: 'left', verifiedWriteBox: { x: 60, width: 200 } };
+  const build = (value) => buildPlan(ops, { reportById: new Map([
+    ['a', { type: 'body', finalLineHeight: 12, paragraphCorrectionDecision: { placement: value } }],
+    ['b', { type: 'body', finalLineHeight: 12 }],
+  ]) });
+  const baseline = build(null);
+  const accepted = build(placement);
+  assert.equal(accepted.items[0].flowWriteBox.x, 60);
+  assert.equal(accepted.items[0].flowWriteBox.width, 200);
+  assert.equal(accepted.items[0].flowWriteBox.y, baseline.items[0].flowWriteBox.y);
+  assert.equal(accepted.items[0].paragraphBoundaryGapAfter, baseline.items[0].paragraphBoundaryGapAfter);
+  assert.deepEqual(accepted.items[1].flowWriteBox, baseline.items[1].flowWriteBox);
+  for (const invalid of [
+    { ...placement, decision: 'no-op' }, { ...placement, fitVerified: false },
+    { ...placement, paragraphId: 'other' }, { ...placement, pageNumber: 2 },
+    { ...placement, column: 'right' }, { ...placement, verifiedWriteBox: { x: 61, width: 200 } },
+  ]) assert.equal(build(invalid).items[0].flowWriteBox.x, 40);
+  ops[0].meta.writeBox.width = 230;
+  assert.equal(build({ ...placement, verifiedWriteBox: { x: 60, width: 230 } }).items[0].flowWriteBox.x, 40);
+});
 
 test('paragraph visual boundary prefix survives wrapping only on the first rendered line', () => {
   const wrap = loadPaperTextWrapper();

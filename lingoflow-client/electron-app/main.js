@@ -32,6 +32,7 @@ const DEFAULT_SHARED_CONFIG = {
   serverBaseUrl: "https://lingoproxy-255344-7-1429669493.sh.run.tcloudbase.com",
   betaToken: "lf_beta_test_token",
   targetLanguage: "en",
+  developerMode: false,
   provider: {
     type: "openai_compatible",
     preset: "custom",
@@ -69,10 +70,11 @@ const DEFAULT_SHARED_CONFIG = {
 
 const OPENAI_COMPATIBLE_PROVIDER_PRESETS = Object.freeze({
   deepseek: { id: "deepseek", label: "DeepSeek", baseUrl: "https://api.deepseek.com/v1", model: "deepseek-v4-flash", requiresApiKey: true },
+  qwen: { id: "qwen", label: "阿里百炼（Qwen）", baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1", model: "qwen-plus", requiresApiKey: true },
+  hunyuan: { id: "hunyuan", label: "腾讯混元", baseUrl: "https://tokenhub.tencentmaas.com/v1", model: "hy3-preview", requiresApiKey: true },
+  kimi: { id: "kimi", label: "Kimi", baseUrl: "https://api.moonshot.cn/v1", model: "kimi-k3", requiresApiKey: true },
   openai: { id: "openai", label: "OpenAI", baseUrl: "https://api.openai.com/v1", model: "gpt-4.1-mini", requiresApiKey: true },
-  openrouter: { id: "openrouter", label: "OpenRouter", baseUrl: "https://openrouter.ai/api/v1", model: "openai/gpt-4.1-mini", requiresApiKey: true },
-  ollama: { id: "ollama", label: "Ollama", baseUrl: "http://127.0.0.1:11434/v1", model: "llama3.2", requiresApiKey: false },
-  custom: { id: "custom", label: "Custom", baseUrl: "", model: "", requiresApiKey: true },
+  custom: { id: "custom", label: "自定义", baseUrl: "", model: "", requiresApiKey: true },
 });
 
 // Learn response-budget requirements from real Provider responses. Reasoning
@@ -97,6 +99,8 @@ function debugPdfWarn(...args) {
 let desktopFeatureProc = null;
 let desktopFeatureStartedAt = null;
 let pdfjsLib = null;
+let pdfjsLoadPromise = null;
+let connectedProviderSession = null;
 
 try {
   app.setPath("userData", path.join(app.getPath("appData"), "MinimalistTranslationMain"));
@@ -107,6 +111,8 @@ try {
 
 async function loadPdfJs() {
   if (pdfjsLib) return pdfjsLib;
+  if (pdfjsLoadPromise) return pdfjsLoadPromise;
+  pdfjsLoadPromise = (async () => {
   const originalWarn = console.warn;
   console.warn = (...args) => {
     const text = args.join(" ");
@@ -115,13 +121,41 @@ async function loadPdfJs() {
   };
   try {
     pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
-    if (pdfjsLib.GlobalWorkerOptions) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = null;
-    }
     return pdfjsLib;
   } finally {
     console.warn = originalWarn;
   }
+  })();
+  try {
+    return await pdfjsLoadPromise;
+  } catch (err) {
+    pdfjsLib = null;
+    pdfjsLoadPromise = null;
+    throw err;
+  }
+}
+
+function providerConnectionFingerprint(provider) {
+  return crypto.createHash('sha256').update(JSON.stringify([
+    String(provider && provider.id || ''),
+    String(provider && provider.baseUrl || ''),
+    String(provider && provider.model || ''),
+    String(provider && provider.apiKey || ''),
+  ])).digest('hex');
+}
+
+function clearConnectedProviderSession() {
+  connectedProviderSession = null;
+}
+
+function requireConnectedProviderSession(provider) {
+  const fingerprint = providerConnectionFingerprint(provider);
+  if (!connectedProviderSession || connectedProviderSession.fingerprint !== fingerprint) {
+    const error = new Error('当前服务商未连接，请先在设置页点击“连接”。');
+    error.code = 'PROVIDER_NOT_CONNECTED';
+    throw error;
+  }
+  return connectedProviderSession;
 }
 
 function isDesktopFeatureRunning() {
@@ -149,6 +183,7 @@ function normalizeSharedConfig(raw) {
   if (!["en", "zh", "ja", "ko", "fr", "de", "es"].includes(config.targetLanguage)) {
     config.targetLanguage = DEFAULT_SHARED_CONFIG.targetLanguage;
   }
+  config.developerMode = Boolean(raw && raw.developerMode);
   const rawProvider = raw && typeof raw.provider === "object" ? raw.provider : {};
   const normalizeProviderEntry = (entry, fallbackId) => ({
     id: String(entry && entry.id || fallbackId || "provider-default"),
@@ -268,6 +303,7 @@ function createProviderHttpError(response, responseBody, responseData) {
 }
 
 function saveProviderConfig(input) {
+  clearConnectedProviderSession();
   const current = readSharedConfig();
   const incoming = input && typeof input === "object" ? input : {};
   const incomingId = String(incoming.id || "").trim();
@@ -285,6 +321,7 @@ function saveProviderConfig(input) {
 }
 
 function activateProviderConfig(providerId) {
+  clearConnectedProviderSession();
   const current = readSharedConfig();
   const provider = (current.providerProfiles || []).find((entry) => entry.id === String(providerId || ""));
   if (!provider) throw new Error("配置不存在或已被移除");
@@ -415,11 +452,14 @@ async function testProviderConnection(input) {
   const current = readSharedConfig();
   const incoming = input && typeof input === "object" ? input : {};
   const savedProfile = (current.providerProfiles || []).find((entry) => entry.id === String(incoming.id || ""));
-  const provider = validateProviderConfig({
+  const provider = {
+    ...validateProviderConfig({
     ...(savedProfile || current.provider || {}),
     ...incoming,
     apiKey: String(incoming.apiKey || "").trim() || String(savedProfile && savedProfile.apiKey || current.provider && current.provider.apiKey || "").trim(),
-  });
+    }),
+    id: String(savedProfile && savedProfile.id || incoming.id || current.activeProviderId || ''),
+  };
   const startedAt = Date.now();
   const result = await callOpenAiCompatibleProvider(provider, {
     messages: [
@@ -441,6 +481,12 @@ async function testProviderConnection(input) {
   }
   const presetDefinition = OPENAI_COMPATIBLE_PROVIDER_PRESETS[provider.preset] || OPENAI_COMPATIBLE_PROVIDER_PRESETS.custom;
   const latencyMs = Date.now() - startedAt;
+  connectedProviderSession = {
+    providerId: String(provider.id || ''),
+    fingerprint: providerConnectionFingerprint(provider),
+    connectedAt: new Date().toISOString(),
+    latencyMs,
+  };
   return {
     ok: true,
     message: "Provider 已连接",
@@ -463,7 +509,11 @@ function getTargetLanguageName(value) {
 
 async function translateWithConfiguredProvider(input) {
   const config = readSharedConfig();
-  const provider = validateProviderConfig(config.provider);
+  const provider = {
+    ...validateProviderConfig(config.provider),
+    id: String(config.activeProviderId || config.provider && config.provider.id || ''),
+  };
+  const providerSession = requireConnectedProviderSession(provider);
   const text = String(input && input.text || "").trim();
   if (!text) throw new Error("翻译文本为空");
   const targetName = getTargetLanguageName(input && (input.targetLanguage || input.target_lang));
@@ -479,7 +529,17 @@ async function translateWithConfiguredProvider(input) {
     temperature: 0.1,
     maxTokens: Math.min(4096, Math.max(256, Math.ceil(text.length * 2.2))),
   });
-  return { status: "ok", translation: result.text, provider: "openai_compatible", model: result.model };
+  return {
+    status: "ok",
+    translation: result.text,
+    provider: "openai_compatible",
+    model: result.model,
+    providerConnection: {
+      providerId: providerSession.providerId,
+      connectedAt: providerSession.connectedAt,
+      latencyMs: providerSession.latencyMs,
+    },
+  };
 }
 
 function readSharedConfig() {
@@ -505,6 +565,16 @@ function writeSharedConfig(nextConfig) {
   fs.mkdirSync(path.dirname(SHARED_CONFIG_PATH), { recursive: true });
   fs.writeFileSync(SHARED_CONFIG_PATH, JSON.stringify(config, null, 2), "utf8");
   return config;
+}
+
+function getDeveloperDiagnosticsDirectory() {
+  return path.join(app.getPath("userData"), "diagnostics");
+}
+
+function makeDeveloperDiagnosticBaseName(fileName) {
+  const base = safeTxtBaseName(String(fileName || "pdf.pdf")).replace(/\.pdf$/i, "") || "pdf";
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  return `${base}_${stamp}`;
 }
 
 function decodePdfTextString(value) {
@@ -1177,7 +1247,7 @@ function isSectionHeadingText(text) {
     return false;
   }
   if (/^\d+(?:\.\d+)*\.?\s+[A-Z][A-Za-z0-9]/.test(value)) return true;
-  if (/^\d+\s*\|\s+[A-Z][A-Za-z0-9]/.test(value)) return true;
+  if (/^(?:\d+(?:\.\d+)*\s*)?\|\s+[A-Z][A-Za-z0-9]/.test(value)) return true;
   if (/^[A-Z][A-Z\s]{3,}$/.test(value) && value.length <= 60) return true;
   return /^(Introduction|Roadmap|Conclusion|Conclusions|Discussion|Methods?|Results?|Endnotes?|Notes?|Acknowledg(?:e)?ments?|Conflicts? of Interest|Funding|Data Availability)\b/i.test(value);
 }
@@ -1835,7 +1905,28 @@ function detectPageColumns(items) {
   const pageHeight = Number(filtered[0] && filtered[0].pageHeight) || (bounds.y + bounds.height);
   const preliminaryLines = mergeTextItemsIntoLines(filtered.map((item) => ({ ...item, column: "single" })));
   const pageLayout = detectPageLayout(preliminaryLines, pageWidth, pageHeight);
-  if (pageLayout.layoutType === "single_column" && pageLayout.languageHint === "zh") {
+  // Text runs inside a genuinely single-column English line are often emitted as several PDF
+  // items. Counting those item centres as independent column evidence splits one physical line
+  // into overlapping left/right paragraphs. Keep the item-level fallback for real two-column
+  // pages, but only after rejecting pages with repeated, continuous lines spanning the page body.
+  const continuousSpanningLines = preliminaryLines.filter((line) => {
+    if (!line || !line.bbox) return false;
+    const left = Number(line.bbox.x || 0);
+    const right = left + Number(line.bbox.width || 0);
+    if (left > pageWidth * 0.28 || right < pageWidth * 0.72) return false;
+    const lineItems = (line.items || []).slice().sort((a, b) => Number(a.x || 0) - Number(b.x || 0));
+    if (lineItems.length < 2) return Number(line.bbox.width || 0) > pageWidth * 0.62;
+    let largestInternalGap = 0;
+    for (let index = 1; index < lineItems.length; index += 1) {
+      const previousRight = Number(lineItems[index - 1].x || 0) + Number(lineItems[index - 1].width || 0);
+      largestInternalGap = Math.max(largestInternalGap, Number(lineItems[index].x || 0) - previousRight);
+    }
+    const fontSize = Math.max(1, Number(line.avgFontSize || lineItems[0].fontSize || lineItems[0].height || 0));
+    return largestInternalGap <= Math.max(18, fontSize * 2.2);
+  });
+  const strongContinuousSingleColumnEvidence = pageLayout.layoutType === "single_column" &&
+    continuousSpanningLines.length >= Math.max(4, Math.ceil(preliminaryLines.length * 0.12));
+  if (pageLayout.layoutType === "single_column" && (pageLayout.languageHint === "zh" || strongContinuousSingleColumnEvidence)) {
     return [{ name: "single", layout: pageLayout, items: filtered.map((item) => ({ ...item, column: "single", layoutType: pageLayout.layoutType, sourceLanguageHint: pageLayout.languageHint })) }];
   }
   const singleItems = [];
@@ -2798,6 +2889,306 @@ function resolvePaperParagraphBoundaryArbitration(previous, current, englishBody
   };
 }
 
+// A weak sentence-end gap is not sufficient to split a body Paragraph when the next extracted
+// fragment continues on the same source line grid without a first-line indent. This evidence may
+// only veto the legacy sentence_end_gap heuristic; structural boundaries remain authoritative.
+function resolvePaperParagraphSemanticContinuationEvidence(previous, current, englishBodyFontSize, verticalGap) {
+  if (!previous || !current) return { isContinuation: false, source: 'missing_segment', checks: { segmentsPresent: false }, failedEvidence: ['segmentsPresent'] };
+  const previousSourceParagraphId = String(previous.sourceParagraphId || previous.sourceParagraphIdentity || '');
+  const currentSourceParagraphId = String(current.sourceParagraphId || current.sourceParagraphIdentity || '');
+  if (previousSourceParagraphId && currentSourceParagraphId) {
+    const sharedSourceParagraphIdentity = previousSourceParagraphId === currentSourceParagraphId;
+    return {
+      isContinuation: sharedSourceParagraphIdentity,
+      source: previousSourceParagraphId === currentSourceParagraphId ? 'shared_source_paragraph_identity' : 'distinct_source_paragraph_identity',
+      previousSourceParagraphId,
+      currentSourceParagraphId,
+      checks: { sharedSourceParagraphIdentity },
+      failedEvidence: sharedSourceParagraphIdentity ? [] : ['sharedSourceParagraphIdentity'],
+    };
+  }
+  const previousFirstLine = getSegmentFirstLineBox(previous);
+  const currentFirstLine = getSegmentFirstLineBox(current);
+  const previousLastLine = getSegmentLastLineBox(previous) || previousFirstLine;
+  if (!previousFirstLine || !currentFirstLine || !previousLastLine) return {
+    isContinuation: false,
+    source: 'missing_line_box',
+    checks: { previousFirstLinePresent: Boolean(previousFirstLine), currentFirstLinePresent: Boolean(currentFirstLine), previousLastLinePresent: Boolean(previousLastLine) },
+    failedEvidence: [
+      ...(!previousFirstLine ? ['previousFirstLinePresent'] : []),
+      ...(!currentFirstLine ? ['currentFirstLinePresent'] : []),
+      ...(!previousLastLine ? ['previousLastLinePresent'] : []),
+    ],
+  };
+  const previousPage = Number(previousFirstLine.pageNumber || previous.pageNumber || 0);
+  const currentPage = Number(currentFirstLine.pageNumber || current.pageNumber || 0);
+  if (!previousPage || previousPage !== currentPage) return { isContinuation: false, source: 'page_mismatch', previousPage, currentPage, checks: { samePage: false }, failedEvidence: ['samePage'] };
+  if (String(previous.column || 'single') !== String(current.column || 'single')) return {
+    isContinuation: false,
+    source: 'column_mismatch',
+    previousColumn: String(previous.column || 'single'),
+    currentColumn: String(current.column || 'single'),
+    checks: { sameColumn: false },
+    failedEvidence: ['sameColumn'],
+  };
+
+  const font = Math.max(8, Number(englishBodyFontSize || 9));
+  const gap = Number(verticalGap || 0);
+  const maximumContinuationGap = Math.max(6, font * 0.78);
+  const previousBox = previous.bbox || {};
+  const currentBox = current.bbox || {};
+  const horizontalOverlap = paperBoxHorizontalOverlapRatio(previousBox, currentBox);
+  const lineStartDelta = Math.abs(Number(currentFirstLine.x || 0) - Number(previousLastLine.x || 0));
+  const columnLeft = Math.min(
+    Number(previousBox.x || previousFirstLine.x || 0),
+    Number(currentBox.x || currentFirstLine.x || 0),
+    Number(previousLastLine.x || 0),
+  );
+  const firstLineIndent = Number(currentFirstLine.x || 0) - columnLeft;
+  const indentThreshold = Math.max(8, font * 0.85);
+  const minimumContinuationGap = Math.max(3, font * 0.45);
+  const maximumLineStartDelta = Math.max(4, font * 0.55);
+  const checks = {
+    aboveMinimumGap: gap > minimumContinuationGap,
+    withinMaximumGap: gap <= maximumContinuationGap,
+    sufficientHorizontalOverlap: horizontalOverlap >= 0.8,
+    alignedLineStart: lineStartDelta <= maximumLineStartDelta,
+    noFirstLineIndentBoundary: firstLineIndent <= indentThreshold,
+  };
+  const failedEvidence = Object.entries(checks).filter(([, passed]) => !passed).map(([name]) => name);
+  const isContinuation = Object.values(checks).every(Boolean);
+  return {
+    isContinuation,
+    source: 'same_grid_unindented_body_continuation',
+    verticalGap: Number(gap.toFixed(2)),
+    minimumContinuationGap: Number(minimumContinuationGap.toFixed(2)),
+    maximumContinuationGap: Number(maximumContinuationGap.toFixed(2)),
+    horizontalOverlap: Number(horizontalOverlap.toFixed(3)),
+    lineStartDelta: Number(lineStartDelta.toFixed(2)),
+    maximumLineStartDelta: Number(maximumLineStartDelta.toFixed(2)),
+    firstLineIndent: Number(firstLineIndent.toFixed(2)),
+    indentThreshold: Number(indentThreshold.toFixed(2)),
+    checks,
+    failedEvidence,
+  };
+}
+
+// A large extracted gap is normally structural, but it can also be an extraction artifact inside
+// one unfinished sentence. Only strong same-page/same-column geometry plus an unfinished previous
+// sentence may downgrade that single soft boundary. Formula, image, type, page and column guards
+// remain outside this resolver and retain authority.
+function resolvePaperParagraphIncompleteSentenceLargeGapEvidence(previous, current, englishBodyFontSize, verticalGap) {
+  if (!previous || !current) return { isContinuation: false, source: 'missing_segment', checks: { segmentsPresent: false }, failedEvidence: ['segmentsPresent'] };
+  const previousFirstLine = getSegmentFirstLineBox(previous);
+  const previousLastLine = getSegmentLastLineBox(previous) || previousFirstLine;
+  const currentFirstLine = getSegmentFirstLineBox(current);
+  if (!previousFirstLine || !previousLastLine || !currentFirstLine) return {
+    isContinuation: false,
+    source: 'missing_line_box',
+    checks: { previousFirstLinePresent: Boolean(previousFirstLine), previousLastLinePresent: Boolean(previousLastLine), currentFirstLinePresent: Boolean(currentFirstLine) },
+    failedEvidence: [
+      ...(!previousFirstLine ? ['previousFirstLinePresent'] : []),
+      ...(!previousLastLine ? ['previousLastLinePresent'] : []),
+      ...(!currentFirstLine ? ['currentFirstLinePresent'] : []),
+    ],
+  };
+  const previousPage = Number(previousFirstLine.pageNumber || previous.pageNumber || 0);
+  const currentPage = Number(currentFirstLine.pageNumber || current.pageNumber || 0);
+  const previousColumn = String(previous.column || 'single');
+  const currentColumn = String(current.column || 'single');
+  const previousText = normalizeExtractedPdfText(previous.sourceText || '').trim();
+  const currentText = normalizeExtractedPdfText(current.sourceText || '').trim();
+  const font = Math.max(8, Number(englishBodyFontSize || 9));
+  const gap = Number(verticalGap || 0);
+  const maximumRecoverableGap = Math.max(36, font * 5);
+  const maximumCollapsedGeometryGap = Math.max(144, font * 16);
+  const previousBox = previous.bbox || {};
+  const currentBox = current.bbox || {};
+  const horizontalOverlap = paperBoxHorizontalOverlapRatio(previousBox, currentBox);
+  const lineStartDelta = Math.abs(Number(currentFirstLine.x || 0) - Number(previousLastLine.x || 0));
+  const maximumLineStartDelta = Math.max(8, font * 1.25);
+  const previousLeft = Number(previousBox.x || previousLastLine.x || 0);
+  const previousRight = previousLeft + Math.max(0, Number(previousBox.width || previousLastLine.width || 0));
+  const currentLeft = Number(currentBox.x || currentFirstLine.x || 0);
+  const currentRight = currentLeft + Math.max(0, Number(currentBox.width || currentFirstLine.width || 0));
+  // Extractors can emit the tail of a visual line as a narrow fragment whose local x is far from
+  // the real column start. In that case direct line-start alignment is the wrong evidence: the next
+  // full-width line containing that fragment on the same grid is the stronger column signal.
+  const directLineStartAligned = lineStartDelta <= maximumLineStartDelta;
+  const currentBoxContainsPreviousFragment = currentLeft <= previousLeft + maximumLineStartDelta
+    && currentRight >= previousRight - maximumLineStartDelta;
+  const alignedColumnGrid = directLineStartAligned || currentBoxContainsPreviousFragment;
+  const previousSentenceIncomplete = Boolean(previousText) && !/[.!?。！？]$/.test(previousText);
+  const currentHasText = Boolean(currentText);
+  const previousObservedLineCount = Math.max(1, Array.isArray(previous.lineBoxes) && previous.lineBoxes.length || Array.isArray(previous.lines) && previous.lines.length || 1);
+  const previousSourceCharsPerObservedLine = previousText.length / previousObservedLineCount;
+  const collapsedSourceGeometry = previousObservedLineCount <= 3 && previousSourceCharsPerObservedLine >= 90;
+  const withinRecoverableGeometryGap = gap <= maximumRecoverableGap || (collapsedSourceGeometry && gap <= maximumCollapsedGeometryGap);
+  const checks = {
+    samePage: previousPage > 0 && previousPage === currentPage,
+    sameColumn: previousColumn === currentColumn,
+    previousSentenceIncomplete,
+    currentHasText,
+    positiveLargeGap: gap > Math.max(14, font * 1.6),
+    withinRecoverableGeometryGap,
+    sufficientHorizontalOverlap: horizontalOverlap >= 0.8,
+    alignedColumnGrid,
+  };
+  const failedEvidence = Object.entries(checks).filter(([, passed]) => !passed).map(([name]) => name);
+  return {
+    isContinuation: Object.values(checks).every(Boolean),
+    source: 'unfinished_sentence_large_gap_same_grid',
+    previousPage,
+    currentPage,
+    previousColumn,
+    currentColumn,
+    verticalGap: Number(gap.toFixed(2)),
+    maximumRecoverableGap: Number(maximumRecoverableGap.toFixed(2)),
+    maximumCollapsedGeometryGap: Number(maximumCollapsedGeometryGap.toFixed(2)),
+    horizontalOverlap: Number(horizontalOverlap.toFixed(3)),
+    lineStartDelta: Number(lineStartDelta.toFixed(2)),
+    maximumLineStartDelta: Number(maximumLineStartDelta.toFixed(2)),
+    directLineStartAligned,
+    currentBoxContainsPreviousFragment,
+    lineStartEvidenceSource: directLineStartAligned ? 'direct_line_start' : (currentBoxContainsPreviousFragment ? 'current_box_contains_previous_fragment' : 'none'),
+    previousSentenceIncomplete,
+    previousObservedLineCount,
+    previousSourceCharsPerObservedLine: Number(previousSourceCharsPerObservedLine.toFixed(2)),
+    collapsedSourceGeometry,
+    checks,
+    failedEvidence,
+  };
+}
+
+function resolvePaperParagraphCrossBoundaryIdentityEvidence(previousRun, currentRun) {
+  const previousPage = Number(previousRun && previousRun.pageNumber || 0);
+  const currentPage = Number(currentRun && currentRun.pageNumber || 0);
+  const previousColumn = String(previousRun && previousRun.column || 'single');
+  const currentColumn = String(currentRun && currentRun.column || 'single');
+  const previousType = String(previousRun && previousRun.type || '');
+  const currentType = String(currentRun && currentRun.type || '');
+  const previousText = normalizeExtractedPdfText(previousRun && previousRun.sourceText || '').trim();
+  const currentText = normalizeExtractedPdfText(currentRun && currentRun.sourceText || '').trim();
+  const samePageColumnAdvance = previousPage > 0 && previousPage === currentPage && previousColumn === 'left' && currentColumn === 'right';
+  const nextPageReadingOrder = previousPage > 0 && currentPage === previousPage + 1 && ['right', 'single'].includes(previousColumn) && ['left', 'single'].includes(currentColumn);
+  const previousSentenceIncomplete = Boolean(previousText) && !/[.!?。！？]$/.test(previousText);
+  const hyphenContinuation = /[A-Za-z]{2,}-\s*$/.test(previousText) && /^[a-z]/.test(currentText);
+  const lowercaseContinuation = previousSentenceIncomplete && /^[a-z]/.test(currentText);
+  const bodyTypes = new Set(['body', 'abstract']);
+  const checks = {
+    bodyTypes: bodyTypes.has(previousType) && bodyTypes.has(currentType),
+    adjacentReadingBoundary: samePageColumnAdvance || nextPageReadingOrder,
+    semanticContinuation: hyphenContinuation || lowercaseContinuation,
+    previousNotBlocked: !previousRun?.blockedByZone,
+    currentNotBlocked: !currentRun?.blockedByZone,
+  };
+  const failedEvidence = Object.entries(checks).filter(([, passed]) => !passed).map(([name]) => name);
+  return {
+    isContinuation: Object.values(checks).every(Boolean),
+    authorityVersion: 'paper-paragraph-identity-recovery/v1',
+    source: samePageColumnAdvance ? 'cross_column_reading_order' : (nextPageReadingOrder ? 'cross_page_reading_order' : 'unsupported_boundary'),
+    previousParagraphId: String(previousRun && previousRun.paragraphId || ''),
+    currentParagraphId: String(currentRun && currentRun.paragraphId || ''),
+    previousPage,
+    currentPage,
+    previousColumn,
+    currentColumn,
+    previousSentenceIncomplete,
+    hyphenContinuation,
+    lowercaseContinuation,
+    checks,
+    failedEvidence,
+  };
+}
+
+function createPaperParagraphCorrectionDecision({ previous = null, current = null, englishBodyFontSize = 9, verticalGap = 0, hardBlockReason = '', candidateReason = '' } = {}) {
+  const authorityVersion = 'paper-paragraph-correction/v1';
+  const boundaryIdentity = {
+    previousSegmentId: String(previous && previous.id || ''),
+    currentSegmentId: String(current && current.id || ''),
+  };
+  if (hardBlockReason) {
+    return {
+      authorityVersion,
+      candidateGenerated: false,
+      decision: 'reject',
+      reason: String(hardBlockReason),
+      evidence: { ...boundaryIdentity, hardBlockReason: String(hardBlockReason), candidateReason: String(candidateReason || '') },
+      missingEvidence: [`structural_rule:${String(hardBlockReason)}`],
+      boundary: { decision: 'reject', reason: String(hardBlockReason) },
+      tail: { decision: 'not_evaluated', reason: 'boundary_rejected' },
+    };
+  }
+  if (candidateReason !== 'sentence_end_gap' && candidateReason !== 'incomplete_sentence_large_gap') {
+    return {
+      authorityVersion,
+      candidateGenerated: false,
+      decision: 'no-op',
+      reason: candidateReason ? `unsupported_candidate_${candidateReason}` : 'no_correction_candidate',
+      evidence: { ...boundaryIdentity, candidateReason: String(candidateReason || '') },
+      missingEvidence: ['candidate_trigger:eligible_semantic_boundary'],
+      boundary: { decision: 'no-op', reason: candidateReason ? `unsupported_candidate_${candidateReason}` : 'no_correction_candidate' },
+      tail: { decision: 'pending', reason: 'awaiting_final_wrap' },
+    };
+  }
+  const evidence = candidateReason === 'incomplete_sentence_large_gap'
+    ? resolvePaperParagraphIncompleteSentenceLargeGapEvidence(previous, current, englishBodyFontSize, verticalGap)
+    : resolvePaperParagraphSemanticContinuationEvidence(previous, current, englishBodyFontSize, verticalGap);
+  const decision = evidence.isContinuation ? 'correct' : 'no-op';
+  const reason = evidence.isContinuation
+    ? (candidateReason === 'incomplete_sentence_large_gap' ? 'incomplete_sentence_large_gap_recovered' : 'semantic_body_continuation_recovered')
+    : (candidateReason === 'incomplete_sentence_large_gap' ? 'large_gap_preserved' : 'sentence_end_gap_preserved');
+  return {
+    authorityVersion,
+    candidateGenerated: true,
+    decision,
+    reason,
+    evidence: { ...boundaryIdentity, candidateReason, ...evidence },
+    missingEvidence: evidence.isContinuation ? [] : (evidence.failedEvidence || ['semantic_continuation_evidence']),
+    boundary: { decision, reason, evidence: { ...evidence } },
+    tail: { decision: decision === 'correct' ? 'pending' : 'not_evaluated', reason: decision === 'correct' ? 'awaiting_final_wrap' : 'paragraph_boundary_preserved' },
+  };
+}
+
+function updatePaperParagraphCorrectionTailDecision(correctionDecision, tailDecision) {
+  if (!correctionDecision || correctionDecision.authorityVersion !== 'paper-paragraph-correction/v1') return;
+  correctionDecision.tail = { ...tailDecision };
+  if (tailDecision && tailDecision.decision === 'correct') {
+    correctionDecision.decision = 'correct';
+    correctionDecision.reason = correctionDecision.boundary && correctionDecision.boundary.decision === 'correct'
+      ? 'boundary_and_tail_corrected'
+      : 'tail_corrected';
+  } else if (!correctionDecision.boundary || correctionDecision.boundary.decision !== 'correct') {
+    correctionDecision.decision = correctionDecision.boundary && correctionDecision.boundary.decision === 'reject' ? 'reject' : 'no-op';
+    correctionDecision.reason = correctionDecision.boundary && correctionDecision.boundary.reason || tailDecision && tailDecision.reason || 'no_correction_applied';
+  }
+  if (correctionDecision.decisionTrace) {
+    correctionDecision.decisionTrace.tail = { ...correctionDecision.tail };
+    correctionDecision.decisionTrace.finalDecision = {
+      decision: correctionDecision.decision,
+      reason: correctionDecision.reason,
+      missingEvidence: Array.isArray(correctionDecision.missingEvidence) ? correctionDecision.missingEvidence.slice() : [],
+    };
+    const lifecycle = correctionDecision.decisionTrace.lifecycle || [];
+    const tailStage = {
+      stage: 'tail_evaluation',
+      status: String(correctionDecision.tail && correctionDecision.tail.decision || 'not_evaluated'),
+      reason: String(correctionDecision.tail && correctionDecision.tail.reason || ''),
+    };
+    const existingTailIndex = lifecycle.findIndex((entry) => entry && entry.stage === 'tail_evaluation');
+    if (existingTailIndex >= 0) lifecycle[existingTailIndex] = tailStage;
+    else lifecycle.push(tailStage);
+    const finalizedStage = {
+      stage: 'paragraph_decision_finalized',
+      status: String(correctionDecision.decision || 'no-op'),
+      reason: String(correctionDecision.reason || ''),
+    };
+    const existingFinalIndex = lifecycle.findIndex((entry) => entry && entry.stage === 'paragraph_decision_finalized');
+    if (existingFinalIndex >= 0) lifecycle[existingFinalIndex] = finalizedStage;
+    else lifecycle.push(finalizedStage);
+  }
+}
+
 function getSegmentVerticalGap(previous, segment) {
   const prevLast = getSegmentLastLineBox(previous);
   const currFirst = getSegmentFirstLineBox(segment);
@@ -2898,6 +3289,8 @@ function getContinuationMergeReason(segment, previous, next) {
   const text = getSegmentText(segment);
   const previousText = getSegmentText(previous);
   if (!text) return "";
+  // Explicit section identity takes precedence over numeric/body continuation.
+  if (isSectionHeadingText(text) || isReferencesHeadingText(text)) return "";
   if (endsWithHyphenatedWord(previousText) || startsWithLowercaseWord(text)) return "hyphen_continuation";
   if (startsWithNumericContinuation(text)) return "numeric_continuation";
   if (segment.type === "heading" && isSentenceLikeBodyText(text)) return "body_context_continuation";
@@ -4068,7 +4461,7 @@ function isPaperReferenceHeadingText(text) {
   return isReferencesHeadingText(value) || /^(References|Bibliography|Works Cited)\b/i.test(value);
 }
 function detectReferenceHeadingSegment(segments) {
-  return (segments || []).filter((segment) => segment && (segment.referenceHeading || isPaperReferenceHeadingText(segment.sourceText || "")))
+  return (segments || []).filter((segment) => segment && (segment.referenceHeading || segment.referenceChainStart || isPaperReferenceHeadingText(segment.sourceText || "")))
     .sort((a, b) => Number(a.pageNumber || 0) - Number(b.pageNumber || 0) || Number(a.bbox && a.bbox.y || 0) - Number(b.bbox && b.bbox.y || 0))[0] || null;
 }
 
@@ -4080,6 +4473,7 @@ function retagSegmentAsReference(segment, trigger) {
   if (!segment || isReferenceModeExemptSegment(segment)) return segment;
   if (segment.type === "reference" && segment.referenceModeApplied) return segment;
   const { type: _ignoredType, semanticType: _ignoredSemanticType, ...untypedSegment } = segment;
+  const isHeading = Boolean(segment.referenceHeading || isPaperReferenceHeadingText(segment.sourceText || ""));
   return semanticStructureProducerStages.applyPaperReferenceChainClassification({
     ...untypedSegment,
     retaggedFromType: String(segment.type || ""),
@@ -4091,25 +4485,43 @@ function retagSegmentAsReference(segment, trigger) {
     referenceModeApplied: true,
     referenceModeTriggerSegmentId: String(trigger && trigger.id || `reference-start-p${Number(trigger && trigger.pageNumber || 0)}-y${Math.round(Number(trigger && trigger.bbox && trigger.bbox.y || 0))}`),
     referenceModeTriggerY: Number(trigger && trigger.bbox && trigger.bbox.y || 0),
-    classificationReason: segment.referenceHeading || isPaperReferenceHeadingText(segment.sourceText || "") ? "reference_mode_heading" : "reference_mode_page_y_coordinate",
-  }, { structureRole: "paper_reference_mode_retag" });
+    classificationReason: isHeading ? "reference_mode_heading" : "reference_mode_page_y_coordinate",
+  }, { structureRole: isHeading ? "paper_reference_chain_heading" : "paper_reference_mode_retag" });
 }
 
 function applyReferenceMode(segments, config) {
   if (!isPaperPdfConfig(config) || !config.enableReferencePreserve) return segments || [];
   const referenceStart = detectReferenceHeadingSegment(segments);
   if (!referenceStart) return segments || [];
+  const referenceSectionEndIndex = (segments || []).findIndex((segment) => segment && segment.referenceSectionBoundary === "end");
   const startPage = Number(referenceStart.pageNumber || 0);
   const triggerY = Number(referenceStart.bbox && referenceStart.bbox.y || 0);
   const tolerance = 12;
+  const headingBox = referenceStart.bbox || {};
+  const sourcePageWidth = Number(referenceStart.items && referenceStart.items[0] && referenceStart.items[0].pageWidth || 0);
+  const headingSpansPageCenter = sourcePageWidth > 0 && Number(headingBox.x) < sourcePageWidth / 2 &&
+    Number(headingBox.x) + Number(headingBox.width) > sourcePageWidth / 2;
   const retaggedIds = [];
-  const mapped = (segments || []).map((segment) => {
+  const mapped = (segments || []).map((segment, segmentIndex) => {
     const pageNumber = Number(segment && segment.pageNumber || 0);
     const y = Number(segment && segment.bbox && segment.bbox.y || 0);
-    const samePageAfterHeading = pageNumber === startPage && y >= triggerY - tolerance;
+    // In two-column reading order the entire right column follows the left.
+    // A right-column heading must not capture lower left-column body text.
+    const startColumn = String(referenceStart.column || "single");
+    const column = String(segment.column || "single");
+    const knownColumnPair = !headingSpansPageCenter && ["left", "right"].includes(startColumn) && ["left", "right"].includes(column);
+    const afterHeading = knownColumnPair && column !== startColumn
+      ? startColumn === "left" && column === "right"
+      : y >= triggerY - tolerance;
+    const samePageAfterHeading = pageNumber === startPage && afterHeading;
     const laterPage = pageNumber > startPage;
     const heading = segment === referenceStart || segment.referenceHeading || isPaperReferenceHeadingText(segment.sourceText || "");
-    if (heading || samePageAfterHeading || laterPage) {
+    // Reading-order arrays place an entire left column before a right-column or center-spanning
+    // heading. Geometry must therefore be allowed to classify same-page entries below the heading
+    // even when those entries precede the heading object in the array. The explicit end boundary
+    // is the only sequence gate.
+    const beforeExplicitEnd = referenceSectionEndIndex < 0 || segmentIndex < referenceSectionEndIndex;
+    if (beforeExplicitEnd && (heading || samePageAfterHeading || laterPage)) {
       const next = retagSegmentAsReference(segment, referenceStart);
       if (next !== segment) retaggedIds.push(String(segment.id || `p${pageNumber}-y${Math.round(y)}`));
       return next;
@@ -4179,22 +4591,90 @@ function applyCaptionFragmentMerges(segments) {
 
 function classifyPaperReferenceChainSegment(segment, structureRole, metadata = {}) {
   const { type: _ignoredType, semanticType: _ignoredSemanticType, ...untypedSegment } = segment || {};
+  const { inheritedSemanticType, ...carrierMetadata } = metadata || {};
   return semanticStructureProducerStages.applyPaperReferenceChainClassification(
-    { ...untypedSegment, ...metadata },
-    { structureRole },
+    { ...untypedSegment, ...carrierMetadata },
+    { structureRole, inheritedSemanticType },
   );
+}
+
+function isCrediblePostReferenceSectionHeading(segment) {
+  if (!segment || String(segment.type || "") !== "heading") return false;
+  const text = normalizeExtractedPdfText(segment.sourceText || "");
+  if (!text || isReferencesHeadingText(text)) return false;
+  // A reference entry may be visually short or bold and therefore arrive as a heading. URLs,
+  // dates, citation markers and sentence-like bibliography text are never section boundaries.
+  if (/https?:\/\/|www\.|\bdoi\s*:|\barxiv\b|^\s*\[?\d+\]?\s*[.)]?/i.test(text)) return false;
+  if (/\b(?:19|20)\d{2}\b/.test(text) || /[,.;:]\s*$/.test(text) || text.length > 90) return false;
+  return /^(?:appendix(?:\s+[A-Z0-9]+)?|supplementary(?:\s+(?:material|information|methods?|results?))?|acknowledg(?:e)?ments?|author\s+contributions?|conflicts?\s+of\s+interest|competing\s+interests?|funding|data\s+availability|ethics?(?:\s+statement)?|declarations?)$/i.test(text);
+}
+
+function getLeadingBracketedReferenceNumber(text) {
+  const match = normalizeExtractedPdfText(text || "").match(/^\[(\d{1,4})\]\s+/);
+  return match ? Number(match[1]) : 0;
+}
+
+function hasStrongBibliographyEvidence(text) {
+  const value = normalizeExtractedPdfText(text || "");
+  if (!value || value.length < 40) return false;
+  const markerCount = (value.match(/\[\d{1,4}\]/g) || []).length;
+  const yearCount = (value.match(/\b(?:19|20)\d{2}\b/g) || []).length;
+  const venueOrIdentifier = /\b(?:doi|arxiv|journal|letters|review|proceedings|university|press|nature|science|physics|astronom|monthly notices|apj|mnras|jcap)\b/i.test(value);
+  const authorInitials = /(?:^|\]\s+)[A-Z][A-Za-z'`.-]*(?:\s+[A-Z]\.){1,3}/.test(value);
+  return markerCount >= 2 && yearCount >= 1 && (venueOrIdentifier || authorInitials);
+}
+
+function detectHeadinglessReferenceStartIndex(segments) {
+  const list = segments || [];
+  if (list.some((segment) => segment && (segment.referenceHeading || isPaperReferenceHeadingText(segment.sourceText || "")))) return -1;
+  for (let index = 0; index < list.length; index += 1) {
+    const segment = list[index];
+    if (!segment || !["body", "heading"].includes(String(segment.type || ""))) continue;
+    const text = normalizeExtractedPdfText(segment.sourceText || "");
+    if (getLeadingBracketedReferenceNumber(text) !== 1 || !hasStrongBibliographyEvidence(text)) continue;
+    const pageNumber = Number(segment.pageNumber || 0);
+    const following = list.slice(index, index + 8).filter((candidate) => {
+      if (!candidate || !["body", "heading"].includes(String(candidate.type || ""))) return false;
+      const candidatePage = Number(candidate.pageNumber || 0);
+      return candidatePage >= pageNumber && candidatePage <= pageNumber + 2;
+    });
+    const distinctNumbers = new Set();
+    let bibliographyEvidenceCount = 0;
+    following.forEach((candidate) => {
+      const candidateText = normalizeExtractedPdfText(candidate.sourceText || "");
+      (candidateText.match(/\[(\d{1,4})\]/g) || []).forEach((marker) => distinctNumbers.add(Number(marker.slice(1, -1))));
+      if (hasStrongBibliographyEvidence(candidateText)) bibliographyEvidenceCount += 1;
+    });
+    if (distinctNumbers.size >= 4 && bibliographyEvidenceCount >= 2) return index;
+  }
+  return -1;
 }
 
 function applyReferenceTypingAndOrdering(segments) {
   let referencesStarted = false;
-  const typed = segments.map((segment) => {
+  const headinglessReferenceStartIndex = detectHeadinglessReferenceStartIndex(segments);
+  const typed = segments.map((segment, segmentIndex) => {
     const text = normalizeExtractedPdfText(segment.sourceText || "");
     const isReferencesHeading = segment.type === "heading" && isReferencesHeadingText(text);
     if (isReferencesHeading) {
       referencesStarted = true;
       return classifyPaperReferenceChainSegment(segment, "paper_reference_chain_heading", { referenceHeading: true });
     }
-    if (referencesStarted && segment.type === "body") {
+    if (segmentIndex === headinglessReferenceStartIndex) {
+      referencesStarted = true;
+      return classifyPaperReferenceChainSegment(segment, "paper_reference_chain_entry", {
+        referenceChainStart: true,
+        classificationReason: "reference_chain_numbered_start_without_heading",
+      });
+    }
+    if (referencesStarted && isCrediblePostReferenceSectionHeading(segment)) {
+      referencesStarted = false;
+      return classifyPaperReferenceChainSegment(segment, "paper_reference_section_end", {
+        inheritedSemanticType: segment.type,
+        classificationReason: segment.classificationReason || "reference_section_explicit_heading_end",
+      });
+    }
+    if (referencesStarted && (segment.type === "body" || segment.type === "heading")) {
       return classifyPaperReferenceChainSegment(segment, "paper_reference_chain_entry");
     }
     return segment;
@@ -4279,6 +4759,7 @@ function splitReferenceSegmentsInOrder(segments) {
 
     if (!referencesMode || segment.type !== "reference") {
       flushReference();
+      if (segment.referenceSectionBoundary === "end") referencesMode = false;
       output.push(segment);
       return;
     }
@@ -5809,6 +6290,16 @@ function runPdfExtractionPipeline(pageItemsByPage, config, imageGeometryByPage =
   } else {
     throw new Error("Unsupported PDF mode");
   }
+  if (config.mode === "paper_pdf") {
+    const formulaEvidence = structureCandidates.segments.map((segment, segmentIndex) => ({
+      segmentIndex,
+      strictPureEquationBlock: isStrictPureEquationBlock(segment, config),
+    }));
+    structureCandidates.segments = semanticStructureProducerStages.applyPaperFormulaClassification(
+      structureCandidates.segments,
+      formulaEvidence
+    );
+  }
   const semanticStructureArtifact = produceSemanticStructureArtifact({
     mode: config.mode,
     segments: structureCandidates.segments,
@@ -5933,8 +6424,15 @@ async function selectAndExtractPdf(payload) {
   try {
     extracted = await extractPdfTextWithPdfJs(buffer, pipelineConfig);
   } catch (err) {
-    console.error("[pdf] pdf.js extract failed:", err.message || err);
-    throw err;
+    console.warn('[pdf] initial pdf.js extraction failed; retrying once:', err && err.message || err);
+    pdfjsLib = null;
+    pdfjsLoadPromise = null;
+    try {
+      extracted = await extractPdfTextWithPdfJs(buffer, pipelineConfig);
+    } catch (retryErr) {
+      console.error("[pdf] pdf.js extract failed after retry:", retryErr && retryErr.message || retryErr);
+      throw retryErr;
+    }
   }
   return {
     ok: true,
@@ -6984,10 +7482,10 @@ function resetCjkFontExportCache() {
   cjkFontEmbedCallCount = 0;
 }
 
-async function canDrawWithCjkFont(fontPath) {
+async function canDrawWithCjkFont(fontPath, subset = false) {
   const probeDoc = await PDFDocument.create();
   probeDoc.registerFontkit(fontkit);
-  const probeFont = await probeDoc.embedFont(fs.readFileSync(fontPath), { subset: false });
+  const probeFont = await probeDoc.embedFont(fs.readFileSync(fontPath), { subset });
   const probePage = probeDoc.addPage([220, 80]);
   probePage.drawText("中文字体测试", {
     x: 10,
@@ -6996,6 +7494,9 @@ async function canDrawWithCjkFont(fontPath) {
     font: probeFont,
     color: rgb(0, 0, 0),
   });
+  // TTC collections can pass embedFont() but fail only when text is encoded or
+  // the subset is materialized. Saving the probe is therefore part of the
+  // capability check, not an optional diagnostic.
   await probeDoc.save();
   return true;
 }
@@ -7043,9 +7544,7 @@ async function loadCjkFont(pdfDoc) {
 
   for (const fontPath of candidates) {
     try {
-      const probeDoc = await PDFDocument.create();
-      probeDoc.registerFontkit(fontkit);
-      await probeDoc.embedFont(fs.readFileSync(fontPath), { subset: true });
+      await canDrawWithCjkFont(fontPath, true);
       const fontBytes = fs.readFileSync(fontPath);
       cjkFontEmbedCallCount += 1;
       const embeddedCjkFont = await pdfDoc.embedFont(fontBytes, { subset: true });
@@ -7061,9 +7560,7 @@ async function loadCjkFont(pdfDoc) {
 
   for (const fontPath of candidates) {
     try {
-      const probeDoc = await PDFDocument.create();
-      probeDoc.registerFontkit(fontkit);
-      await probeDoc.embedFont(fs.readFileSync(fontPath), { subset: false });
+      await canDrawWithCjkFont(fontPath, false);
       const fontBytes = fs.readFileSync(fontPath);
       cjkFontEmbedCallCount += 1;
       const embeddedCjkFont = await pdfDoc.embedFont(fontBytes, { subset: false });
@@ -7826,6 +8323,62 @@ function tokenizePaperWrapText(paragraph) {
   return tokens;
 }
 
+function composePaperWrapTokens(tokens) {
+  let value = '';
+  (tokens || []).forEach((token) => {
+    if (/^\s+$/.test(token)) {
+      if (value && !/\s$/.test(value)) value += ' ';
+      return;
+    }
+    value += token;
+  });
+  return value.trimEnd();
+}
+
+// Reconsider only the final break of one already-wrapped Paragraph. The number of lines, text
+// order, font metrics and width constraint remain unchanged, so no later Paragraph is displaced.
+function balancePaperParagraphTailLines(lines, font, size, maxWidth, correctionDecision = null) {
+  const record = (decision, reason, extra = {}) => updatePaperParagraphCorrectionTailDecision(correctionDecision, { decision, reason, ...extra });
+  if (!correctionDecision || correctionDecision.authorityVersion !== 'paper-paragraph-correction/v1') return lines;
+  if (!Array.isArray(lines) || lines.length < 2) { record('no-op', 'fewer_than_two_lines'); return lines; }
+  const next = lines.slice();
+  const previousIndex = next.length - 2;
+  const tailIndex = next.length - 1;
+  const previousLine = String(next[previousIndex] || '');
+  const tailLine = String(next[tailIndex] || '');
+  if (previousIndex === 0 && /^\s/.test(previousLine)) { record('no-op', 'first_line_indent_protected'); return lines; }
+  const previousWidth = font.widthOfTextAtSize(previousLine, size);
+  const tailWidth = font.widthOfTextAtSize(tailLine, size);
+  if (!(tailWidth < maxWidth * 0.58 && previousWidth > maxWidth * 0.72)) { record('no-op', 'tail_balance_not_needed', { previousWidth, tailWidth, maxWidth }); return lines; }
+
+  const needsJoinSpace = /[A-Za-z0-9]$/.test(previousLine) && /^[A-Za-z0-9]/.test(tailLine);
+  const tokens = tokenizePaperWrapText(previousLine + (needsJoinSpace ? ' ' : '') + tailLine);
+  if (tokens.length < 2) { record('reject', 'insufficient_tail_tokens'); return lines; }
+  const currentDifference = Math.abs(previousWidth - tailWidth);
+  let best = null;
+  for (let split = 1; split < tokens.length; split += 1) {
+    const left = composePaperWrapTokens(tokens.slice(0, split));
+    const right = composePaperWrapTokens(tokens.slice(split));
+    if (!left || !right || /^[，。；：、,.!?;:)]/.test(right) || /[（([《“‘]$/.test(left)) continue;
+    const leftWidth = font.widthOfTextAtSize(left, size);
+    const rightWidth = font.widthOfTextAtSize(right, size);
+    if (leftWidth > maxWidth || rightWidth > maxWidth) continue;
+    if (leftWidth < maxWidth * 0.48 || rightWidth < maxWidth * 0.48) continue;
+    const difference = Math.abs(leftWidth - rightWidth);
+    if (difference >= currentDifference - Math.max(1, size * 0.25)) continue;
+    if (!best || difference < best.difference) best = { left, right, difference };
+  }
+  if (!best) { record('reject', 'no_safe_tail_break', { previousWidth, tailWidth, maxWidth }); return lines; }
+  next[previousIndex] = best.left;
+  next[tailIndex] = best.right;
+  record('correct', 'tail_break_rebalanced', {
+    previousLines: [previousLine, tailLine],
+    correctedLines: [best.left, best.right],
+    lineCountPreserved: next.length === lines.length,
+  });
+  return next;
+}
+
 function wrapTranslatedTextForPaperBox(text, font, size, maxWidth, options = {}) {
   const source = cleanPdfText(text);
   if (!source) return [];
@@ -7869,7 +8422,7 @@ function wrapTranslatedTextForPaperBox(text, font, size, maxWidth, options = {})
       lines[index] = lines[index].slice(1);
     }
   }
-  return lines.filter(Boolean);
+  return balancePaperParagraphTailLines(lines.filter(Boolean), font, size, maxWidth, options.paragraphCorrectionDecision || null);
 }
 
 function wrapPaperTextParagraphs(text, font, size, maxWidth, options = {}) {
@@ -7880,6 +8433,55 @@ function wrapPaperTextParagraphs(text, font, size, maxWidth, options = {}) {
 
 function measurePaperTextHeight(paragraphs, lineHeight, paragraphSpacing) {
   return getPdfTextLayoutHeight(paragraphs, lineHeight, paragraphSpacing);
+}
+
+function resolvePaperParagraphPlacement(run, writeBox, fitted, font, text, pad, firstLinePrefix, validateCandidate, topAnchorPlan) {
+  const decision = { decision: 'no-op', candidateGenerated: false, fitVerified: false,
+    paragraphId: run && run.paragraphId, pageNumber: run && run.pageNumber,
+    column: run && run.column, reason: 'missing_finalized_authority' };
+  const unchanged = (reason) => { decision.reason = reason; return { decision }; };
+  if (!run || !run.paragraphCorrectionDecision || !['body', 'abstract'].includes(run.type)) return unchanged(decision.reason);
+  if (run.runPageMismatch || run.crossPageLineBoxCount || run.blockedByZone || run.leadingFormulaBoundaryApplied) return unchanged('source_ownership_or_structure_not_safe');
+  const source = run.sourceBbox;
+  const finiteBox = (b) => b && ['x', 'y', 'width', 'height'].every((k) => Number.isFinite(b[k])) && b.width > 0 && b.height > 0;
+  if (!finiteBox(source) || !finiteBox(writeBox)) return unchanged('missing_finite_geometry');
+  if (writeBox.y < source.y || writeBox.y >= source.y + source.height) return unchanged('anchor_outside_source_owner');
+  if (source.x < writeBox.x || source.x + source.width > writeBox.x + writeBox.width) return unchanged('source_width_outside_validated_region');
+  if (source.x === writeBox.x && source.width === writeBox.width) return unchanged('already_at_source_width');
+  // Two-column safe spans depend on the median of every final write box. Without a proof
+  // that this candidate leaves that shared geometry unchanged, retain the original result.
+  if (['left', 'right'].includes(run.column)) return unchanged('column_flow_invariance_not_proven');
+  if (!fitted || fitted.overflow || fitted.hardOverflow || fitted.writeIncomplete || fitted.translatedTextTruncated) return unchanged('baseline_fit_not_complete');
+  if (![fitted.size, fitted.lineHeight, fitted.paragraphSpacing, pad].every(Number.isFinite) || fitted.size <= 0 || pad < 0) return unchanged('missing_font_metrics');
+  if (!topAnchorPlan || topAnchorPlan.paragraphId !== run.paragraphId || topAnchorPlan.pageNumber !== run.pageNumber
+      || topAnchorPlan.column !== run.column || !Number.isFinite(topAnchorPlan.maxWriteBottomY)) return unchanged('missing_owned_capacity_authority');
+  const ownedBottom = Math.min(source.y + source.height, topAnchorPlan.maxWriteBottomY);
+  const candidate = { ...writeBox, x: source.x, width: source.width, height: ownedBottom - writeBox.y };
+  decision.candidateGenerated = true;
+  decision.beforeBox = { ...writeBox };
+  decision.candidateBox = { ...candidate };
+  const availableWidth = candidate.width - pad * 2;
+  const availableHeight = candidate.height - pad * 2;
+  if (availableWidth <= 0 || availableHeight <= 0) return unchanged('no_owned_text_capacity');
+  // Trial uses a detached decision: failed wrapping must not overwrite the baseline Tail trace.
+  const trialDecision = JSON.parse(JSON.stringify(run.paragraphCorrectionDecision));
+  const paragraphs = wrapPaperTextParagraphs(text, font, fitted.size, availableWidth, {
+    firstLinePrefix, paragraphCorrectionDecision: trialDecision,
+  });
+  const measured = measurePaperWrappedText(paragraphs, font, fitted.size, fitted.lineHeight, fitted.paragraphSpacing, availableHeight);
+  decision.metrics = { ...measured, availableWidth, availableHeight, fontSize: fitted.size };
+  const normalized = (value) => String(value).replace(/\s/g, '');
+  if (normalized(paragraphs.flat().join('')) !== normalized(text)) return unchanged('wrapped_content_changed');
+  if (!Number.isFinite(measured.maxLineWidth) || measured.maxLineWidth > availableWidth) return unchanged('actual_font_width_overflow');
+  if (!Number.isFinite(measured.renderedTextHeight) || measured.renderedTextHeight > availableHeight) return unchanged('actual_font_height_exceeds_validated_region');
+  candidate.height = measured.renderedTextHeight + pad * 2;
+  if (typeof validateCandidate !== 'function' || !validateCandidate(candidate, measured)) return unchanged('layout_validation_not_passed');
+  const candidateFitted = { ...fitted, paragraphs, ...measured, writeBoxTextDensityRatio: measured.densityRatio };
+  decision.decision = 'correct';
+  decision.reason = 'source_width_restored_within_validated_occupancy';
+  decision.fitVerified = true;
+  decision.verifiedWriteBox = { ...candidate };
+  return { decision, writeBox: candidate, fitted: candidateFitted };
 }
 
 function measurePaperWrappedText(paragraphs, font, fontSize, lineHeight, paragraphSpacing, writeBoxHeight) {
@@ -7925,6 +8527,10 @@ function fitPaperTextToBox(text, font, maxWidth, maxHeight, segmentType, preferr
   });
   const visualRole = authority.visualRole;
   const visualEquivalent = authority.visualEquivalentZhFontSize;
+  const paragraphWrapOptions = {
+    firstLinePrefix: String(options.firstLinePrefix || ''),
+    paragraphCorrectionDecision: options.paragraphCorrectionDecision || segment && segment.paragraphCorrectionDecision || null,
+  };
   if (cjkScaleEligible) {
     const fixedFontSize = authority.typography.initialFontSize;
     const visualEqualScale = options.visualEqualZhFontSizeScale || null;
@@ -7934,15 +8540,14 @@ function fitPaperTextToBox(text, font, maxWidth, maxHeight, segmentType, preferr
     let metrics = authority.metricsForFontSize(fixedFontSize, text);
     let lineHeight = metrics.lineHeight;
     let paragraphSpacing = metrics.paragraphSpacing;
-    const wrapOptions = { firstLinePrefix: String(options.firstLinePrefix || '') };
-    let paragraphs = wrapPaperTextParagraphs(text, font, fixedFontSize, maxWidth, wrapOptions);
+    let paragraphs = wrapPaperTextParagraphs(text, font, fixedFontSize, maxWidth, paragraphWrapOptions);
     let measured = measurePaperWrappedText(paragraphs, font, fixedFontSize, lineHeight, paragraphSpacing, maxHeight);
     if (measured.renderedTextHeight > maxHeight) {
       for (let trySize = fixedFontSize - authority.typography.fontSizeStep; trySize >= minFallbackSize; trySize -= authority.typography.fontSizeStep) {
         metrics = authority.metricsForFontSize(trySize, text);
         const lh = metrics.lineHeight;
         const ps = metrics.paragraphSpacing;
-        const pgs = wrapPaperTextParagraphs(text, font, trySize, maxWidth, wrapOptions);
+        const pgs = wrapPaperTextParagraphs(text, font, trySize, maxWidth, paragraphWrapOptions);
         const m = measurePaperWrappedText(pgs, font, trySize, lh, ps, maxHeight);
         actualFontSize = trySize;
         lineHeight = lh;
@@ -8027,7 +8632,7 @@ function fitPaperTextToBox(text, font, maxWidth, maxHeight, segmentType, preferr
     const resolvedMetrics = authority.metricsForFontSize(size, text);
     const lineHeight = resolvedMetrics.lineHeight;
     const paragraphSpacing = resolvedMetrics.paragraphSpacing;
-    const paragraphs = wrapPaperTextParagraphs(text, font, size, maxWidth);
+    const paragraphs = wrapPaperTextParagraphs(text, font, size, maxWidth, paragraphWrapOptions);
     const measured = measurePaperWrappedText(paragraphs, font, size, lineHeight, paragraphSpacing, maxHeight);
     lastLayout = { paragraphs, size, lineHeight, paragraphSpacing, ...measured };
     if (measured.renderedTextHeight <= maxHeight) {
@@ -8060,7 +8665,7 @@ function fitPaperTextToBox(text, font, maxWidth, maxHeight, segmentType, preferr
     }
   }
   const fallback = lastLayout || {
-    paragraphs: wrapPaperTextParagraphs(text, font, minSize, maxWidth),
+    paragraphs: wrapPaperTextParagraphs(text, font, minSize, maxWidth, paragraphWrapOptions),
     size: minSize,
     lineHeight: authority.metricsForFontSize(minSize, text).lineHeight,
     paragraphSpacing: authority.metricsForFontSize(minSize, text).paragraphSpacing,
@@ -8133,6 +8738,42 @@ function detectPaperParagraphCollision(currentRenderedBox, previousRenderedBoxes
 }
 
 // Layout planning / validation helpers — dry-run safety layer before page.drawText
+function buildPaperReferenceEntryStartByPage(segments) {
+  const starts = new Map();
+  (segments || []).forEach((segment) => {
+    if (String(segment && (segment.semanticReferenceRole || segment.referenceRole) || '') !== 'heading') return;
+    const pageNumber = Number(segment && segment.pageNumber || 0);
+    if (!pageNumber || !segment.bbox) return;
+    const entryStartY = Number(segment.bbox.y || 0) + Math.max(0, Number(segment.bbox.height || 0));
+    const current = starts.get(pageNumber);
+    if (!Number.isFinite(current) || entryStartY < current) starts.set(pageNumber, entryStartY);
+  });
+  return starts;
+}
+
+function getPaperNonWritableSourceBoxes(segment, referenceEntryStartByPage) {
+  if (!segment || !segment.bbox) return [];
+  const pageNumber = Number(segment.pageNumber || 0);
+  const entryStartY = referenceEntryStartByPage instanceof Map ? referenceEntryStartByPage.get(pageNumber) : undefined;
+  const preciseReferenceBoxes = String(segment.type || '') === 'reference' && Array.isArray(segment.lineBoxes)
+    ? segment.lineBoxes.filter((line) => {
+      if (!line) return false;
+      const linePage = Number(line.pageNumber || pageNumber);
+      const lineY = Number(line.y || 0);
+      return linePage === pageNumber && (!Number.isFinite(entryStartY) || lineY >= entryStartY - 1);
+    }).map((line) => ({
+      x: Number(line.x || 0), y: Number(line.y || 0),
+      width: Number(line.width || 0), height: Number(line.height || 0),
+    })).filter((box) => box.width > 0 && box.height > 0)
+    : [];
+  return preciseReferenceBoxes.length
+    ? preciseReferenceBoxes
+    : [{
+      x: Number(segment.bbox.x || 0), y: Number(segment.bbox.y || 0),
+      width: Number(segment.bbox.width || 0), height: Number(segment.bbox.height || 0),
+    }];
+}
+
 function buildPaperLayoutBlockingZones(allSegments, imageRegionsByPage, pageSizesByPage, captionRegionsByPage = {}) {
   const zones = new Map();
   const imageRegionBlockingZoneByPage = {};
@@ -8142,6 +8783,7 @@ function buildPaperLayoutBlockingZones(allSegments, imageRegionsByPage, pageSize
     if (!zones.has(key)) zones.set(key, []);
     zones.get(key).push(zone);
   };
+  const referenceEntryStartByPage = buildPaperReferenceEntryStartByPage(allSegments);
   Object.entries(imageRegionsByPage || {}).forEach(([pStr, regions]) => {
     const pn = Number(pStr);
     (regions || []).forEach((r) => {
@@ -8195,9 +8837,8 @@ function buildPaperLayoutBlockingZones(allSegments, imageRegionsByPage, pageSize
     if (!seg.bbox) return;
     const pn = Number(seg.pageNumber || 0);
     const col = String(seg.column || 'single');
-    const bbox = { x: Number(seg.bbox.x||0), y: Number(seg.bbox.y||0), width: Number(seg.bbox.width||0), height: Number(seg.bbox.height||0) };
-    const zone = { type: t, bbox, hard: isHard, segId: seg.id };
-    push(`${pn}:${col}`, zone);
+    const blockingBoxes = getPaperNonWritableSourceBoxes(seg, referenceEntryStartByPage);
+    blockingBoxes.forEach((bbox) => push(`${pn}:${col}`, { type: t, bbox, hard: isHard, segId: seg.id }));
     // A 'single'-column zone (header/footer/margin/watermark/pageNumber/sideMark/author are
     // almost always full-width) must also block BOTH left and right column writes — the same
     // cross-column rule already applied to imageRegion/referenceZone above. Without this, a
@@ -8206,15 +8847,18 @@ function buildPaperLayoutBlockingZones(allSegments, imageRegionsByPage, pageSize
     // (collectPaperNonWritableZoneEntriesByPage, which is not column-scoped) absolutely does —
     // meaning the violation only got caught after the fact with no recovery attempt at all.
     if (col === 'single') {
-      push(`${pn}:left`, zone);
-      push(`${pn}:right`, zone);
+      blockingBoxes.forEach((bbox) => {
+        const zone = { type: t, bbox, hard: isHard, segId: seg.id };
+        push(`${pn}:left`, zone);
+        push(`${pn}:right`, zone);
+      });
     } else {
-      push(`${pn}:single`, zone);
+      blockingBoxes.forEach((bbox) => push(`${pn}:single`, { type: t, bbox, hard: isHard, segId: seg.id }));
     }
   });
   const refStartByPageColumn = new Map();
   (allSegments || []).forEach((seg) => {
-    if (!(seg.referenceHeading || isPaperReferenceHeadingText(seg.sourceText || seg.textPreview || ""))) return;
+    if (String(seg.semanticReferenceRole || seg.referenceRole || "") !== "heading") return;
     if (!seg.bbox) return;
     const pn = Number(seg.pageNumber || 0);
     const col = String(seg.column || 'single');
@@ -8222,13 +8866,21 @@ function buildPaperLayoutBlockingZones(allSegments, imageRegionsByPage, pageSize
     const y = Number(seg.bbox.y || 0);
     const current = refStartByPageColumn.get(key);
     if (!current || y < current.y) {
-      refStartByPageColumn.set(key, { y, column: col, segmentId: seg.id });
+      refStartByPageColumn.set(key, {
+        y,
+        entryStartY: y + Math.max(0, Number(seg.bbox.height || 0)),
+        column: col,
+        segmentId: seg.id,
+      });
     }
   });
   refStartByPageColumn.forEach((entry, key) => {
     const [pageKey] = String(key).split(":");
     const pn = Number(pageKey || 0);
-    const refY = Number(entry && entry.y || 0);
+    // The section boundary starts at the heading, while the non-writable entry region starts
+    // immediately after the heading's owned source box. This lets the translated heading replace
+    // itself without authorizing any write over the preserved reference entries below it.
+    const refY = Number(entry && (entry.entryStartY || entry.y) || 0);
     const col = String(entry && entry.column || 'single');
     const pageSize = pageSizesByPage instanceof Map ? pageSizesByPage.get(pn) : null;
     const pageWidth = Math.max(1, Number(pageSize && pageSize.width || 595));
@@ -8407,6 +9059,7 @@ function getPaperNonWritableZoneCategory(segment, skipReason) {
 // hardcoded segmentId, and never derived from shrinking/removing a region to pass validation.
 function collectPaperNonWritableZoneEntriesByPage(allSegments, reportById) {
   const zonesByPage = new Map();
+  const referenceEntryStartByPage = buildPaperReferenceEntryStartByPage(allSegments);
   const push = (pageKey, entry) => {
     if (!zonesByPage.has(pageKey)) zonesByPage.set(pageKey, []);
     zonesByPage.get(pageKey).push(entry);
@@ -8422,12 +9075,12 @@ function collectPaperNonWritableZoneEntriesByPage(allSegments, reportById) {
     // are indexed under their correct page, not a mis-attributed one.
     const _zonePageRes = resolveSegmentSourcePage(seg);
     const _zonePage = _zonePageRes.sourcePage || Number(seg.pageNumber || 0);
-    push(String(_zonePage), {
+    getPaperNonWritableSourceBoxes(seg, referenceEntryStartByPage).forEach((box) => push(String(_zonePage), {
       segmentId: String(seg.id || ''),
       zoneCategory,
       column: String(seg.column || 'single'),
-      box: { ...seg.bbox },
-    });
+      box,
+    }));
   });
   Object.entries(currentPdfImageRegionsByPage || {}).forEach(([pageKey, regions]) => {
     (regions || []).forEach((region) => {
@@ -8967,6 +9620,7 @@ function buildPaperLayoutPlan(allSegments, segmentReports) {
   // preserve list can never still overlap it, regardless of what geometry the earlier per-segment
   // write loop happened to capture (header/footer/pageNumber/license/reference/side-mark zones).
   const preserveBoxesByPage = new Map();
+  const referenceEntryStartByPage = buildPaperReferenceEntryStartByPage(allSegments);
   allSegments.forEach((seg) => {
     if (!seg || !seg.bbox) return;
     const segReport = reportById.get(String(seg.id || ''));
@@ -8975,7 +9629,9 @@ function buildPaperLayoutPlan(allSegments, segmentReports) {
     if (!isSegPreserve) return;
     const pageKey = String(seg.pageNumber || 0);
     if (!preserveBoxesByPage.has(pageKey)) preserveBoxesByPage.set(pageKey, []);
-    preserveBoxesByPage.get(pageKey).push({ segmentId: String(seg.id || ''), box: { ...seg.bbox } });
+    getPaperNonWritableSourceBoxes(seg, referenceEntryStartByPage).forEach((box) => {
+      preserveBoxesByPage.get(pageKey).push({ segmentId: String(seg.id || ''), box });
+    });
   });
   // Generic nonWritable-zone registry for the write-box gate (rule 2 below): every preserve-type
   // segment plus every geometric image region, regardless of which specific segmentIds exist.
@@ -9577,6 +10233,7 @@ function validateLayoutPlanBeforeExecution(layoutPlanItems, reportById, options)
   const _duplicateCanonicalMap = (options && options.duplicateCanonicalMap) || {};
   const _itemBySegId = (options && options.itemBySegId) || new Map();
   const _writeCoverageMap = (options && options.writeCoverageMap) || new Map();
+  const _preserveSourceBoxesBySegmentId = (options && options.preserveSourceBoxesBySegmentId) || new Map();
   const itemResults = new Map();
   const get = (id) => {
     if (!itemResults.has(id)) itemResults.set(id, { errors: [], warnings: [], diagnostics: [] });
@@ -9722,7 +10379,8 @@ function validateLayoutPlanBeforeExecution(layoutPlanItems, reportById, options)
     (wi.sourceMaskBoxes || []).forEach((mb) => {
       preserveItems.forEach((pi) => {
         if (wi.pageNumber !== pi.pageNumber) return;
-        if (computeLayoutPlanBoxOverlapArea(mb, pi.sourceBox) > 4) {
+        const preserveSourceBoxes = _preserveSourceBoxesBySegmentId.get(String(pi.segmentId || '')) || [pi.sourceBox];
+        if (preserveSourceBoxes.some((sourceBox) => computeLayoutPlanBoxOverlapArea(mb, sourceBox) > 4)) {
           if (!_maskPreserveHit.has(wi.segmentId)) {
             maskPreserveOverlapCount++;
             _maskPreserveHit.add(wi.segmentId);
@@ -10140,7 +10798,21 @@ function buildPaperColumnFlowPlan(writeOps, context = {}) {
         const candidateY = Math.max(cursorY, spanY, sourceAnchorY);
         const available = spanBottom - candidateY;
         if (item.estimatedRenderedHeight <= available) {
-          item.flowWriteBox = { x: Number(span.x || 0), y: candidateY, width: Math.min(Number(item.originalWriteBox.width || 0), Number(span.width || 0)), height: item.estimatedRenderedHeight };
+          const placement = itemReport && itemReport.paragraphCorrectionDecision && itemReport.paragraphCorrectionDecision.placement;
+          const verifiedBox = placement && placement.verifiedWriteBox;
+          const originalX = Number(item.originalWriteBox.x);
+          const originalWidth = Number(item.originalWriteBox.width);
+          // Consume only a completed fit decision for this physical owner. A planned candidate
+          // is not authority, and must never bypass the existing safe-span or rollback rules.
+          const preservePlacement = writeKind === 'paragraphRun' && ['body', 'abstract'].includes(item.type)
+            && placement && placement.decision === 'correct' && placement.fitVerified === true
+            && Number(placement.pageNumber) === pageNumber && placement.column === column
+            && placement.paragraphId === item.op.meta.paragraphRunId
+            && Boolean(placement.paragraphId) && verifiedBox
+            && Number.isFinite(originalX) && Number.isFinite(originalWidth) && originalWidth > 0
+            && Number(verifiedBox.x) === originalX && Number(verifiedBox.width) === originalWidth
+            && originalX >= Number(span.x) && originalX + originalWidth <= Number(span.x) + Number(span.width);
+          item.flowWriteBox = { x: preservePlacement ? originalX : Number(span.x || 0), y: candidateY, width: preservePlacement ? originalWidth : Math.min(Number(item.originalWriteBox.width || 0), Number(span.width || 0)), height: item.estimatedRenderedHeight };
           item.safeSpanId = span.id;
           item.flowApplied = true;
           item.positionAnchorApplied = true;
@@ -11119,6 +11791,7 @@ function buildPaperParagraphRuns(allSegments, pageBodyFontStats, pipelineConfig 
   let paragraphBoundaryBySourceIdentityCount = 0;
   let paragraphBoundaryByFirstLineIndentCount = 0;
   let paragraphNegativeOverlapContinuationCount = 0;
+  let paragraphSemanticContinuationRecoveryCount = 0;
   const paragraphBoundaryEvidenceDetails = [];
   const sorted = (allSegments || [])
     .filter((s) => s && s.bbox && Number(s.pageNumber || 0) > 0)
@@ -11140,6 +11813,7 @@ function buildPaperParagraphRuns(allSegments, pageBodyFontStats, pipelineConfig 
   let currentType = "";
   let currentBreakBefore = "start_of_flow";
   let currentReclassifiedCount = 0;
+  let currentCorrectionBoundaryDecisions = [];
   let _runPageMismatchCount = 0;
   const _runPageMismatchDetails = [];
   let _page1ContainsPage2SourceRunCount = 0;
@@ -11157,9 +11831,11 @@ function buildPaperParagraphRuns(allSegments, pageBodyFontStats, pipelineConfig 
     const flushType = currentType;
     const flushColumn = currentColumn;
     const flushReclassifiedCount = currentReclassifiedCount;
+    const flushCorrectionBoundaryDecisions = currentCorrectionBoundaryDecisions.slice();
     // Reset flow state immediately so re-entrancy is safe
     currentSegments = [];
     currentReclassifiedCount = 0;
+    currentCorrectionBoundaryDecisions = [];
 
     // Split segments by effective page number.
     // Each segment's authoritative page comes from its first lineBox (if present),
@@ -11278,6 +11954,110 @@ function buildPaperParagraphRuns(allSegments, pageBodyFontStats, pipelineConfig 
         const boxes = Array.isArray(s.lineBoxes) ? s.lineBoxes : [];
         return boxes.map((lineBox, index) => String(lineBox && lineBox.id || `${String(s.id || '')}-lb${index}`));
       });
+      const boundaryCorrected = flushCorrectionBoundaryDecisions.some((entry) => entry && entry.decision === 'correct');
+      const boundaryRejected = flushCorrectionBoundaryDecisions.some((entry) => entry && entry.decision === 'reject');
+      const recoveryCandidates = flushCorrectionBoundaryDecisions.filter((entry) => entry && entry.candidateGenerated === true);
+      const structuralBoundaryRules = flushCorrectionBoundaryDecisions
+        .filter((entry) => entry && entry.decision === 'reject')
+        .map((entry) => String(entry.reason || entry.evidence && entry.evidence.hardBlockReason || 'structural_boundary'));
+      const missingRecoveryEvidence = Array.from(new Set(
+        flushCorrectionBoundaryDecisions.flatMap((entry) => Array.isArray(entry && entry.missingEvidence) ? entry.missingEvidence : [])
+      ));
+      if (!recoveryCandidates.length && !missingRecoveryEvidence.length) {
+        missingRecoveryEvidence.push('candidate_trigger:eligible_semantic_boundary');
+      }
+      const paragraphCorrectionDecision = {
+        authorityVersion: 'paper-paragraph-correction/v1',
+        paragraphId,
+        decision: boundaryCorrected ? 'correct' : (boundaryRejected ? 'reject' : 'no-op'),
+        reason: boundaryCorrected ? 'semantic_boundary_corrected' : (boundaryRejected ? 'boundary_candidate_rejected' : 'no_boundary_correction_candidate'),
+        boundary: {
+          decision: boundaryCorrected ? 'correct' : (boundaryRejected ? 'reject' : 'no-op'),
+          reason: boundaryCorrected ? 'semantic_boundary_corrected' : (boundaryRejected ? 'boundary_candidate_rejected' : 'no_boundary_correction_candidate'),
+          decisions: flushCorrectionBoundaryDecisions.map((entry) => ({ ...entry })),
+        },
+        tail: { decision: 'pending', reason: 'awaiting_final_wrap' },
+        decisionTrace: {
+          traceVersion: 'paper-paragraph-decision-trace/v1',
+          diagnosticOnly: true,
+          paragraphId,
+          lifecycle: [
+            {
+              stage: 'paragraph_run_constructed',
+              status: 'finalized',
+              segmentIds: segs.map((s) => String(s.id || '')).filter(Boolean),
+              lineCount,
+              segmentCount: segs.length,
+            },
+            {
+              stage: 'recovery_candidate_generation',
+              status: recoveryCandidates.length ? 'generated' : 'not_generated',
+              candidateCount: recoveryCandidates.length,
+              evaluatedBoundaryCount: flushCorrectionBoundaryDecisions.length,
+              eligibleTriggers: ['sentence_end_gap', 'incomplete_sentence_large_gap'],
+            },
+            {
+              stage: 'evidence_evaluation',
+              status: boundaryCorrected ? 'sufficient' : (boundaryRejected ? 'structural_reject' : 'insufficient_or_not_applicable'),
+            },
+            {
+              stage: 'boundary_decision',
+              status: boundaryCorrected ? 'correct' : (boundaryRejected ? 'reject' : 'no-op'),
+            },
+          ],
+          candidate: {
+            generated: recoveryCandidates.length > 0,
+            count: recoveryCandidates.length,
+            eligibleTriggers: ['sentence_end_gap', 'incomplete_sentence_large_gap'],
+            evaluatedBoundaries: flushCorrectionBoundaryDecisions.map((entry) => ({ ...entry })),
+          },
+          evidence: {
+            structural: {
+              pageNumber: bucketPage,
+              column: flushColumn,
+              type: flushType,
+              breakBeforeReason: bucketIdx === 0 ? flushBreakBefore : 'cross_page_split',
+              breakAfterReason: bucketIdx === sortedPageKeys.length - 1 ? (breakAfterReason || 'end_of_flow') : 'cross_page_split',
+              blockedByZone: Boolean(segs.some((s) => s.imageRegionOverlap || isPaperPdfNonWritableZoneType(s.zoneType))),
+              rejectedRules: structuralBoundaryRules,
+            },
+            semantic: {
+              candidateEvidence: recoveryCandidates.map((entry) => ({
+                previousSegmentId: String(entry && entry.evidence && entry.evidence.previousSegmentId || ''),
+                currentSegmentId: String(entry && entry.evidence && entry.evidence.currentSegmentId || ''),
+                source: String(entry && entry.evidence && entry.evidence.source || ''),
+                isContinuation: Boolean(entry && entry.evidence && entry.evidence.isContinuation),
+                checks: entry && entry.evidence && entry.evidence.checks || null,
+                failedEvidence: entry && entry.evidence && entry.evidence.failedEvidence || [],
+              })),
+            },
+            geometry: {
+              sourceBbox: sourceBbox ? { ...sourceBbox } : null,
+              firstLineBox: firstLineBox ? { ...firstLineBox } : null,
+              averageLineGap: Number(averageLineGap.toFixed(2)),
+              lineCount,
+              segmentCount: segs.length,
+              candidateGeometry: recoveryCandidates.map((entry) => ({
+                verticalGap: entry && entry.evidence && entry.evidence.verticalGap,
+                minimumContinuationGap: entry && entry.evidence && entry.evidence.minimumContinuationGap,
+                maximumContinuationGap: entry && entry.evidence && entry.evidence.maximumContinuationGap,
+                horizontalOverlap: entry && entry.evidence && entry.evidence.horizontalOverlap,
+                lineStartDelta: entry && entry.evidence && entry.evidence.lineStartDelta,
+                maximumLineStartDelta: entry && entry.evidence && entry.evidence.maximumLineStartDelta,
+                firstLineIndent: entry && entry.evidence && entry.evidence.firstLineIndent,
+                indentThreshold: entry && entry.evidence && entry.evidence.indentThreshold,
+              })),
+            },
+          },
+          missingEvidence: missingRecoveryEvidence,
+          tail: { decision: 'pending', reason: 'awaiting_final_wrap' },
+          finalDecision: {
+            decision: boundaryCorrected ? 'correct' : (boundaryRejected ? 'reject' : 'no-op'),
+            reason: boundaryCorrected ? 'semantic_boundary_corrected' : (boundaryRejected ? 'boundary_candidate_rejected' : 'no_boundary_correction_candidate'),
+            missingEvidence: missingRecoveryEvidence.slice(),
+          },
+        },
+      };
       const run = {
         paragraphId,
         pageNumber: bucketPage,
@@ -11316,8 +12096,12 @@ function buildPaperParagraphRuns(allSegments, pageBodyFontStats, pipelineConfig 
         leadingFormulaBoundarySource: leadingFormulaProseLine ? 'first_prose_line_after_protected_formula' : '',
         leadingFormulaGlyphBottom: Number(leadingFormulaGlyphBottom.toFixed(3)),
         leadingFormulaBackgroundClearanceApplied: leadingFormulaGlyphBottom > 0 && anchorY > rawParagraphAnchorY,
+        paragraphCorrectionDecision,
       };
-      segs.forEach((s) => bySegmentId.set(String(s.id || ''), paragraphId));
+      segs.forEach((s) => {
+        bySegmentId.set(String(s.id || ''), paragraphId);
+        s.paragraphCorrectionDecision = paragraphCorrectionDecision;
+      });
       runs.push(run);
       if (runPageMismatch) {
         _runPageMismatchCount++;
@@ -11395,6 +12179,7 @@ function buildPaperParagraphRuns(allSegments, pageBodyFontStats, pipelineConfig 
     const overlapContinuationEvidence = boundaryArbitration.overlapContinuationEvidence;
     const strongNegativeOverlapContinuation = boundaryArbitration.strongNegativeOverlapContinuation;
     let breakReason = "";
+    let correctionBoundaryDecisionRecorded = false;
     if (vGap > maxGap) breakReason = "large_y_gap";
     else if (vGap < negFloor && !strongNegativeOverlapContinuation) breakReason = "negative_y_overlap";
     else if (xOverlap < 0.5 && xDelta > font * 2.5) breakReason = "x_misalignment";
@@ -11426,6 +12211,39 @@ function buildPaperParagraphRuns(allSegments, pageBodyFontStats, pipelineConfig 
       if (lastHasProtectedFormula || incomingHasProtectedFormula) breakReason = "formula_prose_block";
       else if (lastSeg.imageRegionOverlap || segment.imageRegionOverlap) breakReason = "image_region_block";
     }
+    if (breakReason === 'large_y_gap') {
+      const previousText = normalizeExtractedPdfText(lastSeg.sourceText || '');
+      const currentText = normalizeExtractedPdfText(segment.sourceText || '');
+      const hasProtectedFormulaBoundary = getFormulaProtectedLineBoxes(lastSeg, pipelineConfig).length > 0 ||
+        getFormulaProtectedLineBoxes(segment, pipelineConfig).length > 0;
+      const hasImageBoundary = Boolean(lastSeg.imageRegionOverlap || segment.imageRegionOverlap);
+      const hasNamedStructuralBoundary = (isPaperVisualParagraphBoundaryText(previousText) && !isPaperInlineFigureReferenceText(previousText)) ||
+        (isPaperVisualParagraphBoundaryText(currentText) && !isPaperInlineFigureReferenceText(currentText));
+      if (!hasProtectedFormulaBoundary && !hasImageBoundary && !hasNamedStructuralBoundary) {
+        const correctionDecision = createPaperParagraphCorrectionDecision({
+          previous: lastSeg,
+          current: segment,
+          englishBodyFontSize: font,
+          verticalGap: vGap,
+          candidateReason: 'incomplete_sentence_large_gap',
+        });
+        currentCorrectionBoundaryDecisions.push(correctionDecision);
+        correctionBoundaryDecisionRecorded = true;
+        if (correctionDecision.decision === 'correct') {
+          breakReason = '';
+          paragraphSemanticContinuationRecoveryCount++;
+          paragraphBoundaryEvidenceDetails.push({
+            previousSegmentId: String(lastSeg.id || ''),
+            currentSegmentId: String(segment.id || ''),
+            pageNumber,
+            column,
+            shouldBreak: false,
+            reason: 'incomplete_sentence_large_gap_recovered',
+            ...(correctionDecision.evidence || {}),
+          });
+        }
+      }
+    }
     if (!breakReason && !strongNegativeOverlapContinuation) {
       const prevText = normalizeExtractedPdfText(lastSeg.sourceText || "");
       // Use only hard sentence terminators (not semicolons/colons which appear within paragraphs)
@@ -11446,12 +12264,87 @@ function buildPaperParagraphRuns(allSegments, pageBodyFontStats, pipelineConfig 
         });
       }
       // Any gap + sentence ending → new paragraph (inter-paragraph gaps are typically > 3pt)
-      else if (prevEnded && vGap > Math.max(3, font * 0.45)) breakReason = "sentence_end_gap";
+      else if (prevEnded && vGap > Math.max(3, font * 0.45)) {
+        const correctionDecision = createPaperParagraphCorrectionDecision({
+          previous: lastSeg,
+          current: segment,
+          englishBodyFontSize: font,
+          verticalGap: vGap,
+          candidateReason: 'sentence_end_gap',
+        });
+        currentCorrectionBoundaryDecisions.push(correctionDecision);
+        correctionBoundaryDecisionRecorded = true;
+        const semanticContinuation = correctionDecision.evidence || {};
+        if (correctionDecision.decision === 'correct') {
+          paragraphSemanticContinuationRecoveryCount++;
+          paragraphBoundaryEvidenceDetails.push({
+            previousSegmentId: String(lastSeg.id || ''),
+            currentSegmentId: String(segment.id || ''),
+            pageNumber,
+            column,
+            shouldBreak: false,
+            reason: 'semantic_body_continuation_recovered',
+            ...semanticContinuation,
+          });
+        } else breakReason = "sentence_end_gap";
+      }
+    }
+    if (breakReason && !correctionBoundaryDecisionRecorded) {
+      currentCorrectionBoundaryDecisions.push(createPaperParagraphCorrectionDecision({
+        previous: lastSeg,
+        current: segment,
+        englishBodyFontSize: font,
+        verticalGap: vGap,
+        hardBlockReason: breakReason,
+      }));
     }
     if (breakReason) { flushRun(`break_before_${breakReason}`); startNewRun(segment, breakReason, effectiveType); }
     else { currentSegments.push(segment); if (captionReclassified) currentReclassifiedCount++; }
   });
   flushRun("end_of_flow");
+  let logicalParagraphSequence = 0;
+  let crossColumnParagraphIdentityRecoveryCount = 0;
+  let crossPageParagraphIdentityRecoveryCount = 0;
+  const paragraphIdentityRecoveryDetails = [];
+  let previousPhysicalRun = null;
+  runs.forEach((run) => {
+    const evidence = previousPhysicalRun
+      ? resolvePaperParagraphCrossBoundaryIdentityEvidence(previousPhysicalRun, run)
+      : null;
+    if (evidence && evidence.isContinuation) {
+      run.logicalParagraphId = previousPhysicalRun.logicalParagraphId;
+      run.paragraphIdentityRecoveryDecision = {
+        authorityVersion: 'paper-paragraph-identity-recovery/v1',
+        decision: 'correct',
+        reason: evidence.source === 'cross_page_reading_order' ? 'cross_page_paragraph_identity_recovered' : 'cross_column_paragraph_identity_recovered',
+        evidence,
+      };
+      if (evidence.source === 'cross_page_reading_order') crossPageParagraphIdentityRecoveryCount++;
+      else crossColumnParagraphIdentityRecoveryCount++;
+      paragraphIdentityRecoveryDetails.push({
+        logicalParagraphId: run.logicalParagraphId,
+        decision: 'correct',
+        reason: run.paragraphIdentityRecoveryDecision.reason,
+        ...evidence,
+      });
+    } else {
+      logicalParagraphSequence++;
+      run.logicalParagraphId = `lp-${logicalParagraphSequence}`;
+      run.paragraphIdentityRecoveryDecision = {
+        authorityVersion: 'paper-paragraph-identity-recovery/v1',
+        decision: 'no-op',
+        reason: previousPhysicalRun ? 'cross_boundary_identity_evidence_insufficient' : 'first_physical_run',
+        evidence,
+      };
+    }
+    run.segmentIds.forEach((segmentId) => {
+      const segment = (allSegments || []).find((entry) => String(entry && entry.id || '') === String(segmentId));
+      if (!segment) return;
+      segment.logicalParagraphId = run.logicalParagraphId;
+      segment.paragraphIdentityRecoveryDecision = run.paragraphIdentityRecoveryDecision;
+    });
+    previousPhysicalRun = run;
+  });
   const bodyRuns = runs.filter((r) => BODY_RUN_TYPES.has(r.type));
   const runByPage = {};
   const runByColumn = {};
@@ -11558,6 +12451,12 @@ function buildPaperParagraphRuns(allSegments, pageBodyFontStats, pipelineConfig 
       paperParagraphBoundaryBySourceIdentityCount: paragraphBoundaryBySourceIdentityCount,
       paperParagraphBoundaryByFirstLineIndentCount: paragraphBoundaryByFirstLineIndentCount,
       paperParagraphNegativeOverlapContinuationCount: paragraphNegativeOverlapContinuationCount,
+      paperParagraphSemanticContinuationRecoveryCount: paragraphSemanticContinuationRecoveryCount,
+      paperParagraphIdentityRecoveryAuthorityVersion: 'paper-paragraph-identity-recovery/v1',
+      paperLogicalParagraphCount: logicalParagraphSequence,
+      paperCrossColumnParagraphIdentityRecoveryCount: crossColumnParagraphIdentityRecoveryCount,
+      paperCrossPageParagraphIdentityRecoveryCount: crossPageParagraphIdentityRecoveryCount,
+      paperParagraphIdentityRecoveryDetails: paragraphIdentityRecoveryDetails,
       paperParagraphBoundaryEvidenceDetails: paragraphBoundaryEvidenceDetails,
       paperOversizedParagraphRunCount: oversizedRuns.length,
       paperOversizedParagraphRunDetails: oversizedRuns.map((r) => ({ paragraphId: r.paragraphId, pageNumber: r.pageNumber, column: r.column, lineCount: r.lineCount, segmentCount: r.segmentCount, segmentIds: r.segmentIds })),
@@ -11589,6 +12488,48 @@ function buildPaperParagraphRuns(allSegments, pageBodyFontStats, pipelineConfig 
       sourcePageResolvedByLineBoxCountPPR: _sourcePageResolvedByLineBoxCountPPR,
       sourcePageResolvedByLinesFallbackCountPPR: _sourcePageResolvedByLinesFallbackCountPPR,
     },
+  };
+}
+
+function buildPaperParagraphIdentityTranslationPlan(inputSegments) {
+  const segments = Array.isArray(inputSegments)
+    ? inputSegments.map((segment) => ({ ...segment }))
+    : [];
+  if (!segments.length) return { authorityVersion: 'paper-paragraph-identity-recovery/v1', groups: [] };
+  const normalized = segments.map(applyResolvedSourcePageToPaperSegment);
+  const result = buildPaperParagraphRuns(
+    normalized,
+    buildPaperPageBodyFontStats(normalized),
+    getPdfPipelineConfig('paper_pdf')
+  );
+  const runs = Array.isArray(result && result.runs) ? result.runs : [];
+  const groupsByIdentity = new Map();
+  runs.forEach((run) => {
+    const logicalParagraphId = String(run && run.logicalParagraphId || '');
+    if (!logicalParagraphId) return;
+    if (!groupsByIdentity.has(logicalParagraphId)) groupsByIdentity.set(logicalParagraphId, []);
+    groupsByIdentity.get(logicalParagraphId).push(run);
+  });
+  const groups = [];
+  groupsByIdentity.forEach((identityRuns, logicalParagraphId) => {
+    if (identityRuns.length < 2) return;
+    const hasRecoveredBoundary = identityRuns.some((run) => run && run.paragraphIdentityRecoveryDecision && run.paragraphIdentityRecoveryDecision.decision === 'correct');
+    if (!hasRecoveredBoundary) return;
+    groups.push({
+      logicalParagraphId,
+      authorityVersion: 'paper-paragraph-identity-recovery/v1',
+      members: identityRuns.map((run) => ({
+        paragraphId: String(run.paragraphId || ''),
+        pageNumber: Number(run.pageNumber || 0),
+        column: String(run.column || ''),
+        segmentIds: Array.isArray(run.segmentIds) ? run.segmentIds.map(String) : [],
+        sourceText: String(run.sourceText || ''),
+      })),
+    });
+  });
+  return {
+    authorityVersion: 'paper-paragraph-identity-recovery/v1',
+    groups,
   };
 }
 
@@ -12221,6 +13162,95 @@ function buildPaperParagraphLayoutCommits(maskOps, writeOps, layoutItems, report
       paragraphLayoutCommitRejectedDetails: rejected.map((commit) => ({ commitId: commit.commitId, paragraphRunId: commit.paragraphRunId, memberSegmentIds: commit.memberSegmentIds, violations: commit.violations })),
       paragraphLayoutCommitAtomicMaskCount: committed.reduce((sum, commit) => sum + commit.maskOps.length, 0),
       paragraphLayoutCommitAtomicWriteCount: committed.reduce((sum, commit) => sum + commit.writeOps.length, 0),
+    },
+  };
+}
+
+function getPaperOperationOwnerIds(op) {
+  const ids = new Set();
+  const addMeta = (meta) => {
+    if (!meta || typeof meta !== 'object') return;
+    ['segmentId', 'canonicalSegmentId'].forEach((key) => {
+      if (meta[key]) ids.add(String(meta[key]));
+    });
+    ['segmentIds', 'memberSegmentIds', 'groupSegmentIds', 'logicalSourceOrderIds'].forEach((key) => {
+      (Array.isArray(meta[key]) ? meta[key] : []).forEach((id) => { if (id) ids.add(String(id)); });
+    });
+  };
+  addMeta(op && op.meta);
+  addMeta(op && op.primary && op.primary.meta);
+  addMeta(op && op.continuation && op.continuation.meta);
+  return Array.from(ids);
+}
+
+function isolatePaperMaskWriteOperations(maskOps, writeOps, reportById, captionAuthorityAudit) {
+  const rejectedSegmentIds = new Set();
+  (reportById instanceof Map ? reportById : new Map()).forEach((report, segmentId) => {
+    if (String(report && report.layoutPlanValidationStatus || '') === 'failed'
+      || String(report && report.paragraphLayoutCommitStatus || '') === 'rejected') {
+      rejectedSegmentIds.add(String(segmentId));
+    }
+  });
+  (captionAuthorityAudit && captionAuthorityAudit.violations || []).forEach((violation) => {
+    if (violation && violation.segmentId) rejectedSegmentIds.add(String(violation.segmentId));
+  });
+
+  const allOps = [...(maskOps || []), ...(writeOps || [])];
+  let expanded = true;
+  while (expanded) {
+    expanded = false;
+    allOps.forEach((op) => {
+      const ownerIds = getPaperOperationOwnerIds(op);
+      const commitRejected = Boolean(op && op.paragraphLayoutCommitId && op.paragraphLayoutCommitState !== 'committed');
+      if (!commitRejected && !ownerIds.some((id) => rejectedSegmentIds.has(id))) return;
+      ownerIds.forEach((id) => {
+        if (!rejectedSegmentIds.has(id)) { rejectedSegmentIds.add(id); expanded = true; }
+      });
+    });
+  }
+
+  const authorize = (op) => {
+    const ownerIds = getPaperOperationOwnerIds(op);
+    const reasons = [];
+    if (op && op.paragraphLayoutCommitId && op.paragraphLayoutCommitState !== 'committed') reasons.push('paragraph_layout_commit_rejected');
+    const invalidOwners = ownerIds.filter((id) => rejectedSegmentIds.has(id));
+    if (invalidOwners.length) reasons.push('owner_layout_validation_failed');
+    op.writeIsolationOwnerIds = ownerIds;
+    op.writeIsolationState = reasons.length ? 'isolated_preserve_original' : 'authorized';
+    op.writeIsolationReasons = reasons;
+    return reasons.length === 0;
+  };
+  const authorizedMaskOps = (maskOps || []).filter(authorize);
+  const authorizedWriteOps = (writeOps || []).filter(authorize);
+
+  rejectedSegmentIds.forEach((segmentId) => {
+    const report = reportById && reportById.get(String(segmentId));
+    if (!report) return;
+    report.writeIsolationStatus = 'isolated_preserve_original';
+    report.writeIsolationReason = Array.from(new Set([
+      ...(report.layoutPlanValidationErrors || []),
+      ...(report.paragraphLayoutCommitViolations || []),
+      'owner_write_not_authorized',
+    ])).join(',');
+    report.maskApplied = false;
+    report.writeApplied = false;
+    report.actualWriteApplied = false;
+    report.completeWriteApplied = false;
+    report.writeIncomplete = true;
+    report.visualResidualRisk = false;
+    report.skipReason = report.skipReason || 'write_isolated_preserve_original';
+  });
+  return {
+    authorizedMaskOps,
+    authorizedWriteOps,
+    rejectedSegmentIds: Array.from(rejectedSegmentIds),
+    stats: {
+      writeIsolationRejectedSegmentCount: rejectedSegmentIds.size,
+      writeIsolationRejectedSegmentIds: Array.from(rejectedSegmentIds),
+      writeIsolationAuthorizedMaskOpCount: authorizedMaskOps.length,
+      writeIsolationRejectedMaskOpCount: (maskOps || []).length - authorizedMaskOps.length,
+      writeIsolationAuthorizedWriteOpCount: authorizedWriteOps.length,
+      writeIsolationRejectedWriteOpCount: (writeOps || []).length - authorizedWriteOps.length,
     },
   };
 }
@@ -12945,10 +13975,6 @@ function isMixedFormulaProseSegment(segment, pipelineConfig) {
     cleanPdfText(segment.sourceText).match(/[A-Za-z]{3,}/g)?.length > 12;
 }
 
-function isFormulaProtectedSegment(segment, pipelineConfig) {
-  return isStrictPureEquationBlock(segment, pipelineConfig);
-}
-
 function isPromptLeakTranslation(text) {
   const value = String(text || "");
   return /根据上下文|以正式文件阅读的方式|保留专业术语|不得概括|不得扩展|不得省略|不得改写|不得添加|仅返回翻译后的段落|不得包含解释|不得包含标签|不得包含\s*Markdown|You are a translator|Translate the following|Do not include|Return only|system prompt|user prompt/i.test(value);
@@ -12961,15 +13987,35 @@ function getTranslationOutputSemanticFailure(sourceText, translatedText) {
   const sourceWords = source.match(/[A-Za-z]{2,}/g) || [];
   const translatedWords = translated.match(/[A-Za-z]{2,}/g) || [];
   const hasTargetScript = /[\u3400-\u9fff]/.test(translated);
-  if (!hasTargetScript && sourceWords.length >= 4 && translatedWords.length >= 4) {
+  const sourceFormulaSignalCount = (source.match(/[=_^+*/<>≤≥⩾∑∫√∞λψφπ⟨⟩()|]/g) || []).length;
+  const sourceLongProseWords = sourceWords.filter((word) => word.length >= 4);
+  const formulaDominatedSource = sourceFormulaSignalCount >= 3 && sourceLongProseWords.length <= 1;
+  if (!hasTargetScript && !formulaDominatedSource && sourceWords.length >= 4 && translatedWords.length >= 4) {
     const normalizedSource = source.toLowerCase().replace(/\s+/g, " ").trim();
     const normalizedTranslation = translated.toLowerCase().replace(/\s+/g, " ").trim();
     if (normalizedTranslation === normalizedSource || translatedWords.length >= Math.ceil(sourceWords.length * 0.75)) return "invalid_translation_source_language_unchanged";
   }
-  const leadingAscii = ((translated.match(/^[\x20-\x7e]{8,}/) || [""])[0]).trim();
-  if (hasTargetScript && leadingAscii && source.toLowerCase().startsWith(leadingAscii.toLowerCase()) && !/\bet\s+al\.?\s*(?:\d{4})?/i.test(leadingAscii) && /[A-Za-z]{3,}\s+[A-Za-z]{2,}/.test(leadingAscii)) return "invalid_translation_leading_source_carryover";
-  const leadingLowercaseFragment = ((translated.match(/^([a-z]{4,})(?=[\u3400-\u9fff])/) || [""])[0]);
-  if (leadingLowercaseFragment && source.toLowerCase().startsWith(leadingLowercaseFragment) && !/^(?:kbol|lbol|ledd|mbh|agn|jwst|wfc)$/i.test(leadingLowercaseFragment)) return "invalid_translation_leading_source_carryover";
+  // Use the same parenthetical-year boundary as citation protection. Only an
+  // exact source/response prefix is exempt; still inspect the prose after it.
+  let sourceProse = source;
+  let translatedProse = translated;
+  let citation;
+  while ((citation = sourceProse.match(/^\((?=[^)]*\b(?:19|20)\d{2}[a-z]?\b)[^)]{3,260}\)/i)) && translatedProse.startsWith(citation[0])) {
+    sourceProse = sourceProse.slice(citation[0].length).trimStart();
+    translatedProse = translatedProse.slice(citation[0].length).trimStart();
+  }
+  const leadingAscii = ((translatedProse.match(/^[\x20-\x7e]{8,}/) || [""])[0]).trim();
+  const leadingMathExpression = /[=_^+*/<>]/.test(leadingAscii);
+  const leadingProperNameTokens = leadingAscii.split(/\s+/).filter(Boolean);
+  const leadingProperName = (/^(?:(?:de|del|de la|van|von|le|la)\s+)?[A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-öø-ÿ'’-]+$/i.test(leadingAscii)
+    && /[A-ZÀ-ÖØ-Þ]/.test(leadingAscii)) || (
+    leadingProperNameTokens.length >= 2 && leadingProperNameTokens.length <= 4 &&
+    !/^(?:the|this|these|those|we|our|a|an)\b/i.test(leadingAscii) &&
+    leadingProperNameTokens.every((token) => /^(?:[A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-öø-ÿ'’.\-]*|[A-Z]{2,}|[A-Za-z]+[A-Z][A-Za-z]*)$/.test(token))
+  );
+  if (hasTargetScript && leadingAscii && sourceProse.toLowerCase().startsWith(leadingAscii.toLowerCase()) && !leadingMathExpression && !leadingProperName && !/\bet\s+al\.?\s*(?:\d{4})?/i.test(leadingAscii) && /[A-Za-z]{3,}\s+[A-Za-z]{2,}/.test(leadingAscii)) return "invalid_translation_leading_source_carryover";
+  // A single unchanged word is insufficient evidence of untranslated prose:
+  // the translation contract explicitly permits retained technical terms.
   return "";
 }
 
@@ -13298,6 +14344,23 @@ function normalizePaperTranslationLifecycleEvents(segment) {
       error: String(event.error || ''),
     };
   });
+}
+
+// Diagnostic-only: retain rejected output separately from writable translatedText.
+// Missing historical events must remain missing, never reconstructed from source text.
+function buildFailedTranslationEvidence(segment, developerDiagnosticsRequested) {
+  if (!developerDiagnosticsRequested || !segment || segment.status !== 'failed') return null;
+  const events = normalizePaperTranslationLifecycleEvents(segment);
+  const inputs = events.filter((event) => event.stage === 'translationInput');
+  const outputs = events.filter((event) => event.stage === 'translationOutput');
+  return {
+    schemaVersion: 1,
+    segmentId: String(segment.id || ''),
+    reason: String(segment.invalidTranslationReason || segment.error || ''),
+    observation: outputs.length ? 'recorded_output' : 'missing_output_event',
+    inputObserved: inputs.length > 0,
+    events,
+  };
 }
 
 function buildCaptionGroupTranslationEventEvidence(segments, canonicalSegmentId) {
@@ -13696,7 +14759,7 @@ function writePdfDebugSidecarsFallback({ actualPdfPath, segmentReports, exportSu
 }
 // ── end sidecar helpers ────────────────────────────────────────────────────
 
-async function simpleExportDocumentFlowPdf(payload, pipelineConfig, diagnosticRuntime) {
+async function simpleExportDocumentFlowPdf(payload, pipelineConfig, diagnosticRuntime, requestedOutputPath) {
   if (!isSimplePdfV2Config(pipelineConfig)) throw new Error("simpleExportDocumentFlowPdf requires simple_pdf_v2 config");
   const focused = BrowserWindow.getFocusedWindow();
   const fileName = String(payload && payload.fileName ? payload.fileName : "pdf.pdf");
@@ -13713,7 +14776,7 @@ async function simpleExportDocumentFlowPdf(payload, pipelineConfig, diagnosticRu
   if (!blocks.length) return { ok: false, canceled: false, error: "empty_simple_blocks" };
 
   const defaultPath = path.join(app.getPath("documents"), `${safeTxtBaseName(fileName)}_translated.pdf`);
-  let outputFilePath = String(process.env.PDF_EXPORT_OUTPUT_PATH || "").trim();
+  let outputFilePath = String(requestedOutputPath || process.env.PDF_EXPORT_OUTPUT_PATH || "").trim();
   if (!outputFilePath) {
     const result = await dialog.showSaveDialog(focused || undefined, {
       title: "保存普通版 PDF",
@@ -13808,18 +14871,23 @@ async function simpleExportDocumentFlowPdf(payload, pipelineConfig, diagnosticRu
   }, { required: false, hashValue: false }));
   const diagnosticPlatform = diagnosticRuntime.snapshot();
   const _simpleDbReport = { summary, pages: [], simpleBlocks: segmentReports, generatedAt: new Date().toISOString(), diagnosticPlatform };
-  const _simpleSidecar = writePdfDebugSidecars({
-    actualPdfPath: outputFilePath,
-    segmentReports: segmentReports,
-    pipelineDebugReport: _simpleDbReport,
-    exportSummary: summary,
-    exportStats: { fileName: String(payload && payload.fileName || ''), sourcePath: String(payload && payload.filePath || ''), targetLanguage: String(payload && payload.targetLanguage || '') },
-    extra: { diagnosticPlatform },
-  });
+  const _simpleSidecar = payload && payload.developerDiagnosticsRequested
+    ? writePdfDebugSidecars({
+      actualPdfPath: outputFilePath,
+      segmentReports: segmentReports,
+      pipelineDebugReport: _simpleDbReport,
+      exportSummary: summary,
+      exportStats: { fileName: String(payload && payload.fileName || ''), sourcePath: String(payload && payload.filePath || ''), targetLanguage: String(payload && payload.targetLanguage || '') },
+      extra: { diagnosticPlatform },
+    })
+    : { segmentReportsPath: '', pipelineDebugPath: '', sidecarWriteStatus: 'disabled_for_user_export', sidecarWriteError: '' };
   const { segmentReportsPath, pipelineDebugPath, sidecarWriteStatus, sidecarWriteError } = _simpleSidecar;
 
   return {
     ok: true,
+    translationComplete: blocks.every((block) => String(block && block.status || '') === 'done'),
+    writeComplete: writtenCount === blocks.filter((block) => String(block && block.status || '') === 'done').length,
+    exportGenerated: true,
     filePath: outputFilePath,
     exportedPdfSize: fs.statSync(outputFilePath).size,
     segmentReportsPath,
@@ -13896,7 +14964,6 @@ function getPdfExportSkipReason(segment, pipelineConfig) {
   }
   if (semanticDisposition === "blocked") return "unsupported_type";
   if (segment._crossPageDuplicateFragment) return "cross_page_duplicate_fragment";
-  if (isFormulaProtectedSegment(segment, pipelineConfig)) return "formula_equation_block_preserve";
   if (segment.status !== "done") return "status_" + (segment.status || "missing");
   if (!cleanPdfText(segment.translatedText)) return "empty_translated_text";
   if (Number(segment.pageNumber) <= 0) return "invalid_page";
@@ -13932,7 +14999,6 @@ function getPdfExportSkipReasonForMode(segment, mode, pipelineConfig) {
     return type + "_preserve_original";
   }
   if (semanticDisposition === "blocked") return "unsupported_type";
-  if (isFormulaProtectedSegment(segment, pipelineConfig)) return "formula_equation_block_preserve";
   if (segment.status !== "done") return "status_" + (segment.status || "missing");
   if (!cleanPdfText(segment.translatedText)) return "empty_translated_text";
   if (Number(segment.pageNumber) <= 0) return "invalid_page";
@@ -14012,12 +15078,14 @@ const PAPER_WRITE_ONLY_SKIP_REASONS = new Set(['caption_region_overflow']);
 
 function getPaperTranslationReadinessBeforeExport(segmentReports) {
   const reports = Array.isArray(segmentReports) ? segmentReports : [];
-  // Cross-page duplicate fragments are intentionally excluded from the completeness gate:
-  // they are extraction artifacts suppressed before the write loop, not missing translations.
-  const translatableReports = reports.filter((report) => hasPdfExportReportDisposition(report, "translate", "translation completeness audit") && String(report && report.skipReason || '') !== 'cross_page_duplicate_fragment');
+  // Translation completeness uses the frozen canonical translate set as its denominator. A
+  // cross-page duplicate may later be covered by its canonical write, but it still remains a
+  // canonical translate segment and must not silently disappear from translation accounting.
+  const translatableReports = reports.filter((report) => hasPdfExportReportDisposition(report, "translate", "translation completeness audit"));
   const incompleteReports = translatableReports.filter((report) => {
     const status = String(report && report.status || "");
     const skipReason = String(report && report.skipReason || '');
+    if (status === "done" && Boolean(report && report.hasTranslatedText) && skipReason === 'cross_page_duplicate_fragment') return false;
     if (status === "done" && Boolean(report && report.hasTranslatedText) && PAPER_WRITE_ONLY_SKIP_REASONS.has(skipReason)) return false;
     return status !== "done" ||
       !Boolean(report && report.hasTranslatedText) ||
@@ -15591,12 +16659,14 @@ function subtractTopLeftBox(box, cut) {
 
 function getPaperSourceMaskPreserveBoxes(pageNumber, sourceSegmentIds, allSegments, reportById) {
   const sourceIds = new Set((sourceSegmentIds || []).map(String));
+  const referenceEntryStartByPage = buildPaperReferenceEntryStartByPage(allSegments);
   return (allSegments || []).filter((segment) => {
     if (!segment || Number(segment.pageNumber || 0) !== Number(pageNumber || 0) || !segment.bbox) return false;
     if (sourceIds.has(String(segment.id || ''))) return false;
     const report = reportById instanceof Map ? reportById.get(String(segment.id || '')) : null;
     return requirePdfExportSemanticDisposition(segment, "source mask preserve boxes") === "preserve" || Boolean(report && String(report.skipReason || '').endsWith('_preserve_original'));
-  }).map((segment) => ({ ...segment.bbox, preserveType: String(segment.type || 'preserve') }));
+  }).flatMap((segment) => getPaperNonWritableSourceBoxes(segment, referenceEntryStartByPage)
+    .map((box) => ({ ...box, preserveType: String(segment.type || 'preserve') })));
 }
 
 function buildPaperSourceCoverPlan(lineMasks, sourceSegmentIds, allSegments, reportById, pipelineConfig = null) {
@@ -16965,208 +18035,6 @@ function buildNextWriteTopMap(segments) {
   return result;
 }
 
-async function loadOriginalPdfForExport(payload) {
-  validatePdfTranslationMode(payload);
-  const fileName = String(payload && payload.fileName ? payload.fileName : "pdf.pdf");
-  const originalFilePath = String(payload && payload.filePath ? payload.filePath : "");
-  if (!originalFilePath || !fs.existsSync(originalFilePath)) {
-    return { error: "original_pdf_missing", fileName };
-  }
-  const pdfDoc = await PDFDocument.load(fs.readFileSync(originalFilePath));
-  return { pdfDoc, fileName };
-}
-
-async function exportPdfDebugBbox(payload) {
-  const focused = BrowserWindow.getFocusedWindow();
-  const loaded = await loadOriginalPdfForExport(payload);
-  if (loaded.error) return { ok: false, canceled: false, error: loaded.error };
-  const segments = normalizePdfDiagnosticSegments(payload && payload.segments);
-  if (!segments.length) return { ok: false, canceled: false, error: "empty_segments" };
-  const defaultPath = path.join(app.getPath("documents"), `${safeTxtBaseName(loaded.fileName)}_debug_bbox.pdf`);
-  const result = await dialog.showSaveDialog(focused || undefined, {
-    title: "保存 PDF BBox 调试版",
-    defaultPath,
-    filters: [{ name: "PDF", extensions: ["pdf"] }],
-  });
-  if (result.canceled || !result.filePath) return { ok: false, canceled: true };
-
-  const pages = loaded.pdfDoc.getPages();
-  const labelFont = await loaded.pdfDoc.embedFont(StandardFonts.Helvetica);
-  let boxedCount = 0;
-  segments.forEach((segment, index) => {
-    const page = pages[Number(segment.pageNumber) - 1];
-    if (!page) return;
-    const pageSize = page.getSize();
-    const box = topLeftBoxToPdfBox(segment.bbox, pageSize, 0);
-    page.drawRectangle({
-      ...box,
-      borderColor: rgb(1, 0, 0),
-      borderWidth: 1.2,
-      borderOpacity: 0.72,
-      opacity: 0,
-    });
-    const labelX = Math.min(pageSize.width - 22, box.x + box.width + 2);
-    const labelY = Math.min(pageSize.height - 8, box.y + box.height - 8);
-    page.drawText(`S${index + 1}`, {
-      x: labelX,
-      y: Math.max(0, labelY),
-      size: 7,
-      font: labelFont,
-      color: rgb(1, 0, 0),
-      opacity: 0.86,
-    });
-    boxedCount += 1;
-  });
-
-  fs.writeFileSync(result.filePath, await loaded.pdfDoc.save());
-  return { ok: true, filePath: result.filePath, boxedCount };
-}
-
-async function exportPdfMaskTest(payload) {
-  const focused = BrowserWindow.getFocusedWindow();
-  const loaded = await loadOriginalPdfForExport(payload);
-  if (loaded.error) return { ok: false, canceled: false, error: loaded.error };
-  const segments = normalizePdfDiagnosticSegments(payload && payload.segments);
-  if (!segments.length) return { ok: false, canceled: false, error: "empty_segments" };
-  const defaultPath = path.join(app.getPath("documents"), `${safeTxtBaseName(loaded.fileName)}_mask_test.pdf`);
-  const result = await dialog.showSaveDialog(focused || undefined, {
-    title: "保存 PDF 遮罩测试版",
-    defaultPath,
-    filters: [{ name: "PDF", extensions: ["pdf"] }],
-  });
-  if (result.canceled || !result.filePath) return { ok: false, canceled: true };
-
-  const pages = loaded.pdfDoc.getPages();
-  let maskedCount = 0;
-  let lineCount = 0;
-  segments.forEach((segment) => {
-    const lines = normalizePdfLineBoxes(segment);
-    lines.forEach((line) => {
-      const page = pages[Number(line.pageNumber) - 1];
-      if (!page) return;
-      const pageSize = page.getSize();
-      const box = topLeftBoxToPdfBox(line, pageSize, 0.8);
-      page.drawRectangle({
-        ...box,
-        color: rgb(1, 1, 1),
-        opacity: 1,
-      });
-      lineCount += 1;
-    });
-    if (lines.length) maskedCount += 1;
-  });
-
-  fs.writeFileSync(result.filePath, await loaded.pdfDoc.save());
-  return { ok: true, filePath: result.filePath, maskedCount, lineCount };
-}
-
-async function exportPdfDebugLineBox(payload) {
-  const focused = BrowserWindow.getFocusedWindow();
-  const loaded = await loadOriginalPdfForExport(payload);
-  if (loaded.error) return { ok: false, canceled: false, error: loaded.error };
-  const segments = normalizePdfDiagnosticSegments(payload && payload.segments);
-  if (!segments.length) return { ok: false, canceled: false, error: "empty_segments" };
-  const defaultPath = path.join(app.getPath("documents"), `${safeTxtBaseName(loaded.fileName)}_debug_linebox.pdf`);
-  const result = await dialog.showSaveDialog(focused || undefined, {
-    title: "保存 PDF LineBox 调试版",
-    defaultPath,
-    filters: [{ name: "PDF", extensions: ["pdf"] }],
-  });
-  if (result.canceled || !result.filePath) return { ok: false, canceled: true };
-
-  const pages = loaded.pdfDoc.getPages();
-  const labelFont = await loaded.pdfDoc.embedFont(StandardFonts.Helvetica);
-  let lineCount = 0;
-  segments.forEach((segment) => {
-    const lines = normalizePdfLineBoxes(segment);
-    lines.forEach((line) => {
-      const page = pages[Number(line.pageNumber) - 1];
-      if (!page) return;
-      const pageSize = page.getSize();
-      const box = convertBoxToPdfCoords(line, pageSize.height, pageSize.width);
-      lineCount += 1;
-      page.drawRectangle({
-        ...box,
-        borderColor: rgb(0, 0.28, 1),
-        borderWidth: 0.85,
-        borderOpacity: 0.72,
-        opacity: 0,
-      });
-      const labelX = Math.min(pageSize.width - 22, box.x + box.width + 1.5);
-      const labelY = Math.min(pageSize.height - 8, box.y + box.height - 7);
-      page.drawText(`L${lineCount}`, {
-        x: labelX,
-        y: Math.max(0, labelY),
-        size: 5.8,
-        font: labelFont,
-        color: rgb(0, 0.22, 1),
-        opacity: 0.86,
-      });
-    });
-  });
-
-  fs.writeFileSync(result.filePath, await loaded.pdfDoc.save());
-  return { ok: true, filePath: result.filePath, lineCount };
-}
-
-async function exportPdfDebugMaskArea(payload) {
-  const focused = BrowserWindow.getFocusedWindow();
-  const loaded = await loadOriginalPdfForExport(payload);
-  if (loaded.error) return { ok: false, canceled: false, error: loaded.error };
-  const segments = normalizePdfDiagnosticSegments(payload && payload.segments);
-  if (!segments.length) return { ok: false, canceled: false, error: "empty_segments" };
-  const defaultPath = path.join(app.getPath("documents"), `${safeTxtBaseName(loaded.fileName)}_debug_mask_area.pdf`);
-  const result = await dialog.showSaveDialog(focused || undefined, {
-    title: "保存 PDF 遮罩区域调试版",
-    defaultPath,
-    filters: [{ name: "PDF", extensions: ["pdf"] }],
-  });
-  if (result.canceled || !result.filePath) return { ok: false, canceled: true };
-
-  const pages = loaded.pdfDoc.getPages();
-  const { masks, stats } = collectValidLineMasks(segments, pages);
-  masks.forEach(({ page, pdfBox }) => {
-    page.drawRectangle({
-      ...pdfBox,
-      color: rgb(1, 0.25, 0.25),
-      opacity: 0.28,
-    });
-  });
-
-  debugPdfLog("[pdf-mask-debug]", JSON.stringify(stats));
-  fs.writeFileSync(result.filePath, await loaded.pdfDoc.save());
-  return { ok: true, filePath: result.filePath, ...stats };
-}
-
-async function exportPdfMaskLineBoxTest(payload) {
-  const focused = BrowserWindow.getFocusedWindow();
-  const loaded = await loadOriginalPdfForExport(payload);
-  if (loaded.error) return { ok: false, canceled: false, error: loaded.error };
-  const segments = normalizePdfDiagnosticSegments(payload && payload.segments);
-  if (!segments.length) return { ok: false, canceled: false, error: "empty_segments" };
-  const defaultPath = path.join(app.getPath("documents"), `${safeTxtBaseName(loaded.fileName)}_mask_linebox_test.pdf`);
-  const result = await dialog.showSaveDialog(focused || undefined, {
-    title: "保存 PDF LineBox 遮罩测试版",
-    defaultPath,
-    filters: [{ name: "PDF", extensions: ["pdf"] }],
-  });
-  if (result.canceled || !result.filePath) return { ok: false, canceled: true };
-
-  const pages = loaded.pdfDoc.getPages();
-  const { masks, stats } = collectValidLineMasks(segments, pages);
-  masks.forEach(({ page, pdfBox }) => {
-    page.drawRectangle({
-      ...pdfBox,
-      color: rgb(1, 1, 1),
-      opacity: 1,
-    });
-  });
-
-  debugPdfLog("[pdf-mask-linebox]", JSON.stringify(stats));
-  fs.writeFileSync(result.filePath, await loaded.pdfDoc.save());
-  return { ok: true, filePath: result.filePath, ...stats };
-}
-
 function getPdfSegmentWriteKind(segment, lineMasks) {
   return paperLayoutAuthority.resolveWriteKind(segment, lineMasks, cleanPdfText);
 }
@@ -17918,7 +18786,24 @@ function buildPipelineDebugReport(pipelineDebug, segmentReports, pageLayouts, ex
     paperParagraphBoundaryBySourceIdentityCount: Number(exportSummary.paperParagraphBoundaryBySourceIdentityCount || 0),
     paperParagraphBoundaryByFirstLineIndentCount: Number(exportSummary.paperParagraphBoundaryByFirstLineIndentCount || 0),
     paperParagraphNegativeOverlapContinuationCount: Number(exportSummary.paperParagraphNegativeOverlapContinuationCount || 0),
+    paperParagraphSemanticContinuationRecoveryCount: Number(exportSummary.paperParagraphSemanticContinuationRecoveryCount || 0),
+    paperParagraphIdentityRecoveryAuthorityVersion: exportSummary.paperParagraphIdentityRecoveryAuthorityVersion || null,
+    paperLogicalParagraphCount: Number(exportSummary.paperLogicalParagraphCount || 0),
+    paperCrossColumnParagraphIdentityRecoveryCount: Number(exportSummary.paperCrossColumnParagraphIdentityRecoveryCount || 0),
+    paperCrossPageParagraphIdentityRecoveryCount: Number(exportSummary.paperCrossPageParagraphIdentityRecoveryCount || 0),
+    paperParagraphIdentityRecoveryDetails: exportSummary.paperParagraphIdentityRecoveryDetails || [],
     paperParagraphBoundaryEvidenceDetails: exportSummary.paperParagraphBoundaryEvidenceDetails || [],
+    paperParagraphCorrectionAuthorityVersion: exportSummary.paperParagraphCorrectionAuthorityVersion || null,
+    paperParagraphCorrectionDecisionCount: Number(exportSummary.paperParagraphCorrectionDecisionCount || 0),
+    paperParagraphCorrectionCorrectCount: Number(exportSummary.paperParagraphCorrectionCorrectCount || 0),
+    paperParagraphCorrectionNoopCount: Number(exportSummary.paperParagraphCorrectionNoopCount || 0),
+    paperParagraphCorrectionRejectCount: Number(exportSummary.paperParagraphCorrectionRejectCount || 0),
+    paperParagraphCorrectionTailCorrectCount: Number(exportSummary.paperParagraphCorrectionTailCorrectCount || 0),
+    paperParagraphDecisionTraceVersion: exportSummary.paperParagraphDecisionTraceVersion || null,
+    paperParagraphDecisionTraceCount: Number(exportSummary.paperParagraphDecisionTraceCount || 0),
+    paperParagraphRecoveryCandidateGeneratedCount: Number(exportSummary.paperParagraphRecoveryCandidateGeneratedCount || 0),
+    paperParagraphRecoveryCandidateNotGeneratedCount: Number(exportSummary.paperParagraphRecoveryCandidateNotGeneratedCount || 0),
+    paperParagraphCorrectionDecisionDetails: exportSummary.paperParagraphCorrectionDecisionDetails || [],
     paperOversizedParagraphRunCount: Number(exportSummary.paperOversizedParagraphRunCount || 0),
     paperOversizedParagraphRunDetails: exportSummary.paperOversizedParagraphRunDetails || [],
     paperParagraphRunMaxLineCount: Number(exportSummary.paperParagraphRunMaxLineCount || 0),
@@ -18353,15 +19238,6 @@ const PAPER_PDF_COLUMN_LOCAL_TYPES = Object.freeze(["body", "heading", "caption"
 const PAPER_PDF_NON_WRITABLE_ZONE_TYPES = Object.freeze(["imageZone", "figureZone", "formulaZone", "referenceZone", "headerZone", "footerZone", "pageNumberZone", "marginZone", "watermarkZone", "licenseZone", "sideMarkZone"]);
 const PAPER_PDF_CAPTION_ZONE_TYPES = Object.freeze(["captionZone"]);
 const PAPER_PDF_BODY_ZONE_TYPES = Object.freeze(["twoColumnBodyZone", "bodyZone"]);
-const PAPER_PDF_REFERENCE_HEADING_PATTERNS = Object.freeze(["References", "REFERENCES", "Bibliography", "BIBLIOGRAPHY", "Works Cited"]);
-const PAPER_PDF_REFERENCE_PRESERVE_RULE = Object.freeze({
-  trigger: "heading-like References/Bibliography/Works Cited plus reference-format evidence",
-  preserveStatus: "preserved",
-  skipReason: "reference_preserve_original",
-  translate: false,
-  mask: false,
-  write: false,
-});
 const PAPER_PDF_FORMULA_HANDLING_RULES = Object.freeze({
   inlineFormulaToken: "protect token, translate prose, restore token",
   equationBlock: "preserve original block, no translate, no mask, no write",
@@ -18395,7 +19271,9 @@ function assertPaperPdfRuleContract(exportSummary, segmentReports, options = {})
   (segmentReports || []).forEach((report) => {
     const zoneType = getPaperPdfCanonicalZoneType(report && report.zoneType);
     if (report && hasPdfExportReportDisposition(report, 'preserve', 'paper rule contract') && report.writeApplied) warnings.push("preserve_type_written:" + (report.id || report.type || 'unknown'));
-    if (isPaperPdfNonWritableZoneType(zoneType) && report && report.writeApplied) warnings.push("non_writable_zone_written:" + (report.id || zoneType));
+    const canonicalReferenceHeadingWrite = report && report.semanticReferenceRole === "heading" &&
+      hasPdfExportReportDisposition(report, 'translate', 'paper reference heading rule contract');
+    if (isPaperPdfNonWritableZoneType(zoneType) && report && report.writeApplied && !canonicalReferenceHeadingWrite) warnings.push("non_writable_zone_written:" + (report.id || zoneType));
   });
   return Array.from(new Set(warnings));
 }
@@ -18439,7 +19317,10 @@ function buildPaperRuleAudit(exportSummary, segmentReports, pipelineConfig) {
   // Consumer binding already rejects unknown semantic types against the canonical artifact.
   // This audit consumes the decision and must not recreate that vocabulary locally.
   const preserveTypeWrittenCount = (segmentReports || []).filter((report) => hasPdfExportReportDisposition(report, 'preserve', 'paper rule audit') && report.writeApplied).length;
-  const nonWritableZoneWrittenCount = (segmentReports || []).filter((report) => isPaperPdfNonWritableZoneType(report && report.zoneType) && report.writeApplied).length;
+  const nonWritableZoneWrittenCount = (segmentReports || []).filter((report) => {
+    if (!isPaperPdfNonWritableZoneType(report && report.zoneType) || !report.writeApplied) return false;
+    return !(report.semanticReferenceRole === "heading" && hasPdfExportReportDisposition(report, 'translate', 'paper reference heading audit'));
+  }).length;
   const nonCrossColumnTypeFullWidthWriteCount = (segmentReports || []).filter((report) => (
     report &&
     !isPaperPdfCrossColumnAllowedType(report.type) &&
@@ -18456,7 +19337,7 @@ function buildPaperRuleAudit(exportSummary, segmentReports, pipelineConfig) {
     knownColumnLocalTypes: PAPER_PDF_COLUMN_LOCAL_TYPES.slice(),
     knownCrossColumnAllowedTypes: PAPER_PDF_CROSS_COLUMN_ALLOWED_TYPES.slice(),
     knownNonWritableZones: PAPER_PDF_NON_WRITABLE_ZONE_TYPES.slice(),
-    referenceHeadingPatterns: PAPER_PDF_REFERENCE_HEADING_PATTERNS.slice(),
+    referenceRoleAuthority: "SemanticStructureArtifact.semanticReferenceRole",
     formulaTokenExamples: PAPER_PDF_PROTECTED_FORMULA_TOKEN_EXAMPLES.slice(),
     contractWarnings,
     unknownPaperSegmentTypeCount: 0,
@@ -18673,7 +19554,131 @@ function simpleBuildReport(blocks, summary) {
     sourcePageCount: Number(summary && summary.sourcePageCount || 0),
   };
 }
-async function exportTranslatedPdf(payload) {
+async function exportPdfAtCurrentProgress(payload) {
+  const snapshot = JSON.parse(JSON.stringify(payload || {}));
+  const developerMode = Boolean(readSharedConfig().developerMode);
+  const developerDiagnosticsRequested = Boolean(snapshot.developerDiagnosticsRequested);
+  if (developerDiagnosticsRequested && !developerMode) {
+    return { ok: false, exportGenerated: false, error: 'developer_mode_required' };
+  }
+  const removeTransientExportFiles = (candidates) => {
+    const removed = [];
+    Array.from(new Set((Array.isArray(candidates) ? candidates : []).filter(Boolean).map(String))).forEach((candidate) => {
+      try {
+        if (fs.existsSync(candidate)) {
+          fs.unlinkSync(candidate);
+          removed.push(candidate);
+        }
+      } catch (error) {
+        console.warn('[LINGOFLOW][EXPORT_OUTPUT_CLEANUP]', candidate, error && error.message || error);
+      }
+    });
+    return removed;
+  };
+  const sourcePath = String(snapshot.filePath || '');
+  const defaultPath = path.join(app.getPath('documents'), `${safeTxtBaseName(snapshot.fileName || 'pdf.pdf')}_current.pdf`);
+  const diagnosticsDirectory = developerDiagnosticsRequested ? getDeveloperDiagnosticsDirectory() : '';
+  let outputPath = developerDiagnosticsRequested
+    ? path.join(diagnosticsDirectory, `${makeDeveloperDiagnosticBaseName(snapshot.fileName)}.pdf`)
+    : String(process.env.PDF_EXPORT_OUTPUT_PATH || '').trim();
+  if (!outputPath && !developerDiagnosticsRequested) {
+    const selection = await dialog.showSaveDialog(BrowserWindow.getFocusedWindow() || undefined, {
+      title: '导出当前译文 PDF', defaultPath, filters: [{ name: 'PDF', extensions: ['pdf'] }],
+    });
+    if (selection.canceled || !selection.filePath) return { ok: false, canceled: true };
+    outputPath = selection.filePath;
+  }
+  if (!/\.pdf$/i.test(outputPath)) outputPath += '.pdf';
+  if (sourcePath && path.resolve(sourcePath).toLowerCase() === path.resolve(outputPath).toLowerCase()) {
+    return { ok: false, exportGenerated: false, error: '不能覆盖原始 PDF，请选择其他文件名。' };
+  }
+  const stem = outputPath.replace(/\.pdf$/i, '');
+  const snapshotPath = stem + '.snapshot.json';
+  const textPath = stem + '.translations.txt';
+  const exportFailurePath = stem + '.exportFailure.json';
+  const all = Array.isArray(snapshot.allSegments) ? snapshot.allSegments : Array.isArray(snapshot.segments) ? snapshot.segments : [];
+  const entries = all.map((s) => ({
+    id: String(s.id || ''), page: Number(s.pageNumber || 0), status: String(s.status || 'pending'),
+    text: s.status === 'done' && String(s.translatedText || '').trim() ? String(s.translatedText) : String(s.sourceText || ''),
+  }));
+  const text = ['开发诊断 transcript（只读证据）', '已完成段落使用译文；其他段落保留原文。',
+    ...entries.map((s) => `\n[第${s.page}页 / ${s.id} / ${s.status}]\n${s.text}`)].join('\n');
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  if (developerDiagnosticsRequested) {
+    fs.writeFileSync(snapshotPath, JSON.stringify({ capturedAt: new Date().toISOString(), payload: snapshot }, null, 2), 'utf8');
+    fs.writeFileSync(textPath, text, 'utf8');
+  }
+  try {
+    const exportPayload = { ...snapshot, developerDiagnosticsRequested };
+    const result = await exportTranslatedPdf(exportPayload, outputPath);
+    if (result && result.canceled) return result;
+    if (result && result.exportGenerated) {
+      if (developerDiagnosticsRequested) {
+        return { ...result, ok: true, snapshotPath, textPath, diagnosticsDirectory };
+      }
+      removeTransientExportFiles([
+        result.segmentReportsPath,
+        result.pipelineDebugPath,
+        result.captionGroupAuditReportPath,
+      ]);
+      const cleanResult = { ...result, ok: true, sidecarWriteStatus: 'disabled_for_user_export' };
+      delete cleanResult.snapshotPath;
+      delete cleanResult.textPath;
+      delete cleanResult.segmentReportsPath;
+      delete cleanResult.pipelineDebugPath;
+      delete cleanResult.captionGroupAuditReportPath;
+      return cleanResult;
+    }
+    const failureResult = {
+      ...(result || {}),
+      ok: false,
+      exportGenerated: false,
+      error: String(result && result.error || 'export_not_generated'),
+      ...(developerDiagnosticsRequested ? { snapshotPath, textPath, diagnosticsDirectory } : {}),
+    };
+    if (developerDiagnosticsRequested) {
+      fs.writeFileSync(exportFailurePath, JSON.stringify({
+        capturedAt: new Date().toISOString(),
+        stage: 'exportTranslatedPdf.returned_without_pdf',
+        fileName: String(snapshot.fileName || ''),
+        sourcePath,
+        requestedOutputPath: outputPath,
+        result: failureResult,
+      }, null, 2), 'utf8');
+      failureResult.exportFailurePath = exportFailurePath;
+    }
+    return failureResult;
+  } catch (error) {
+    const failureResult = {
+      ok: false,
+      exportGenerated: false,
+      error: String(error && error.message || error),
+      code: String(error && error.code || ''),
+      details: error && error.details || null,
+      ...(developerDiagnosticsRequested ? { snapshotPath, textPath, diagnosticsDirectory } : {}),
+    };
+    if (developerDiagnosticsRequested) {
+      fs.writeFileSync(exportFailurePath, JSON.stringify({
+        capturedAt: new Date().toISOString(),
+        stage: 'exportTranslatedPdf.exception',
+        fileName: String(snapshot.fileName || ''),
+        sourcePath,
+        requestedOutputPath: outputPath,
+        error: {
+          name: String(error && error.name || 'Error'),
+          message: String(error && error.message || error),
+          code: String(error && error.code || ''),
+          details: error && error.details || null,
+          stack: String(error && error.stack || ''),
+        },
+      }, null, 2), 'utf8');
+      failureResult.exportFailurePath = exportFailurePath;
+    }
+    return failureResult;
+  }
+}
+
+async function exportTranslatedPdf(payload, requestedOutputPath) {
   const pipelineConfig = validatePdfTranslationMode(payload);
   const boundConsumerPayload = bindSemanticStructureConsumerPayload(payload, {
     stage: "main.exportTranslatedPdf",
@@ -18690,15 +19695,11 @@ async function exportTranslatedPdf(payload) {
     config: pipelineConfig,
   });
   if (isSimplePdfV2Config(pipelineConfig)) {
-    return simpleExportDocumentFlowPdf(payload, pipelineConfig, diagnosticRuntime);
+    return simpleExportDocumentFlowPdf(payload, pipelineConfig, diagnosticRuntime, requestedOutputPath);
   }
-  // Explicit dev-debug request to inspect a paper_pdf export whose layoutPlan gate fails (or
-  // whose translation isn't finished yet). Both flags must be set by the caller — this never
-  // applies to simple_pdf, and never on its own relaxes the layoutPlan validation gate itself,
-  // only the upfront "every translatable segment must already be done" readiness gate below that
-  // otherwise blocks the whole export (including the *_debugFail.pdf write) before it can start.
-  const debugFailExportRequested = Boolean(payload && payload.debugFailExport && payload.allowLayoutPlanDebugFailExport)
-    && isPaperPdfConfig(pipelineConfig);
+  // Developer diagnostics is evidence-only. It may write sidecars, but it cannot alter
+  // translation selection, layout validation, operation authorization, or the generated PDF.
+  const developerDiagnosticsRequested = Boolean(payload && payload.developerDiagnosticsRequested);
   const focused = BrowserWindow.getFocusedWindow();
   const fileName = String(payload && payload.fileName ? payload.fileName : "pdf.pdf");
   const originalFilePath = String(payload && payload.filePath ? payload.filePath : "");
@@ -18716,6 +19717,7 @@ async function exportTranslatedPdf(payload) {
   let _captionPretranslationArtifactAudit = { mode: 'not_applicable', behaviorMutationApplied: false, violationCount: 0, violations: [] };
   let _captionDisplayArtifactAudit = { mode: 'not_applicable', behaviorMutationApplied: false, violationCount: 0, violations: [] };
   let _imageGeometryAuthorityAudit = { status: 'not_applicable', violationCount: 0, violations: [] };
+  const _exportAuthorityIsolatedSegmentIds = new Set();
   diagnosticRuntime.registerPlugin({
     id: 'segment-identity-validator', version: '1', stage: 'segmentation', sourceFunction: 'assertUniqueSegmentIds', verifyNoMutation: false,
     evaluate: (_context, segments) => {
@@ -18816,17 +19818,16 @@ async function exportTranslatedPdf(payload) {
     _captionPretranslationArtifactAudit = diagnosticRuntime.runPlugin('caption-pretranslation-artifact-validator', allSegments);
     if (_captionPretranslationArtifactAudit.violationCount > 0) {
       console.error('[LINGOFLOW][CAPTION PRETRANSLATION ARTIFACT INVALID]', JSON.stringify(_captionPretranslationArtifactAudit, null, 2));
-      const error = new Error('Caption pretranslation lifecycle artifacts are missing or inconsistent.');
-      error.code = 'CAPTION_PRETRANSLATION_ARTIFACT_INVALID';
-      error.details = _captionPretranslationArtifactAudit;
-      throw error;
+      (_captionPretranslationArtifactAudit.violations || []).forEach((violation) => {
+        if (violation && violation.segmentId) _exportAuthorityIsolatedSegmentIds.add(String(violation.segmentId));
+      });
     }
     _captionDisplayArtifactAudit = diagnosticRuntime.runPlugin('caption-display-artifact-validator', allSegments);
     if (_captionDisplayArtifactAudit.violationCount > 0) {
-      const error = new Error('Caption display artifacts are missing or inconsistent.');
-      error.code = 'CAPTION_DISPLAY_ARTIFACT_INVALID';
-      error.details = _captionDisplayArtifactAudit;
-      throw error;
+      console.error('[LINGOFLOW][CAPTION DISPLAY ARTIFACT INVALID]', JSON.stringify(_captionDisplayArtifactAudit, null, 2));
+      (_captionDisplayArtifactAudit.violations || []).forEach((violation) => {
+        if (violation && violation.segmentId) _exportAuthorityIsolatedSegmentIds.add(String(violation.segmentId));
+      });
     }
     allSegments.forEach((segment) => {
       const segmentId = String(segment && segment.id || '');
@@ -18946,11 +19947,11 @@ async function exportTranslatedPdf(payload) {
       error.code = "SEMANTIC_CONSUMER_TYPE_REQUIRED";
       throw error;
     }
-    const pureFormulaSegment = isPureFormulaSegment(segment, pipelineConfig);
-    const strictPureEquationBlock = isStrictPureEquationBlock(segment, pipelineConfig);
     const type = assertSemanticConsumerTypeProjection(segment, rawType, "export_report");
     const semanticTranslationDisposition = requirePdfExportSemanticDisposition(segment, "export_report");
-    const preserveOriginal = semanticTranslationDisposition === "preserve" || strictPureEquationBlock;
+    const pureFormulaSegment = type === "formula";
+    const strictPureEquationBlock = type === "formula";
+    const preserveOriginal = semanticTranslationDisposition === "preserve";
     const reportStatus = preserveOriginal ? "preserved" : String(segment && segment.status || "");
     const formulaGroups = getFormulaSegmentLineGroups(segment, pipelineConfig);
     const preservedFormulaLines = formulaGroups.formulaLines.map((line) => cleanPdfText(line.text || line.sourceLineText)).filter(Boolean);
@@ -18971,12 +19972,26 @@ async function exportTranslatedPdf(payload) {
       semanticSourceOwnership: segment && segment.semanticSourceOwnership || null,
       semanticPolicy: segment && segment.semanticPolicy || null,
       semanticTranslationDisposition,
+      semanticReferenceRole: String(segment && (segment.semanticReferenceRole || segment.referenceRole) || ""),
+      referenceHeading: Boolean(segment && segment.referenceHeading),
+      referenceChainStart: Boolean(segment && segment.referenceChainStart),
       layoutType: String(segment && segment.layoutType || ""),
       column: String(segment && segment.column || "single"),
       zoneType: String(segment && segment.zoneType || ""),
       sourceLanguageHint: String(segment && segment.sourceLanguageHint || ""),
       targetLanguage,
       pdfTranslationMode: pipelineConfig.mode,
+      translationProviderConnection: segment && segment.translationProviderConnection && typeof segment.translationProviderConnection === 'object'
+        ? {
+          providerId: String(segment.translationProviderConnection.providerId || ''),
+          connectedAt: String(segment.translationProviderConnection.connectedAt || ''),
+          latencyMs: Number(segment.translationProviderConnection.latencyMs || 0),
+        }
+        : null,
+      paragraphIdentityTranslationGroupId: String(segment && segment.paragraphIdentityTranslationGroupId || ''),
+      paragraphIdentityTranslationAuthorityVersion: String(segment && segment.paragraphIdentityTranslationAuthorityVersion || ''),
+      paragraphIdentityTranslationMemberPageNumber: Number(segment && segment.paragraphIdentityTranslationMemberPageNumber || 0),
+      paragraphIdentityTranslationSourceCombined: Boolean(segment && segment.paragraphIdentityTranslationSourceCombined),
       status: reportStatus,
       hasTranslatedText: Boolean(cleanPdfText(segment && segment.translatedText)),
       skipReason: getPdfExportSkipReason(segment, pipelineConfig),
@@ -18984,6 +19999,7 @@ async function exportTranslatedPdf(payload) {
       promptLeakDetected: Boolean(segment && (segment.promptLeakDetected || isPromptLeakTranslation(segment.translatedText))),
       invalidTranslationDetected: Boolean(segment && segment.invalidTranslationDetected),
       invalidTranslationReason: String(segment && segment.invalidTranslationReason || ""),
+      failedTranslationEvidence: buildFailedTranslationEvidence(segment, developerDiagnosticsRequested),
       citationTokenProtectedCount: Number(segment && segment.citationTokenProtectedCount || 0),
       citationTokenRestoreFailedCount: Number(segment && segment.citationTokenRestoreFailedCount || 0),
       citationNameMutationRiskCount: Number(segment && segment.citationNameMutationRiskCount || 0),
@@ -19187,6 +20203,13 @@ async function exportTranslatedPdf(payload) {
   const reportById = new Map(segmentReports.map((report) => [report.id, report]));
   const exportSegmentIds = new Set(exportInputSegments.map((segment) => String(segment.id || "")));
   segmentReports.forEach((report) => {
+    if (_exportAuthorityIsolatedSegmentIds.has(String(report.id || ''))) {
+      report.writeIsolationStatus = 'isolated_preserve_original';
+      report.writeIsolationReason = 'caption_authority_artifact_invalid';
+      report.writeIncomplete = true;
+      report.visualResidualRisk = false;
+      report.skipReason = 'caption_authority_artifact_invalid_preserve_original';
+    }
     if (!report.skipReason && !exportSegmentIds.has(report.id)) {
       report.skipReason = "writable_but_not_sent_to_export";
     }
@@ -19201,37 +20224,21 @@ async function exportTranslatedPdf(payload) {
       report.preserveReasonLabel = getPdfPreserveReasonLabelForReport(report);
     }
   });
-  const segments = exportInputSegments.filter((segment) => !getPdfExportSkipReason(segment, pipelineConfig));
+  const segments = exportInputSegments.filter((segment) => (
+    !_exportAuthorityIsolatedSegmentIds.has(String(segment && segment.id || ''))
+    && !getPdfExportSkipReason(segment, pipelineConfig)
+  ));
   const paperTranslationReadiness = isPaperPdfConfig(pipelineConfig)
     ? getPaperTranslationReadinessBeforeExport(segmentReports)
     : null;
-  // A planned mask cannot stand in for an untranslated or pending paper segment.
-  // Block before opening the output path so incomplete work never becomes a visual draft.
-  // A debugFailExport request is explicitly asking to inspect an in-progress/failing export, so
-  // it must not be blocked by the same "everything already translated" gate the normal export
-  // path enforces — the *_debugFail.pdf path below still independently keeps the layoutPlan gate
-  // intact and still never produces a normal xxx_translated.pdf.
-  if (paperTranslationReadiness && !paperTranslationReadiness.ready && !debugFailExportRequested) {
-    return {
-      ok: false,
-      canceled: false,
-      error: "translation_incomplete_before_export",
-      ...paperTranslationReadiness,
-    };
-  }
   if (!originalFilePath || !fs.existsSync(originalFilePath)) {
     return { ok: false, canceled: false, error: "original_pdf_missing" };
   }
-  // segments is filtered down to translated/exportable candidates only — a debugFailExport
-  // request must still be able to produce its debug report off allSegments (the full extracted
-  // set) even when nothing is translated yet, since "only the layoutPlan must not be faked" is
-  // the requirement, not "translation must already be complete".
-  if (!segments.length && !(debugFailExportRequested && allSegments.length)) {
-    return { ok: false, canceled: false, error: "empty_content" };
-  }
+  // Zero writable translations is still a valid current-state export: the original pages remain
+  // unchanged. Translation completeness is reported independently from export generation.
 
   const defaultPath = path.join(app.getPath("documents"), `${safeTxtBaseName(fileName)}_translated.pdf`);
-  let outputFilePath = String(process.env.PDF_EXPORT_OUTPUT_PATH || "").trim();
+  let outputFilePath = String(requestedOutputPath || process.env.PDF_EXPORT_OUTPUT_PATH || "").trim();
   if (!outputFilePath) {
     const result = await dialog.showSaveDialog(focused || undefined, {
       title: "保存翻译 PDF",
@@ -19273,11 +20280,12 @@ async function exportTranslatedPdf(payload) {
   let _layoutPlan = { items: [], stats: {} };
   let _layoutPlanValidationStats = {};
   let _captionAuthorityChainAudit = { mode: 'not_applicable', behaviorMutationApplied: false, violationCount: 0, violations: [], authorizedCaptionWriteCount: 0 };
-  let _paperLayoutDebugFail = false;
+  let _paperLayoutHasIsolatedFailures = false;
   let _paperColumnFlowPlan = { enabled: false, items: [], safeSpans: [], stats: {} };
   let _layoutPlanBuiltBeforeExecution = false;
   let _layoutPlanValidatedBeforeExecution = false;
   let _layoutPlanExecutionBlocked = false;
+  let _paperWriteIsolationPlan = { authorizedMaskOps: [], authorizedWriteOps: [], rejectedSegmentIds: [], stats: {} };
   let _debugVisualStats = {};
   let _imageCaptionLayoutStats = {};
   let _captionVisualReplacementAudit = {};
@@ -19375,12 +20383,14 @@ async function exportTranslatedPdf(payload) {
     const executePaperMasks = () => {
       _paperMaskOps.forEach((op) => {
         if (op.paragraphLayoutCommitId && op.paragraphLayoutCommitState !== 'committed') return;
+        if (op.writeIsolationState === 'isolated_preserve_original') return;
         drawPaperMaskRect(op.page, op.pdfBox, op.meta);
       });
     };
     const executePaperWrites = () => {
       _paperWriteOps.forEach((op) => {
         if (op.paragraphLayoutCommitId && op.paragraphLayoutCommitState !== 'committed') return;
+        if (op.writeIsolationState === 'isolated_preserve_original') return;
         if (op.suppressedByColumnFlow || op.suppressedByPrimaryWriter) return;
         if (op.opType === 'write') {
           drawPaperTranslatedText(op.page, op.fitted, op.font, op.box, op.pad, op.align, op.meta);
@@ -19901,6 +20911,14 @@ async function exportTranslatedPdf(payload) {
       .filter((entry) => !_captionGroupSuppressedMemberIds.has(String(entry && entry.id || '')));
     const _paragraphRunLogicalSourceOrderIds = _isParagraphRunGroupWrite && Array.isArray(_paragraphRunGroup.logicalSourceOrderIds)
       ? _paragraphRunGroup.logicalSourceOrderIds.slice() : visualGroupSegments.map((entry) => String(entry.id || '')).filter(Boolean);
+    const _paragraphCorrectionDecision = _isParagraphRunGroupWrite && _paragraphRunGroup.run
+      ? _paragraphRunGroup.run.paragraphCorrectionDecision || null
+      : null;
+    if (_paragraphCorrectionDecision) {
+      visualGroupSegments.forEach((entry) => { entry.paragraphCorrectionDecision = _paragraphCorrectionDecision; });
+      _paragraphRunTextSegments.forEach((entry) => { entry.paragraphCorrectionDecision = _paragraphCorrectionDecision; });
+      segment.paragraphCorrectionDecision = _paragraphCorrectionDecision;
+    }
     const finalWriteRepresentativeId = String(segment.id || '');
     const _paragraphLayoutCommitId = _isParagraphRunGroupWrite
       ? `paragraph-layout-commit:${String(_paragraphRunGroup && _paragraphRunGroup.id || finalWriteRepresentativeId)}`
@@ -21522,6 +22540,41 @@ async function exportTranslatedPdf(payload) {
     }
     const _paragraphRunGroupId = _isParagraphRunGroupWrite && !continuationWriteApplied && visualGroupEntry && visualGroupEntry.group
       ? String(visualGroupEntry.group.id || '') : '';
+    if (_isParagraphRunGroupWrite && _paragraphCorrectionDecision && !continuationWriteApplied) {
+      let placementValidation = null;
+      const placementResult = resolvePaperParagraphPlacement(_paragraphRunGroup.run, writeBox, fitted, cjkFont,
+        translatedText, pad, _paragraphRunFirstLinePrefix, (candidate, measured) => {
+          const item = makePaperLayoutWritePlanItem({ segment, group: visualGroupEntry.group,
+            writeBox: candidate, renderedBox: makeRenderedTextBbox(candidate, measured.renderedTextHeight), maskBox: candidate, fitStatus: 'fit' });
+          placementValidation = validatePaperLayoutWritePlanItem(item,
+            writePlanByPageColumn.get(`${Number(segment.pageNumber)}:${String(segment.column || 'single')}`) || [], blockingZonesByPageColumn);
+          return !placementValidation.hasHardBlockingZone && !placementValidation.hasRealCollision;
+        }, _paragraphRunTopAnchorPlan);
+      _paragraphCorrectionDecision.placement = placementResult.decision;
+      if (placementValidation) placementResult.decision.layoutEvidence = {
+        hasHardBlockingZone: placementValidation.hasHardBlockingZone,
+        hasRealCollision: placementValidation.hasRealCollision,
+        blockingZoneHits: placementValidation.item.blockingZoneHits || [],
+        collisionHits: placementValidation.item.collisionHits || [],
+      };
+      if (placementResult.writeBox) {
+        writeBox = placementResult.writeBox;
+        fitted = placementResult.fitted;
+        drawBoxOverride = convertBoxToPdfCoords(writeBox, pageSize.height, pageSize.width);
+        renderedBox = makeRenderedTextBbox(writeBox, fitted.renderedTextHeight);
+        writePlanValidation = placementValidation;
+        writePlanItem = placementValidation.item;
+        visualGroupReports.forEach((entryReport) => { entryReport.writePlanItem = { ...writePlanItem }; });
+        _paragraphCorrectionDecision.decision = 'correct';
+        _paragraphCorrectionDecision.reason = 'placement_source_width_corrected';
+      }
+      if (_paragraphCorrectionDecision.decisionTrace) {
+        const trace = _paragraphCorrectionDecision.decisionTrace;
+        trace.placement = placementResult.decision;
+        trace.lifecycle.push({ stage: 'placement_fit_validation', status: placementResult.decision.decision, reason: placementResult.decision.reason });
+        trace.finalDecision = { ...trace.finalDecision, decision: _paragraphCorrectionDecision.decision, reason: _paragraphCorrectionDecision.reason };
+      }
+    }
     if (!continuationWriteApplied) {
       // Shrink the visual white-background rectangle to match rendered Chinese text height when
       // the text fills < 85% of the write box — leaves the gap area to the source cover masks.
@@ -21632,6 +22685,9 @@ async function exportTranslatedPdf(payload) {
       entryReport.finalLineHeight = Number(fitted.lineHeight || 0);
       entryReport.renderedTextLineCount = Number(fitted.renderedTextLineCount || 0);
       entryReport.renderedTextHeight = Number(fitted.renderedTextHeight || 0);
+      entryReport.paragraphCorrectionDecision = _paragraphCorrectionDecision
+        ? JSON.parse(JSON.stringify(_paragraphCorrectionDecision))
+        : null;
       entryReport.maxRenderedLineWidth = Number(fitted.maxLineWidth || 0);
       entryReport.writeBoxTextDensityRatio = Number(fitted.writeBoxTextDensityRatio || 0);
       entryReport.fontSizeBelowReadable = Boolean(fitted.fontSizeBelowReadable);
@@ -21834,9 +22890,7 @@ async function exportTranslatedPdf(payload) {
       groupSplitSegmentIds: Array.from(new Set(groupSplitSegmentIds.filter(Boolean))),
     };
     if (isPaperPdfConfig(pipelineConfig)) {
-      const columnFlowReferenceReport = segmentReports.find((entry) =>
-        entry.referenceModeApplied || entry.referenceHeading || isReferencesHeadingText(entry.textPreview || '')
-      );
+      const columnFlowReferenceReport = segmentReports.find((entry) => entry.semanticReferenceRole === 'heading');
       const columnFlowReferenceStartPage = Number(columnFlowReferenceReport && columnFlowReferenceReport.pageNumber || 0);
       const columnFlowReferenceTriggerY = Number(
         columnFlowReferenceReport && (columnFlowReferenceReport.referenceModeTriggerY || columnFlowReferenceReport.bbox && columnFlowReferenceReport.bbox.y) || 0
@@ -21851,6 +22905,14 @@ async function exportTranslatedPdf(payload) {
         referenceModeTriggerY: columnFlowReferenceTriggerY,
       });
       applyPaperColumnFlowToWriteOps(_paperWriteOps, _paperColumnFlowPlan, { reportById, pageSizesByPage, maskOps: _paperMaskOps });
+      segmentReports.forEach((entry) => {
+        const placement = entry.paragraphCorrectionDecision && entry.paragraphCorrectionDecision.placement;
+        if (!placement || !placement.fitVerified) return;
+        const finalBox = entry.finalWriteBox;
+        placement.finalWriteVerified = Boolean(finalBox && finalBox.x === placement.verifiedWriteBox.x
+          && finalBox.width === placement.verifiedWriteBox.width && finalBox.y === placement.verifiedWriteBox.y);
+        placement.finalWriteBox = finalBox ? { ...finalBox } : null;
+      });
     }
     // layoutPlan is the pre-execution construction blueprint, not a post-hoc report: build and
     // validate it here, before any mask/write op is actually drawn onto the PDF pages. All the
@@ -22167,6 +23229,18 @@ async function exportTranslatedPdf(payload) {
           duplicateCanonicalMap: (_layoutPlan.stats && _layoutPlan.stats.duplicateFragmentCanonicalReplacementMap) || {},
           itemBySegId: _layoutPlanItemBySegId,
           writeCoverageMap: _validationWriteCoverageMap,
+          preserveSourceBoxesBySegmentId: (() => {
+            const bySegmentId = new Map();
+            const referenceEntryStarts = buildPaperReferenceEntryStartByPage(allSegments);
+            allSegments.forEach((segment) => {
+              const report = _layoutPlanRBI.get(String(segment && segment.id || ''));
+              const preserve = requirePdfExportSemanticDisposition(segment, 'layout validation preserve geometry') === 'preserve'
+                || Boolean(report && String(report.skipReason || '').endsWith('_preserve_original'));
+              if (!preserve) return;
+              bySegmentId.set(String(segment.id || ''), getPaperNonWritableSourceBoxes(segment, referenceEntryStarts));
+            });
+            return bySegmentId;
+          })(),
         })
       : {};
     _captionAuthorityChainAudit = isPaperExport
@@ -22240,66 +23314,20 @@ async function exportTranslatedPdf(payload) {
       diagnosticRuntime.runPlugin('paragraph-layout-commit-validator', _paperParagraphLayoutCommitPlan);
     }
     _layoutPlanValidatedBeforeExecution = true;
-    _layoutPlanExecutionBlocked = isPaperExport && _layoutPlanValidationStats.layoutPlanValidationStatus === 'failed';
-    if (!_layoutPlanExecutionBlocked) {
-      executePaperMasks();
-      executePaperWrites();
-    } else if (_layoutPlanExecutionBlocked) {
-      // A failed layout plan is saved only as *_debugFail.pdf, but it must still represent the
-      // operations that were actually planned. Previously complete translations skipped every
-      // mask/write here, leaving an unchanged source PDF while reports claimed writeApplied=true.
-      // Execute the collected diagnostic operations; the failed validation still blocks a normal
-      // translated PDF and remains visible in the filename, result status, and audit sidecars.
-      executePaperMasks();
-      executePaperWrites();
-      const _doneSegmentIds = new Set(segments.map((s) => String(s.id || '')));
-      let _debugPendingMarkedCount = 0;
-      let _debugBlockedMarkedCount = 0;
-      // Mark pending (untranslated) translatable segments with a [PENDING] label and blue border.
-      allSegments.forEach((seg) => {
-        const segId = String(seg.id || '');
-        if (requirePdfExportSemanticDisposition(seg, 'debug pending marker') !== 'translate') return;
-        if (_doneSegmentIds.has(segId)) return;
-        const pageNum = Number(seg.pageNumber || 0);
-        const pg = pageNum > 0 ? pages[pageNum - 1] : null;
-        if (!pg || !seg.bbox) return;
-        const pageSize = pageSizesByPage.get(pageNum) || pg.getSize();
-        const pdfBox = convertBoxToPdfCoords(seg.bbox, pageSize.height, pageSize.width);
-        try {
-          pg.drawRectangle({ x: pdfBox.x, y: pdfBox.y, width: pdfBox.width, height: pdfBox.height, borderColor: rgb(0.2, 0.4, 0.8), borderWidth: 0.7, color: rgb(0.2, 0.4, 0.8), opacity: 0.04, borderOpacity: 0.55 });
-          pg.drawText('[PENDING]', { x: pdfBox.x + 2, y: pdfBox.y + pdfBox.height - 7, size: 6, font: latinFont, color: rgb(0.2, 0.4, 0.8), opacity: 0.8 });
-        } catch (_) {}
-        _debugPendingMarkedCount++;
-      });
-      // Highlight done segments that failed layoutPlan validation with an orange border.
-      _doneSegmentIds.forEach((segId) => {
-        const report = reportById.get(segId);
-        if (!report || report.layoutPlanValidationStatus !== 'failed') return;
-        const pageNum = Number(report.pageNumber || 0);
-        const pg = pageNum > 0 ? pages[pageNum - 1] : null;
-        if (!pg) return;
-        const writeBox = report.writeBbox || report.renderedTextBbox;
-        if (!writeBox) return;
-        const pageSize = pageSizesByPage.get(pageNum) || pg.getSize();
-        const pdfBox = convertBoxToPdfCoords(writeBox, pageSize.height, pageSize.width);
-        try {
-          pg.drawRectangle({ x: pdfBox.x, y: pdfBox.y, width: pdfBox.width, height: pdfBox.height, borderColor: rgb(0.8, 0.3, 0.1), borderWidth: 1, color: rgb(0.8, 0.3, 0.1), opacity: 0.05, borderOpacity: 0.5 });
-        } catch (_) {}
-        _debugBlockedMarkedCount++;
-      });
-      _debugVisualStats = {
-        debugFailVisualMode: paperTranslationReadiness && paperTranslationReadiness.ready
-          ? 'complete_translation_layout_validation_failed'
-          : 'partial_done_segments',
-        manualOrPartialExportDebug: Boolean(debugFailExportRequested || paperTranslationReadiness && !paperTranslationReadiness.ready),
-        debugFailVisualWriteAttemptedCount: _paperWriteOps.length,
-        debugFailVisualWriteAppliedCount: _paperWriteExecutionLog.length,
-        debugFailVisualPendingMarkedCount: _debugPendingMarkedCount,
-        debugFailVisualBlockedMarkedCount: _debugBlockedMarkedCount,
-        debugFailVisualSourceCoverAppliedCount: _paperMaskExecutionLog.filter((m) => m.maskKind === 'sourceCover').length,
-        debugFailVisualWriteBackgroundAppliedCount: _paperMaskExecutionLog.filter((m) => m.maskKind === 'writeBackground').length,
-      };
-    }
+    _paperWriteIsolationPlan = isolatePaperMaskWriteOperations(
+      _paperMaskOps,
+      _paperWriteOps,
+      _layoutPlanRBI,
+      _captionAuthorityChainAudit,
+    );
+    _layoutPlanExecutionBlocked = false;
+    executePaperMasks();
+    executePaperWrites();
+    _debugVisualStats = {
+      diagnosticsAffectBusinessDecision: false,
+      developerDiagnosticsRequested,
+      ..._paperWriteIsolationPlan.stats,
+    };
     }
 
 
@@ -22329,8 +23357,14 @@ async function exportTranslatedPdf(payload) {
       _paperMaskExecutionLog, _paperWriteExecutionLog, _layoutPlan.items,
       { suppressedByCanonicalMap: _paperColumnFlowPlan && _paperColumnFlowPlan.stats && _paperColumnFlowPlan.stats.suppressedByCanonicalMap }
     );
-    const _committedPaperMaskOps = _paperMaskOps.filter((op) => !op.paragraphLayoutCommitId || op.paragraphLayoutCommitState === 'committed');
-    const _committedPaperWriteOps = _paperWriteOps.filter((op) => !op.paragraphLayoutCommitId || op.paragraphLayoutCommitState === 'committed');
+    const _committedPaperMaskOps = _paperMaskOps.filter((op) => (
+      (!op.paragraphLayoutCommitId || op.paragraphLayoutCommitState === 'committed') &&
+      op.writeIsolationState !== 'isolated_preserve_original'
+    ));
+    const _committedPaperWriteOps = _paperWriteOps.filter((op) => (
+      (!op.paragraphLayoutCommitId || op.paragraphLayoutCommitState === 'committed') &&
+      op.writeIsolationState !== 'isolated_preserve_original'
+    ));
     // Consistency audit: cross-reference collected ops against layoutPlan items. Runs regardless
     // of whether execution was blocked — the ops are always collected during the segment loop.
     _paperExecutionConsistencyAuditStats = isPaperExport
@@ -22361,10 +23395,9 @@ async function exportTranslatedPdf(payload) {
         paperExecutionLastMaskSeq: lastSourceMaskSeq,
       };
     })();
-    if (isPaperExport && _layoutPlanValidationStats.layoutPlanValidationStatus === 'failed') {
-      _paperLayoutDebugFail = true;
-      outputFilePath = outputFilePath.replace(/\.pdf$/i, '_debugFail.pdf');
-    }
+    _paperLayoutHasIsolatedFailures = Boolean(
+      isPaperExport && Number(_paperWriteIsolationPlan.stats && _paperWriteIsolationPlan.stats.writeIsolationRejectedSegmentCount || 0) > 0
+    );
     const bytes = await pdfDoc.save({ useObjectStreams: true });
     fs.writeFileSync(outputFilePath, bytes);
     exportedPdfSize = fs.statSync(outputFilePath).size;
@@ -22374,7 +23407,7 @@ async function exportTranslatedPdf(payload) {
   // later steps throw, the user always has segmentReports alongside the PDF.
   const _exportStatsBaseEarly = { fileName, sourcePath: originalFilePath, targetLanguage };
   let _sidecarFallbackResult = { segmentReportsPath: '', pipelineDebugPath: '', sidecarWriteStatus: 'not_written', sidecarWriteError: '' };
-  if (isPaperExport && exportedPdfSize > 0) {
+  if (developerDiagnosticsRequested && isPaperExport && exportedPdfSize > 0) {
     try {
       (_layoutPlan.items || []).forEach((item, index) => diagnosticRuntime.registerArtifact({
         artifactType: 'layout-item', artifactId: String(item.captionLayoutItemId || item.layoutItemId || `${item.segmentId || 'item'}:${index}`),
@@ -22397,7 +23430,7 @@ async function exportTranslatedPdf(payload) {
           pdfTranslationMode: pipelineConfig && pipelineConfig.mode,
           outputFilePath,
           exportedPdfSize,
-          layoutPlanDebugFail: Boolean(_paperLayoutDebugFail),
+          layoutWriteHasIsolatedFailures: _paperLayoutHasIsolatedFailures,
           diagnosticRunId: diagnosticRuntime.context.runId,
           diagnosticDocumentId: diagnosticRuntime.context.documentId,
           diagnosticPlatformStatus: fallbackDiagnosticPlatform.summary.status,
@@ -22661,14 +23694,18 @@ async function exportTranslatedPdf(payload) {
     if (report.skipReason) acc[report.type] = (acc[report.type] || 0) + 1;
     return acc;
   }, {});
-  // Cross-page duplicate fragments are excluded from all completeness/coverage counts.
-  // They are suppressed extraction artifacts, not missing translations or write failures.
-  const translatableReports = segmentReports.filter((report) => report.semanticTranslationDisposition === 'translate' && report.skipReason !== 'cross_page_duplicate_fragment');
+  // The denominator is the complete frozen canonical translate set. Duplicate extraction
+  // fragments remain counted; owner-aware coverage below decides whether their source glyphs were
+  // safely covered by the canonical write.
+  const translatableReports = segmentReports.filter((report) => report.semanticTranslationDisposition === 'translate');
   // 5A-5: a caption-group member is real, translatable content — unlike a cross-page duplicate
   // fragment, it must stay counted in translatableReports (denominator) — it is just "written" by
   // its canonical caption owner instead of independently, so every completeness check below treats
   // captionGroupCompletenessCovered the same way it already treats a genuinely complete own write.
-  const skippedTranslatableReports = translatableReports.filter((report) => Boolean(report.skipReason) && !report.captionGroupCompletenessCovered);
+  const isCoveredCrossPageDuplicate = (report) => String(report && report.skipReason || '') === 'cross_page_duplicate_fragment'
+    && Boolean(report && report.crossPageDuplicateSourceMasked);
+  const skippedTranslatableReports = translatableReports.filter((report) => Boolean(report.skipReason)
+    && !report.captionGroupCompletenessCovered && !isCoveredCrossPageDuplicate(report));
   const _captionGroupCoverageReportById = new Map(segmentReports.map((report) => [String(report && report.id || ''), report]));
   segmentReports.forEach((report) => {
     const _captionCoverage = String(report.skipReason || '') === 'caption_group_member_covered_by_canonical'
@@ -22707,9 +23744,12 @@ async function exportTranslatedPdf(payload) {
       report.writePlanPageMatchesResolvedSourcePage = null;
     }
   });
-  const completeWriteReports = translatableReports.filter((report) => report.captionGroupCompletenessCovered || (report.maskApplied && isPdfReportCompleteWriteApplied(report) && !report.skipReason));
+  const completeWriteReports = translatableReports.filter((report) => report.captionGroupCompletenessCovered
+    || isCoveredCrossPageDuplicate(report)
+    || (report.maskApplied && isPdfReportCompleteWriteApplied(report) && !report.skipReason));
   const incompleteWriteReports = translatableReports.filter((report) => report.writeApplied && !isPdfReportCompleteWriteApplied(report));
-  const translatedButUnwrittenReports = translatableReports.filter((report) => report.status === "done" && report.hasTranslatedText && !report.writeApplied && !report.captionGroupCompletenessCovered);
+  const translatedButUnwrittenReports = translatableReports.filter((report) => report.status === "done" && report.hasTranslatedText
+    && !report.writeApplied && !report.captionGroupCompletenessCovered && !isCoveredCrossPageDuplicate(report));
   const writtenButTruncatedReports = translatableReports.filter((report) => report.writeApplied && report.translatedTextTruncated);
   const noValidLineMaskReports = translatableReports.filter((report) => report.skipReason === "no_valid_line_masks" || report.noValidLineMask);
   const invalidClippedWriteBoxReports = translatableReports.filter((report) => report.invalidClippedWriteBox || report.skipReason === "invalid_clipped_write_box");
@@ -22737,7 +23777,7 @@ async function exportTranslatedPdf(payload) {
   });
   const visualResidualRiskReports = translatableReports.filter((report) => report.visualResidualRisk);
   const unwrittenTranslatableReports = translatableReports.filter((report) => (
-    !report.captionGroupCompletenessCovered && (
+    !report.captionGroupCompletenessCovered && !isCoveredCrossPageDuplicate(report) && (
       report.status !== "done" ||
       !report.hasTranslatedText ||
       !report.maskApplied ||
@@ -22748,11 +23788,16 @@ async function exportTranslatedPdf(payload) {
       Boolean(report.skipReason)
     )
   ));
-  const translatedReports = translatableReports.filter((report) => report.status === "done" && report.hasTranslatedText && (!report.skipReason || report.captionGroupCompletenessCovered || PAPER_WRITE_ONLY_SKIP_REASONS.has(String(report.skipReason || ''))));
+  // Translation completion is independent of downstream write/layout eligibility. A translated
+  // segment that later receives a layout skip remains translated; write completeness is reported
+  // separately by completeWriteReports/unwrittenTranslatableReports.
+  const translatedReports = translatableReports.filter((report) => report.status === "done" && report.hasTranslatedText);
   const writtenReports = completeWriteReports;
   const preservedReports = segmentReports.filter((report) => report.status === "preserved" || String(report.skipReason || "").endsWith("_preserve_original"));
   const pendingTranslatableReports = translatableReports.filter((report) => report.status === "pending" || report.status === "translating");
-  const failedTranslatableReports = translatableReports.filter((report) => !report.captionGroupCompletenessCovered && (report.status === "failed" || report.writeIncomplete || report.translatedTextTruncated || Boolean(report.skipReason)));
+  const failedTranslatableReports = translatableReports.filter((report) => !report.captionGroupCompletenessCovered
+    && !isCoveredCrossPageDuplicate(report)
+    && (report.status === "failed" || report.writeIncomplete || report.translatedTextTruncated || Boolean(report.skipReason)));
   const skippedTranslatableByType = skippedTranslatableReports.reduce((acc, report) => {
     acc[report.type] = (acc[report.type] || 0) + 1;
     return acc;
@@ -22765,7 +23810,7 @@ async function exportTranslatedPdf(payload) {
   const isSimpleExport = isSimplePdfConfig(pipelineConfig);
   const paperDebugPages = isPaperExport && extractionPipelineDebug && Array.isArray(extractionPipelineDebug.pages) ? extractionPipelineDebug.pages : [];
   const paperZones = paperDebugPages.flatMap((page) => Array.isArray(page.zones) ? page.zones : []);
-  const referenceStartReport = segmentReports.find((report) => report.referenceModeApplied || report.referenceHeading || isReferencesHeadingText(report.textPreview || ""));
+  const referenceStartReport = segmentReports.find((report) => report.semanticReferenceRole === "heading" || report.referenceChainStart);
   const referenceModeTriggerReport = segmentReports.find((report) => report.referenceModeTriggerSegmentId) || referenceStartReport;
   const referenceModeRetaggedSegmentIds = Array.from(new Set(segmentReports.flatMap((report) => report.referenceModeRetaggedSegmentIds || []).filter(Boolean)));
   const referenceModePages = new Set(segmentReports.filter((report) => report.referenceModeApplied || report.type === "reference").map((report) => Number(report.pageNumber || 0)).filter(Boolean));
@@ -22961,8 +24006,8 @@ async function exportTranslatedPdf(payload) {
     captionGroupSupplementalMaskBlockedReason: _captionGroupSupplementalMaskBlockedReason,
     captionLifecycleArtifactCount: _captionLifecycleArtifactDetails.length,
     captionLifecycleArtifactDetails: _captionLifecycleArtifactDetails,
-    layoutPlanDebugFail: Boolean(_paperLayoutDebugFail),
-    normalPdfExportBlockedByLayoutPlan: Boolean(_paperLayoutDebugFail),
+    layoutWriteHasIsolatedFailures: _paperLayoutHasIsolatedFailures,
+    normalPdfExportBlockedByLayoutPlan: false,
     paperColumnFlowEnabled: Boolean(isPaperExport && _paperColumnFlowPlan && _paperColumnFlowPlan.enabled),
     paperColumnFlowCandidateCount: Number(_paperColumnFlowPlan && _paperColumnFlowPlan.stats && _paperColumnFlowPlan.stats.paperColumnFlowCandidateCount || 0),
     paperColumnFlowAppliedCount: Number(_paperColumnFlowPlan && _paperColumnFlowPlan.stats && _paperColumnFlowPlan.stats.paperColumnFlowAppliedCount || 0),
@@ -23228,6 +24273,12 @@ async function exportTranslatedPdf(payload) {
     citationTokenRestoreFailedCount: segmentReports.reduce((sum, report) => sum + Number(report.citationTokenRestoreFailedCount || 0), 0),
     citationNameMutationRiskCount: segmentReports.reduce((sum, report) => sum + Number(report.citationNameMutationRiskCount || 0), 0),
     citationNameMutationSegmentIds: segmentReports.filter((report) => Number(report.citationNameMutationRiskCount || 0) > 0).map((report) => report.id).filter(Boolean),
+    providerConnectionEvidence: Array.from(new Map(segmentReports
+      .filter((report) => report.translationProviderConnection && report.translationProviderConnection.providerId)
+      .map((report) => {
+        const evidence = report.translationProviderConnection;
+        return [`${evidence.providerId}|${evidence.connectedAt}`, evidence];
+      })).values()),
     glyphFallbackCount: segmentReports.reduce((sum, report) => sum + (Array.isArray(report.glyphFallbackChars) ? report.glyphFallbackChars.length : 0), 0),
     formulaFormatWarningCount: segmentReports.reduce((sum, report) => sum + (Array.isArray(report.formulaFormatWarnings) ? report.formulaFormatWarnings.length : 0), 0),
     formulaLineDemotedToInlineCount: segmentReports.filter((report) => report.formulaLineDemotedToInline || (report.mixedFormulaProse && report.formulaLinePreserveCount === 0)).length,
@@ -23333,7 +24384,7 @@ async function exportTranslatedPdf(payload) {
   exportSummary.layoutPlanBuiltBeforeExecution = _layoutPlanBuiltBeforeExecution;
   exportSummary.layoutPlanValidatedBeforeExecution = _layoutPlanValidatedBeforeExecution;
   exportSummary.layoutPlanExecutionBlocked = _layoutPlanExecutionBlocked;
-  exportSummary.normalPdfExportBlockedByLayoutPlan = _layoutPlanExecutionBlocked;
+  exportSummary.normalPdfExportBlockedByLayoutPlan = false;
   exportSummary.captionGroupLifecycleAuditStatus = _captionGroupLifecycleAudits.some((audit) => audit.status === 'error') ? 'error' : 'pass';
   exportSummary.captionGroupLifecycleAuditGroupCount = _captionGroupLifecycleAudits.length;
   exportSummary.captionGroupLifecycleAuditErrorGroupCount = _captionGroupLifecycleAudits.filter((audit) => audit.status === 'error').length;
@@ -23407,7 +24458,7 @@ async function exportTranslatedPdf(payload) {
       imageTextPreservePreviews: segmentReports.filter((report) => report.type === "imageText" && (report.status === "preserved" || String(report.skipReason || "").endsWith("_preserve_original"))).slice(0, 20).map((report) => report.textPreview || "").filter(Boolean),
       bodyMisclassifiedAsImageTextCount: segmentReports.filter((report) => report.type === "imageText" && isBodyLikeImageText(report.textPreview || "")).length,
       bodyMisclassifiedAsImageTextSegmentIds: segmentReports.filter((report) => report.type === "imageText" && isBodyLikeImageText(report.textPreview || "")).map((report) => report.id).filter(Boolean),
-      referenceHeadingCount: segmentReports.filter((report) => report.referenceHeading || isReferencesHeadingText(report.textPreview || "")).length,
+      referenceHeadingCount: segmentReports.filter((report) => report.semanticReferenceRole === "heading").length,
       referenceSegmentCount: segmentReports.filter((report) => report.type === "reference").length,
       referencePreservedCount: exportSummary.referencePreserveCount,
       referenceMaskAppliedCount: segmentReports.filter((report) => report.type === "reference" && report.maskApplied).length,
@@ -23656,7 +24707,39 @@ async function exportTranslatedPdf(payload) {
       exportSummary.paperParagraphBoundaryBySourceIdentityCount = _prs.paperParagraphBoundaryBySourceIdentityCount || 0;
       exportSummary.paperParagraphBoundaryByFirstLineIndentCount = _prs.paperParagraphBoundaryByFirstLineIndentCount || 0;
       exportSummary.paperParagraphNegativeOverlapContinuationCount = _prs.paperParagraphNegativeOverlapContinuationCount || 0;
+      exportSummary.paperParagraphSemanticContinuationRecoveryCount = _prs.paperParagraphSemanticContinuationRecoveryCount || 0;
+      exportSummary.paperParagraphIdentityRecoveryAuthorityVersion = _prs.paperParagraphIdentityRecoveryAuthorityVersion || null;
+      exportSummary.paperLogicalParagraphCount = _prs.paperLogicalParagraphCount || 0;
+      exportSummary.paperCrossColumnParagraphIdentityRecoveryCount = _prs.paperCrossColumnParagraphIdentityRecoveryCount || 0;
+      exportSummary.paperCrossPageParagraphIdentityRecoveryCount = _prs.paperCrossPageParagraphIdentityRecoveryCount || 0;
+      exportSummary.paperParagraphIdentityRecoveryDetails = _prs.paperParagraphIdentityRecoveryDetails || [];
       exportSummary.paperParagraphBoundaryEvidenceDetails = _prs.paperParagraphBoundaryEvidenceDetails || [];
+      const paragraphCorrectionDecisions = (_paperParagraphRunResult.runs || [])
+        .map((run) => run && run.paragraphCorrectionDecision)
+        .filter(Boolean);
+      const countCorrectionDecision = (decision) => paragraphCorrectionDecisions
+        .filter((item) => String(item.decision || '').toLowerCase() === decision).length;
+      exportSummary.paperParagraphCorrectionAuthorityVersion = 'paper-paragraph-correction/v1';
+      exportSummary.paperParagraphCorrectionDecisionCount = paragraphCorrectionDecisions.length;
+      exportSummary.paperParagraphCorrectionCorrectCount = countCorrectionDecision('correct');
+      exportSummary.paperParagraphCorrectionNoopCount = countCorrectionDecision('no-op');
+      exportSummary.paperParagraphCorrectionRejectCount = countCorrectionDecision('reject');
+      exportSummary.paperParagraphCorrectionTailCorrectCount = paragraphCorrectionDecisions
+        .filter((item) => item.tail && item.tail.decision === 'correct').length;
+      exportSummary.paperParagraphRecoveryCandidateGeneratedCount = paragraphCorrectionDecisions
+        .filter((item) => item.decisionTrace && item.decisionTrace.candidate && item.decisionTrace.candidate.generated).length;
+      exportSummary.paperParagraphRecoveryCandidateNotGeneratedCount = paragraphCorrectionDecisions.length - exportSummary.paperParagraphRecoveryCandidateGeneratedCount;
+      exportSummary.paperParagraphCorrectionDecisionDetails = paragraphCorrectionDecisions.map((item) => ({
+        authorityVersion: item.authorityVersion,
+        paragraphId: item.paragraphId || null,
+        decision: item.decision,
+        reason: item.reason,
+        boundary: item.boundary || null,
+        tail: item.tail || null,
+        decisionTrace: item.decisionTrace || null,
+      }));
+      exportSummary.paperParagraphDecisionTraceVersion = 'paper-paragraph-decision-trace/v1';
+      exportSummary.paperParagraphDecisionTraceCount = paragraphCorrectionDecisions.filter((item) => item.decisionTrace).length;
       exportSummary.paperOversizedParagraphRunCount = _prs.paperOversizedParagraphRunCount;
       exportSummary.paperOversizedParagraphRunDetails = _prs.paperOversizedParagraphRunDetails;
       exportSummary.paperParagraphRunMaxLineCount = _prs.paperParagraphRunMaxLineCount;
@@ -23856,40 +24939,35 @@ async function exportTranslatedPdf(payload) {
   const completenessValidation = isPaperExport
     ? diagnosticRuntime.runPlugin('export-completeness-validator', exportSummary)
     : { exportCompletenessHardFail: false, exportCompletenessStatus: "complete", exportCompletenessFailureReasons: [] };
-  const layoutPlanHardFail = Boolean(isPaperExport && _paperLayoutDebugFail);
-  const exportCompletenessHardFail = Boolean(completenessValidation.exportCompletenessHardFail || layoutPlanHardFail);
-  exportSummary.exportCompletenessHardFail = exportCompletenessHardFail;
-  exportSummary.exportCompletenessStatus = layoutPlanHardFail ? 'incomplete' : completenessValidation.exportCompletenessStatus;
+  const layoutWriteIsolatedFailureSegmentIds = Array.from(new Set([
+    ...(_paperWriteIsolationPlan.stats && _paperWriteIsolationPlan.stats.writeIsolationRejectedSegmentIds || []),
+    ..._exportAuthorityIsolatedSegmentIds,
+  ]));
+  const layoutWriteIsolatedFailureCount = layoutWriteIsolatedFailureSegmentIds.length;
+  const translationComplete = Boolean(!paperTranslationReadiness || paperTranslationReadiness.ready);
+  const writeComplete = Boolean(
+    layoutWriteIsolatedFailureCount === 0 && !completenessValidation.exportCompletenessHardFail
+  );
+  const exportGenerated = exportedPdfSize > 0;
+  exportSummary.translationComplete = translationComplete;
+  exportSummary.translationStatus = translationComplete ? 'complete' : 'partial';
+  exportSummary.writeComplete = writeComplete;
+  exportSummary.writeStatus = writeComplete ? 'complete' : 'partial';
+  exportSummary.writeIsolatedFailureCount = layoutWriteIsolatedFailureCount;
+  exportSummary.writeIsolatedFailureSegmentIds = layoutWriteIsolatedFailureSegmentIds;
+  exportSummary.exportGenerated = exportGenerated;
+  exportSummary.exportStatus = exportGenerated ? 'generated' : 'not_generated';
+  exportSummary.exportCompletenessHardFail = Boolean(completenessValidation.exportCompletenessHardFail);
+  exportSummary.exportCompletenessStatus = completenessValidation.exportCompletenessStatus;
   exportSummary.exportCompletenessFailureReasons = Array.from(new Set([
     ...(completenessValidation.exportCompletenessFailureReasons || []),
-    ...(layoutPlanHardFail ? ['layout_plan_validation_failed'] : []),
+    ...(_paperLayoutHasIsolatedFailures ? ['layout_write_segment_isolated'] : []),
   ]));
-  // Completeness-based export gate: if the paper PDF was generated (masks/writes executed)
-  // but owner-aware completeness still fails (doneButNoWrite > 0, etc.), the file must
-  // become a debugFail PDF rather than a normal _translated.pdf.  layoutPlan pass alone
-  // does not guarantee a complete export.
-  let _completenessHardFail = false;
-  if (isPaperExport && exportCompletenessHardFail && !layoutPlanHardFail && exportedPdfSize > 0) {
-    _completenessHardFail = true;
-    if (outputFilePath && !outputFilePath.endsWith('_debugFail.pdf')) {
-      const _compDebugFailPath = outputFilePath.replace(/\.pdf$/i, '_debugFail.pdf');
-      try {
-        fs.renameSync(outputFilePath, _compDebugFailPath);
-        // Rename the fallback sidecars that were written with the old (translated) path so
-        // there are no stale *_translated.pipelineDebug.json / segmentReports.json files.
-        // The full sidecar write below will overwrite these with complete content.
-        const _oldSC = makePdfSidecarPaths(outputFilePath);
-        const _newSC = makePdfSidecarPaths(_compDebugFailPath);
-        try { if (fs.existsSync(_oldSC.segmentReportsPath)) fs.renameSync(_oldSC.segmentReportsPath, _newSC.segmentReportsPath); } catch (_) {}
-        try { if (fs.existsSync(_oldSC.pipelineDebugPath)) fs.renameSync(_oldSC.pipelineDebugPath, _newSC.pipelineDebugPath); } catch (_) {}
-        outputFilePath = _compDebugFailPath;
-      } catch (_) {}
-    }
-  }
-  exportSummary.normalPdfExportBlockedByCompleteness = _completenessHardFail;
-  exportSummary.exportCompletenessBlocksNormalPdf = _completenessHardFail;
-  exportSummary.normalPdfExportBlockedReason = layoutPlanHardFail ? 'layout_plan_failed'
-    : (_completenessHardFail ? 'export_incomplete' : null);
+  // Completeness and layout validation are evidence. A local write rejection leaves that
+  // segment's source pixels untouched and cannot downgrade or rename the user's PDF.
+  exportSummary.normalPdfExportBlockedByCompleteness = false;
+  exportSummary.exportCompletenessBlocksNormalPdf = false;
+  exportSummary.normalPdfExportBlockedReason = null;
   // 2D-4 instrumentation: copy the extraction-time body-line-density counter-proof counters onto
   // exportSummary too, so segmentReports.json's summary carries them, not just pipelineDebug.json.
   exportSummary.imageRegionBodyCounterProofAttemptCount = Number(extractionPipelineDebug && extractionPipelineDebug.imageRegionBodyCounterProofAttemptCount || 0);
@@ -23930,7 +25008,7 @@ async function exportTranslatedPdf(payload) {
     sourcePath: originalFilePath,
     targetLanguage,
   };
-  if (isPaperExport) {
+  if (developerDiagnosticsRequested && isPaperExport) {
     try {
       _captionGroupAuditReportPath = writeCaptionGroupMarkdownAudit(outputFilePath, _captionGroupLifecycleAudits, { sourcePath: originalFilePath });
     } catch (err) {
@@ -23942,7 +25020,7 @@ async function exportTranslatedPdf(payload) {
   exportSummary.captionGroupAuditReportError = _captionGroupAuditReportError;
   // Overwrite fallback sidecars with full pipelineDebugReport + exportSummary.
   // If this fails, the fallback JSON written right after the PDF is still on disk.
-  try {
+  if (developerDiagnosticsRequested) try {
     const _fullSidecarResult = writePdfDebugSidecars({
       actualPdfPath: outputFilePath,
       segmentReports,
@@ -23964,6 +25042,11 @@ async function exportTranslatedPdf(payload) {
     sidecarWriteStatus = 'fallback_pass_full_sidecar_failed';
     sidecarWriteError = String(err && err.message || err);
     console.error('[LINGOFLOW][SIDECAR] full sidecar write failed (fallback preserved):', sidecarWriteError);
+  } else {
+    sidecarWriteStatus = 'disabled_for_user_export';
+    sidecarWriteError = '';
+    segmentReportsPath = '';
+    pipelineDebugPath = '';
   }
   const exportStats = {
     ...exportSummary,
@@ -24004,24 +25087,24 @@ async function exportTranslatedPdf(payload) {
   debugPdfLog("[pdf-export] segment details", JSON.stringify(segmentReports));
   debugPdfLog("[pdf-export] skipped segments", JSON.stringify(segmentReports.filter((report) => report.skipReason)));
   resetCjkFontExportCache();
-  const debugFailExportSucceeded = debugFailExportRequested && (layoutPlanHardFail || _completenessHardFail);
   return {
     ...exportStats,
-    ok: debugFailExportSucceeded ? true : !exportCompletenessHardFail,
+    ok: exportGenerated,
     filePath: outputFilePath,
-    layoutPlanDebugFail: Boolean(_paperLayoutDebugFail),
-    normalPdfExportBlockedByLayoutPlan: Boolean(layoutPlanHardFail),
-    normalPdfExportBlockedByCompleteness: _completenessHardFail,
-    exportCompletenessBlocksNormalPdf: _completenessHardFail,
-    normalPdfExportBlockedReason: exportSummary.normalPdfExportBlockedReason || null,
+    translationComplete,
+    writeComplete,
+    exportGenerated,
+    layoutWriteHasIsolatedFailures: _paperLayoutHasIsolatedFailures,
+    writeIsolatedFailureCount: layoutWriteIsolatedFailureCount,
+    normalPdfExportBlockedByLayoutPlan: false,
+    normalPdfExportBlockedByCompleteness: false,
+    exportCompletenessBlocksNormalPdf: false,
+    normalPdfExportBlockedReason: null,
     segmentReportsPath,
     pipelineDebugPath,
     sidecarWriteStatus,
     sidecarWriteError,
-    error: debugFailExportSucceeded
-      ? undefined
-      : (layoutPlanHardFail ? "pdf_layout_validation_failed" : (exportCompletenessHardFail ? "pdf_export_incomplete" : undefined)),
-    debugFailExport: debugFailExportSucceeded,
+    error: exportGenerated ? undefined : "pdf_export_not_generated",
   };
 }
 
@@ -24068,6 +25151,21 @@ function registerWindowChromeIpc() {
     const current = readSharedConfig();
     return writeSharedConfig({ ...current, betaToken });
   });
+  ipcMain.handle("lingoflow-config:set-developer-mode", (_event, enabled) => {
+    const current = readSharedConfig();
+    const saved = writeSharedConfig({ ...current, developerMode: Boolean(enabled) });
+    return { ok: true, developerMode: Boolean(saved.developerMode) };
+  });
+  ipcMain.handle("developer-diagnostics:get-directory", () => ({
+    ok: true,
+    directory: getDeveloperDiagnosticsDirectory(),
+  }));
+  ipcMain.handle("developer-diagnostics:open", async () => {
+    const directory = getDeveloperDiagnosticsDirectory();
+    fs.mkdirSync(directory, { recursive: true });
+    const error = await shell.openPath(directory);
+    return error ? { ok: false, error } : { ok: true, directory };
+  });
   ipcMain.handle("lingoflow-provider:get", () => getProviderManagerPublicConfig());
   ipcMain.handle("lingoflow-provider:presets", () => getProviderPresetList());
   ipcMain.handle("lingoflow-provider:save", (_event, provider) => saveProviderConfig(provider));
@@ -24084,16 +25182,15 @@ function registerWindowChromeIpc() {
     }
   });
   ipcMain.handle("lingoflow-provider:translate", async (_event, payload) => translateWithConfiguredProvider(payload));
+  ipcMain.handle("pdf:paragraph-identity-translation-plan", (_event, payload) =>
+    buildPaperParagraphIdentityTranslationPlan(bindSemanticStructureConsumerPayload({
+      ...payload,
+      allSegments: payload && payload.segments,
+    }, { stage: "main.paragraphIdentityTranslationPlan", mode: "paper_pdf" }).payload.segments));
   ipcMain.handle("pdf:select-and-extract", (_event, payload) => selectAndExtractPdf(payload));
   ipcMain.handle("pdf:export-translated-txt", (_event, payload) => exportTranslatedTxt(payload));
   ipcMain.handle("pdf:export-translated-docx", (_event, payload) => exportTranslatedDocx(payload));
-  ipcMain.handle("pdf:export-translated-pdf", (_event, payload) => exportTranslatedPdf(payload));
-  const bindDiagnosticConsumerPayload = (payload, stage) => bindSemanticStructureConsumerPayload(payload, { stage, mode: payload.pdfTranslationMode }).payload;
-  ipcMain.handle("pdf:export-debug-bbox", (_event, payload) => exportPdfDebugBbox(bindDiagnosticConsumerPayload(payload, "main.debugBbox")));
-  ipcMain.handle("pdf:export-mask-test", (_event, payload) => exportPdfMaskTest(bindDiagnosticConsumerPayload(payload, "main.maskTest")));
-  ipcMain.handle("pdf:export-debug-linebox", (_event, payload) => exportPdfDebugLineBox(bindDiagnosticConsumerPayload(payload, "main.debugLineBox")));
-  ipcMain.handle("pdf:export-debug-mask-area", (_event, payload) => exportPdfDebugMaskArea(bindDiagnosticConsumerPayload(payload, "main.debugMaskArea")));
-  ipcMain.handle("pdf:export-mask-linebox-test", (_event, payload) => exportPdfMaskLineBoxTest(bindDiagnosticConsumerPayload(payload, "main.maskLineBoxTest")));
+  ipcMain.handle("pdf:export-translated-pdf", (_event, payload) => exportPdfAtCurrentProgress(payload));
 }
 
 function createWindow() {
@@ -24121,6 +25218,7 @@ registerWindowChromeIpc();
 
 app.whenReady().then(() => {
   console.log("[app] server display mode: local python backend removed from startup path.");
+  loadPdfJs().catch((err) => console.error('[pdf] PDF.js startup warmup failed:', err && err.message || err));
   createWindow();
 });
 

@@ -77,6 +77,24 @@ test("canonical binding makes semantic fields artifact-backed and rejects mutati
   assert.equal(bound.segments[0].status, "done");
 });
 
+test("Reference role is artifact-backed and immutable for every consumer", () => {
+  const heading = { id: "ref-heading", pageNumber: 2, type: "heading", referenceRole: "heading", referenceHeading: true, sourceText: "References" };
+  const entry = { id: "ref-entry", pageNumber: 2, type: "reference", referenceRole: "entry", sourceText: "Doe, J. 2025." };
+  const segments = [heading, entry];
+  const artifact = produceSemanticStructureArtifact({ mode: "paper_pdf", segments });
+  const runtime = segments.map((segment) => ({ ...segment }));
+  bindSemanticStructureConsumerSegments(runtime, artifact, { stage: "reference-consumer" });
+  assert.deepEqual(runtime.map((segment) => segment.semanticReferenceRole), ["heading", "entry"]);
+  assert.deepEqual(runtime.map((segment) => segment.referenceHeading), [true, false]);
+  assert.deepEqual(runtime.map((segment) => segment.semanticPolicy.translationDisposition), ["translate", "preserve"]);
+  assert.throws(() => { runtime[0].referenceRole = "entry"; }, { code: "SEMANTIC_POST_FREEZE_MUTATION" });
+  assert.throws(() => { runtime[1].referenceHeading = true; }, { code: "SEMANTIC_POST_FREEZE_MUTATION" });
+  const drift = segments.map((segment, index) => ({ ...segment, referenceRole: index === 0 ? "entry" : segment.referenceRole }));
+  assert.throws(() => bindSemanticStructureConsumerSegments(drift, artifact, { stage: "reference-drift" }), {
+    code: "SEMANTIC_CONSUMER_PARITY_FAILED",
+  });
+});
+
 test("an untyped carrier can only be materialized at the canonical producer boundary", () => {
   const candidates = [{ id: "simple-1", structureRole: "simple_paragraph", sourceText: "Body", firstLinePageNumber: 1 }];
   const artifact = produceSemanticStructureArtifact({ mode: "simple_pdf", segments: candidates });
@@ -192,7 +210,9 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.match(mainSource, /semanticStructureArtifact,\s*\r?\n\s*semanticStructureValidationEvidence/);
   assert.doesNotMatch(mainSource, /runSemanticStructureShadowValidation|legacyConsumersRemainAuthoritative|shadowOnly|semanticStructureShadowValidation/);
   assert.match(mainSource, /stage:\s*"main\.exportTranslatedPdf"/);
-  assert.match(mainSource, /bindDiagnosticConsumerPayload\(payload,\s*"main\.debugBbox"\)/);
+  assert.match(mainSource, /const developerDiagnosticsRequested = Boolean\(snapshot\.developerDiagnosticsRequested\)/);
+  assert.match(mainSource, /ipcMain\.handle\("pdf:export-translated-pdf", \(_event, payload\) => exportPdfAtCurrentProgress\(payload\)\)/);
+  assert.doesNotMatch(mainSource, /bindDiagnosticConsumerPayload/);
 
   assert.match(rendererSource, /bindSemanticStructureConsumerSegments\(\s*normalizedSegments/);
   assert.match(rendererSource, /stage:\s*"renderer\.extraction"/);
@@ -207,6 +227,7 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.doesNotMatch(mainSource, /const SIMPLE_PDF_EXPORT_(?:ALLOWED|PRESERVE)_TYPES\s*=/);
   assert.doesNotMatch(mainSource, /const PDF_EXPORT_(?:ALLOWED|TRANSLATABLE|PRESERVE)_TYPES\s*=/);
   assert.doesNotMatch(mainSource, /const PAPER_PDF_(?:TRANSLATABLE|OPTIONAL_TRANSLATABLE|PRESERVE|NON_WRITABLE|WRITABLE)_TYPES\s*=/);
+  assert.doesNotMatch(mainSource, /PAPER_PDF_REFERENCE_(?:HEADING_PATTERNS|PRESERVE_RULE)/);
   assert.doesNotMatch(mainSource, /function isPaperPdf(?:Translatable|OptionalTranslatable|Preserve|NonWritable|Writable)Type\(/);
   assert.doesNotMatch(mainSource, /legacy_simple_pdf|function postProcessSimplePdfSegments\(|function mergeSimpleCrossPageParagraphs\(/);
   assert.doesNotMatch(auditSource, /const (?:ALLOWED_WRITE|PRESERVE)_TYPES\s*=/);
@@ -216,6 +237,7 @@ test("runtime transport requires the artifact at renderer, translation-plan, dia
   assert.match(mainSource, /requirePdfExportSemanticDisposition\(segment, "export_skip_reason"\)/);
   assert.match(mainSource, /semanticTranslationDisposition = requirePdfExportSemanticDisposition\(segment, "export_report"\)/);
   assert.match(mainSource, /semanticPolicy: segment && segment\.semanticPolicy \|\| null/);
+  assert.match(mainSource, /semanticReferenceRole: String\(segment && \(segment\.semanticReferenceRole \|\| segment\.referenceRole\)/);
   assert.match(mainSource, /translatableReports = segmentReports\.filter\(\(report\) => report\.semanticTranslationDisposition === 'translate'/);
   assert.match(mainSource, /function hasPdfExportReportDisposition\(/);
   assert.match(mainSource, /requirePdfExportSemanticDisposition\(segment, "source mask preserve boxes"\)/);

@@ -74,9 +74,14 @@ const PAPER_ABSTRACT_FINALIZER_ROLE_TYPES = Object.freeze({
   paper_abstract_finalizer_body: "abstract",
 });
 const PAPER_REFERENCE_CHAIN_ROLE_TYPES = Object.freeze({
-  paper_reference_chain_heading: "reference",
+  paper_reference_chain_heading: "heading",
   paper_reference_chain_entry: "reference",
   paper_reference_mode_retag: "reference",
+});
+const PAPER_REFERENCE_CHAIN_ROLES = Object.freeze({
+  paper_reference_chain_heading: "heading",
+  paper_reference_chain_entry: "entry",
+  paper_reference_mode_retag: "entry",
 });
 const PAPER_RECOVERY_ROLE_TYPES = Object.freeze({
   paper_recovery_body: "body",
@@ -234,6 +239,55 @@ function classifyPaperSegmentNoiseEvidence(evidence = {}) {
   if (evidence.narrowTallMargin) return "margin";
   if (evidence.footerOrWatermarkText) return evidence.downloadedOrWileyText ? "watermark" : "licenseText";
   return "";
+}
+
+function applyPaperFormulaClassification(segments, evidenceByIndex) {
+  const candidates = Array.isArray(segments) ? segments : [];
+  const evidence = Array.isArray(evidenceByIndex) ? evidenceByIndex : [];
+  if (evidence.length !== candidates.length) {
+    throw structureError("SEMANTIC_PAPER_FORMULA_EVIDENCE_COUNT_MISMATCH", "Paper formula evidence count does not match candidates", {
+      candidateCount: candidates.length,
+      evidenceCount: evidence.length,
+    });
+  }
+  return candidates.map((segment, index) => {
+    const itemEvidence = evidence[index];
+    if (!itemEvidence || Number(itemEvidence.segmentIndex) !== index) {
+      throw structureError("SEMANTIC_PAPER_FORMULA_EVIDENCE_ORDER_MISMATCH", "Paper formula evidence order does not match candidates", {
+        index,
+        evidenceIndex: itemEvidence && itemEvidence.segmentIndex,
+      });
+    }
+    let currentType;
+    try {
+      currentType = normalizeCanonicalType(segment && (segment.semanticType || segment.type)).semanticType;
+    } catch (error) {
+      if (!error || error.code !== "SEMANTIC_TYPE_MISSING") throw error;
+      const segmentId = String(segment && (segment.id || segment.segmentIdentity && segment.segmentIdentity.segmentId) || "");
+      throw structureError(
+        "SEMANTIC_TYPE_MISSING",
+        `Semantic type is required before Paper formula finalization: segment ${segmentId || "<missing-id>"} (index ${index})`,
+        {
+          index,
+          segmentId,
+          pageNumber: Number(segment && (segment.pageNumber || segment.firstLinePageNumber) || 0),
+          classificationReason: String(segment && segment.classificationReason || ""),
+          splitReason: String(segment && segment.splitReason || ""),
+          mergeReason: String(segment && segment.mergeReason || ""),
+          sourceTextPreview: String(segment && segment.sourceText || "").slice(0, 160),
+        },
+      );
+    }
+    if (currentType !== "body" || !itemEvidence.strictPureEquationBlock) return segment;
+    return {
+      ...segment,
+      type: "formula",
+      classificationReason: "strict_pure_equation_block",
+      formulaLinePreserve: true,
+      pureFormulaSegment: true,
+      strictPureEquationBlock: true,
+    };
+  });
 }
 
 function applyPaperSegmentNoiseClassification(segments, evidenceByIndex) {
@@ -440,11 +494,28 @@ function applyPaperReferenceChainClassification(segment, evidence = {}) {
     throw structureError("SEMANTIC_PAPER_REFERENCE_CHAIN_SEGMENT_REQUIRED", "Paper Reference chain candidate is required for role classification");
   }
   const structureRole = String(evidence.structureRole || "").trim();
+  if (structureRole === "paper_reference_section_end") {
+    const inheritedSemanticType = normalizeCanonicalType(evidence.inheritedSemanticType || segment.type || segment.semanticType).semanticType;
+    return {
+      ...segment,
+      type: inheritedSemanticType,
+      referenceRole: "",
+      referenceHeading: false,
+      referenceSectionBoundary: "end",
+    };
+  }
   const semanticType = PAPER_REFERENCE_CHAIN_ROLE_TYPES[structureRole];
   if (!semanticType) {
     throw structureError("SEMANTIC_PAPER_REFERENCE_CHAIN_ROLE_UNKNOWN", `Unknown Paper Reference chain role: ${structureRole || "<empty>"}`, { structureRole });
   }
-  return { ...segment, type: semanticType };
+  const referenceRole = PAPER_REFERENCE_CHAIN_ROLES[structureRole];
+  return {
+    ...segment,
+    type: semanticType,
+    referenceRole,
+    referenceHeading: referenceRole === "heading",
+    referenceSectionBoundary: referenceRole === "heading" ? "start" : "",
+  };
 }
 
 function applyPaperRecoveryClassification(segment, evidence = {}) {
@@ -552,6 +623,7 @@ function materializePaperClassifiedCarrier(carrier, evidence = {}) {
 const semanticStructureProducerStages = Object.freeze({
   classifyPaperLineEvidence,
   classifyPaperSegmentNoiseEvidence,
+  applyPaperFormulaClassification,
   applyPaperSegmentNoiseClassification,
   applyPaperImageTextDemotionClassification,
   applyPaperCaptionBodyDemotionClassification,
@@ -636,7 +708,33 @@ function normalizeLineOwnership(segment, segmentId) {
   return [];
 }
 
-function buildClassificationEvidence(segment, normalizedType) {
+function resolveCanonicalReferenceRole(segment, semanticType) {
+  const explicitRole = String(segment && segment.referenceRole || "").trim();
+  const inferredRole = explicitRole || (segment && segment.referenceHeading ? "heading" : (semanticType === "reference" ? "entry" : ""));
+  if (inferredRole && inferredRole !== "heading" && inferredRole !== "entry") {
+    throw structureError("SEMANTIC_REFERENCE_ROLE_UNKNOWN", `Unknown canonical Reference role: ${inferredRole}`, { referenceRole: inferredRole });
+  }
+  if (inferredRole === "heading" && semanticType !== "heading") {
+    throw structureError("SEMANTIC_REFERENCE_HEADING_TYPE_MISMATCH", "Reference heading must freeze as canonical heading", { semanticType });
+  }
+  if (inferredRole === "entry" && semanticType !== "reference") {
+    throw structureError("SEMANTIC_REFERENCE_ENTRY_TYPE_MISMATCH", "Reference entry must freeze as canonical reference", { semanticType });
+  }
+  return inferredRole;
+}
+
+function resolveCanonicalReferenceSectionBoundary(segment, referenceRole) {
+  const boundary = String(segment && segment.referenceSectionBoundary || (referenceRole === "heading" ? "start" : "")).trim();
+  if (boundary && boundary !== "start" && boundary !== "end") {
+    throw structureError("SEMANTIC_REFERENCE_BOUNDARY_UNKNOWN", `Unknown canonical Reference boundary: ${boundary}`, { referenceSectionBoundary: boundary });
+  }
+  if (boundary === "start" && referenceRole !== "heading") {
+    throw structureError("SEMANTIC_REFERENCE_START_ROLE_MISMATCH", "Reference section start must be owned by the canonical heading", { referenceRole });
+  }
+  return boundary;
+}
+
+function buildClassificationEvidence(segment, normalizedType, referenceRole, referenceSectionBoundary) {
   return {
     ingressType: normalizedType.rawType,
     structureRole: normalizedType.structureRole || "",
@@ -645,6 +743,9 @@ function buildClassificationEvidence(segment, normalizedType) {
     classificationReason: String(segment && segment.classificationReason || "structure_candidate_type_input"),
     zoneType: String(segment && segment.zoneType || ""),
     referenceModeApplied: Boolean(segment && segment.referenceModeApplied),
+    referenceRole,
+    referenceHeading: referenceRole === "heading",
+    referenceSectionBoundary,
     formulaEvidence: {
       formulaLinePreserve: Boolean(segment && segment.formulaLinePreserve),
       pureFormulaSegment: Boolean(segment && segment.pureFormulaSegment),
@@ -673,7 +774,28 @@ function buildCanonicalSegment(segment, index, mode) {
       identitySegmentId: String(segmentIdentity.segmentId || ""),
     });
   }
-  const normalizedType = resolveCandidateSemanticType(segment, mode);
+  let normalizedType;
+  try {
+    normalizedType = resolveCandidateSemanticType(segment, mode);
+  } catch (error) {
+    if (!error || error.code !== "SEMANTIC_TYPE_MISSING") throw error;
+    throw structureError(
+      "SEMANTIC_TYPE_MISSING",
+      `Semantic type is required at Structure Authority ingress: segment ${segmentId} (index ${index})`,
+      {
+        index,
+        segmentId,
+        pageNumber: Number(segment.pageNumber || segment.firstLinePageNumber || 0),
+        structureRole: String(segment.structureRole || ""),
+        classificationReason: String(segment.classificationReason || ""),
+        splitReason: String(segment.splitReason || ""),
+        mergeReason: String(segment.mergeReason || ""),
+        sourceTextPreview: String(segment.sourceText || "").slice(0, 160),
+      },
+    );
+  }
+  const referenceRole = resolveCanonicalReferenceRole(segment, normalizedType.semanticType);
+  const referenceSectionBoundary = resolveCanonicalReferenceSectionBoundary(segment, referenceRole);
   const sourceText = String(segment.sourceText || "");
   const sourceLines = normalizeLineOwnership(segment, segmentId);
   const sourceOwnership = {
@@ -688,10 +810,12 @@ function buildCanonicalSegment(segment, index, mode) {
       ? segment.sourceLineRange.map((value) => Number(value || 0))
       : [],
   };
-  const classificationEvidence = buildClassificationEvidence(segment, normalizedType);
+  const classificationEvidence = buildClassificationEvidence(segment, normalizedType, referenceRole, referenceSectionBoundary);
   const decisionBasis = {
     segmentId,
     semanticType: normalizedType.semanticType,
+    referenceRole,
+    referenceSectionBoundary,
     sourceOwnership,
     classificationEvidence,
   };
@@ -708,6 +832,9 @@ function buildCanonicalSegment(segment, index, mode) {
     sourceOwnership,
     sourceLines,
     semanticType: normalizedType.semanticType,
+    referenceRole,
+    referenceHeading: referenceRole === "heading",
+    referenceSectionBoundary,
     semanticDecisionId: `semantic-decision-sha256:${sha256(stableStringify(decisionBasis))}`,
     classification: {
       producer: AUTHORITY_NAME,

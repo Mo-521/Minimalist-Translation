@@ -110,6 +110,15 @@ function getPaperExportCompletenessStrict() {
   return { totalSegments: candidates.length, doneSegments: done, pendingSegments: pending, failedSegments: failed, bodyHeadingNotDone: bodyHeadingNotDone };
 }
 
+function resolvePaperTranslationCompletion(completeness, canceled) {
+  var total = Number(completeness.totalSegments || 0);
+  var done = Number(completeness.doneSegments || 0);
+  return {
+    stateName: canceled ? "canceled" : (completeness.failedSegments || completeness.pendingSegments || done < total ? "incomplete" : "translated"),
+    progress: { current: done, total: total, percent: total ? Math.round(done / total * 100) : 100 },
+  };
+}
+
 
 
 function isSimplePdfTranslatableSegment(segment) {
@@ -299,6 +308,8 @@ function isPdfOverlayCandidate(segment) {
     provider: null,
     providerFormBaseline: "",
     providerConnectionStates: {},
+    developerMode: false,
+    diagnosticsDirectory: "",
     pdfPartialRegressionMode: false,
     pdfPartialTranslateRatio: 0,
   };
@@ -948,6 +959,7 @@ function isPdfOverlayCandidate(segment) {
       state.targetLabel = lang.label;
       setText("targetLangLabel", lang.label);
       state.provider = config && config.provider || null;
+      state.developerMode = Boolean(config && config.developerMode);
     } catch (_err) {
       // Keep local defaults when the shared config is unavailable.
     }
@@ -1058,6 +1070,42 @@ function isPdfOverlayCandidate(segment) {
     }
   }
 
+  function syncDeveloperModeUi() {
+    var toggle = document.getElementById("developerModeToggle");
+    var openDirectoryBtn = document.getElementById("btnOpenDiagnosticsDirectory");
+    var diagnosticsExportBtn = document.getElementById("btnExportDeveloperDiagnostics");
+    if (toggle) toggle.checked = Boolean(state.developerMode);
+    if (openDirectoryBtn) openDirectoryBtn.hidden = !state.developerMode;
+    if (diagnosticsExportBtn) diagnosticsExportBtn.classList.toggle("hidden", !state.developerMode);
+  }
+
+  function setupDeveloperModeControls() {
+    var toggle = document.getElementById("developerModeToggle");
+    var openDirectoryBtn = document.getElementById("btnOpenDiagnosticsDirectory");
+    syncDeveloperModeUi();
+    if (toggle) toggle.addEventListener("change", async function () {
+      var ipc = getElectronIpc();
+      var requested = Boolean(toggle.checked);
+      if (!ipc) {
+        toggle.checked = Boolean(state.developerMode);
+        return;
+      }
+      try {
+        var result = await ipc.invoke("lingoflow-config:set-developer-mode", requested);
+        state.developerMode = Boolean(result && result.developerMode);
+      } catch (_err) {
+        toggle.checked = Boolean(state.developerMode);
+      }
+      syncDeveloperModeUi();
+    });
+    if (openDirectoryBtn) openDirectoryBtn.addEventListener("click", async function () {
+      var ipc = getElectronIpc();
+      if (!ipc || !state.developerMode) return;
+      var result = await ipc.invoke("developer-diagnostics:open");
+      if (result && result.directory) state.diagnosticsDirectory = String(result.directory);
+    });
+  }
+
   function setProviderFeedback(message, status) {
     var feedback = document.getElementById("providerFeedback");
     if (!feedback) return;
@@ -1131,9 +1179,14 @@ function isPdfOverlayCandidate(segment) {
   function applyProviderPreset(presetId, overwrite) {
     var presets = Array.isArray(state.providerPresets) ? state.providerPresets : [];
     var preset = presets.find(function (item) { return item && item.id === presetId; });
-    if (!preset || preset.id === "custom") return;
     var baseUrl = document.getElementById("providerBaseUrl");
     var model = document.getElementById("providerModel");
+    if (!preset) return;
+    if (preset.id === "custom") {
+      if (overwrite && baseUrl) baseUrl.value = "";
+      if (overwrite && model) model.value = "";
+      return;
+    }
     if (baseUrl && (overwrite || !baseUrl.value)) baseUrl.value = preset.baseUrl || "";
     if (model && (overwrite || !model.value)) model.value = preset.model || "";
   }
@@ -1190,6 +1243,11 @@ function isPdfOverlayCandidate(segment) {
     return status === "connected" ? "已连接" : status === "connecting" ? "连接中" : status === "failed" ? "重试连接" : "连接";
   }
 
+  function isActiveProviderConnected() {
+    var active = state.providerManager && state.providerManager.active || state.provider || {};
+    return Boolean(active && active.id && state.providerConnectionStates[active.id] === 'connected');
+  }
+
   function updateProviderConnectionUi(providerId, status) {
     state.providerConnectionStates[providerId] = status;
     var manager = state.providerManager || {};
@@ -1225,7 +1283,7 @@ function isPdfOverlayCandidate(segment) {
       var result = await ipc.invoke("lingoflow-provider:test", profile);
       if (result && result.ok) {
         updateProviderConnectionUi(profile.id, "connected");
-        setProviderFeedback("Provider 已连接 · " + (result.provider || "Custom") + " · " + Number(result.latencyMs || 0) + " ms", "success");
+        setProviderFeedback("服务商已连接 · " + (result.provider || "自定义") + " · " + Number(result.latencyMs || 0) + " ms", "success");
       } else {
         updateProviderConnectionUi(profile.id, "failed");
         setProviderFeedback("连接失败：" + summarizeProviderDiagnostic(result), "error");
@@ -1238,7 +1296,7 @@ function isPdfOverlayCandidate(segment) {
 
   function providerPresetLabel(presetId) {
     var preset = (state.providerPresets || []).find(function (entry) { return entry && entry.id === presetId; });
-    return preset && preset.label || presetId || "Custom";
+    return preset && preset.label || presetId || "自定义";
   }
 
   function renderProviderProfiles(manager) {
@@ -1249,7 +1307,7 @@ function isPdfOverlayCandidate(segment) {
     list.innerHTML = "";
     var profiles = Array.isArray(manager.profiles) ? manager.profiles : [];
     if (!profiles.length) {
-      list.innerHTML = '<div class="provider-profile-empty">暂无配置，请新建第一个 Provider 连接。</div>';
+      list.innerHTML = '<div class="provider-profile-empty">暂无配置，请先添加一个模型服务商。</div>';
       setProviderStatusBadge("disconnected");
       return;
     }
@@ -1331,6 +1389,106 @@ function isPdfOverlayCandidate(segment) {
     rememberProviderFormBaseline();
   }
 
+  function getProviderHelpData() {
+    var content = window.PROVIDER_HELP_CONTENT;
+    return content && content.topics ? content : null;
+  }
+
+  function getProviderPresetHelpTopic() {
+    var preset = document.getElementById("providerPreset");
+    return preset && preset.value === "custom" ? "custom-provider" : "openai-compatible";
+  }
+
+  function renderProviderHelpTopic(topicId) {
+    var content = getProviderHelpData();
+    if (!content) return;
+    var topic = content.topics[topicId] || content.topics[content.defaultTopic];
+    if (!topic) return;
+    var panel = document.getElementById("providerHelpPanel");
+    var title = document.getElementById("providerHelpTitle");
+    var what = document.getElementById("providerHelpWhat");
+    var example = document.getElementById("providerHelpExample");
+    var how = document.getElementById("providerHelpHow");
+    var note = document.getElementById("providerHelpNote");
+    var noteSection = document.getElementById("providerHelpNoteSection");
+    var links = document.getElementById("providerHelpLinks");
+    if (!panel || !title || !what || !example || !how || !note || !noteSection || !links) return;
+    panel.setAttribute("data-topic", topicId);
+    title.textContent = topic.title || "配置帮助";
+    what.textContent = topic.what || "";
+    example.textContent = topic.example || "";
+    how.innerHTML = "";
+    (topic.howTo || []).forEach(function (step) {
+      var item = document.createElement("li");
+      item.textContent = step;
+      how.appendChild(item);
+    });
+    note.textContent = topic.note || "";
+    noteSection.classList.toggle("hidden", !topic.note);
+    links.innerHTML = "";
+    (topic.links || []).forEach(function (link) {
+      if (!link || !link.href || !link.label) return;
+      var anchor = document.createElement("a");
+      anchor.href = link.href;
+      anchor.textContent = link.label;
+      anchor.target = "_blank";
+      anchor.rel = "noreferrer noopener";
+      links.appendChild(anchor);
+    });
+    links.classList.toggle("hidden", !links.children.length);
+  }
+
+  function setProviderHelpDrawer(open, focusPanel) {
+    var dialog = document.getElementById("providerConfigDialog");
+    var panel = document.getElementById("providerHelpPanel");
+    var trigger = document.getElementById("btnOpenProviderHelp");
+    if (!dialog || !panel || !trigger) return;
+    dialog.classList.toggle("provider-help-drawer-open", Boolean(open));
+    trigger.setAttribute("aria-expanded", open ? "true" : "false");
+    trigger.setAttribute("aria-label", open ? "收起配置帮助" : "打开配置帮助");
+    panel.setAttribute("aria-hidden", open ? "false" : "true");
+    if (open && focusPanel) panel.focus();
+  }
+
+  function setupProviderHelpSystem() {
+    var form = document.getElementById("providerSettingsForm");
+    var openButton = document.getElementById("btnOpenProviderHelp");
+    var closeButton = document.getElementById("btnCloseProviderHelp");
+    var scrim = document.getElementById("providerHelpScrim");
+    var preset = document.getElementById("providerPreset");
+    if (!form || !getProviderHelpData()) return;
+    renderProviderHelpTopic(getProviderPresetHelpTopic());
+    form.addEventListener("focusin", function (event) {
+      var target = event.target && event.target.closest ? event.target.closest("[data-help-topic]") : null;
+      if (!target) return;
+      var topicId = target.getAttribute("data-help-topic");
+      if (target.id === "providerPreset" || topicId === "openai-compatible") topicId = getProviderPresetHelpTopic();
+      renderProviderHelpTopic(topicId);
+    });
+    if (preset) preset.addEventListener("change", function () { renderProviderHelpTopic(getProviderPresetHelpTopic()); });
+    if (openButton) openButton.addEventListener("click", function () {
+      var dialog = document.getElementById("providerConfigDialog");
+      var shouldOpen = !dialog || !dialog.classList.contains("provider-help-drawer-open");
+      setProviderHelpDrawer(shouldOpen, shouldOpen);
+    });
+    if (closeButton) closeButton.addEventListener("click", function () { setProviderHelpDrawer(false, false); if (openButton) openButton.focus(); });
+    if (scrim) scrim.addEventListener("click", function () { setProviderHelpDrawer(false, false); });
+    form.addEventListener("keydown", function (event) {
+      var dialog = document.getElementById("providerConfigDialog");
+      if (event.key !== "Escape" || !dialog || !dialog.classList.contains("provider-help-drawer-open")) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setProviderHelpDrawer(false, false);
+      if (openButton) openButton.focus();
+    });
+    if (window.matchMedia) {
+      var compactQuery = window.matchMedia("(max-width: 900px)");
+      var syncHelpVisibility = function () { setProviderHelpDrawer(false, false); };
+      if (compactQuery.addEventListener) compactQuery.addEventListener("change", syncHelpVisibility);
+      else if (compactQuery.addListener) compactQuery.addListener(syncHelpVisibility);
+    }
+  }
+
   function openProviderDialog(profile) {
     var dialog = document.getElementById("providerConfigDialog");
     var title = document.getElementById("providerConfigDialogTitle");
@@ -1348,12 +1506,15 @@ function isPdfOverlayCandidate(segment) {
       toggle.setAttribute("aria-pressed", "false");
     }
     setProviderDialogFeedback("", "idle");
+    renderProviderHelpTopic(getProviderPresetHelpTopic());
+    setProviderHelpDrawer(false, false);
     rememberProviderFormBaseline();
     if (!dialog.open) dialog.showModal();
   }
 
   function closeProviderDialog() {
     var dialog = document.getElementById("providerConfigDialog");
+    setProviderHelpDrawer(false, false);
     if (dialog && dialog.open) dialog.close();
   }
 
@@ -1382,7 +1543,7 @@ function isPdfOverlayCandidate(segment) {
       renderProviderProfiles(manager);
       applyProviderPublicConfig(manager.active || {});
     } catch (err) {
-      setProviderFeedback("读取 Provider 配置失败：" + String(err && err.message || err), "error");
+      setProviderFeedback("读取服务商配置失败：" + String(err && err.message || err), "error");
     }
   }
 
@@ -1398,6 +1559,7 @@ function isPdfOverlayCandidate(segment) {
     var dialog = document.getElementById("providerConfigDialog");
     if (!form) return;
     await loadProviderSettings();
+    setupProviderHelpSystem();
 
     if (diagnosticToggle) {
       diagnosticToggle.addEventListener("click", function () {
@@ -1452,7 +1614,7 @@ function isPdfOverlayCandidate(segment) {
         state.providerConnectionStates[manager.active && manager.active.id] = "disconnected";
         renderProviderProfiles(manager);
         applyProviderPublicConfig(manager.active || {});
-        setProviderFeedback("配置已保存。点击“连接”确认当前 Provider。", "success");
+        setProviderFeedback("配置已保存。点击“连接”确认当前服务商。", "success");
         setProviderDialogFeedback("配置已保存。", "success");
         window.setTimeout(closeProviderDialog, 420);
       } catch (err) {
@@ -1609,15 +1771,35 @@ function isPdfOverlayCandidate(segment) {
     var sourceWords = source.match(/[A-Za-z]{2,}/g) || [];
     var translatedWords = translated.match(/[A-Za-z]{2,}/g) || [];
     var hasTargetScript = /[\u3400-\u9fff]/.test(translated);
-    if (!hasTargetScript && sourceWords.length >= 4 && translatedWords.length >= 4) {
+    var sourceFormulaSignalCount = (source.match(/[=_^+*/<>≤≥⩾∑∫√∞λψφπ⟨⟩()|]/g) || []).length;
+    var sourceLongProseWords = sourceWords.filter(function (word) { return word.length >= 4; });
+    var formulaDominatedSource = sourceFormulaSignalCount >= 3 && sourceLongProseWords.length <= 1;
+    if (!hasTargetScript && !formulaDominatedSource && sourceWords.length >= 4 && translatedWords.length >= 4) {
       var normalizedSource = source.toLowerCase().replace(/\s+/g, " ").trim();
       var normalizedTranslation = translated.toLowerCase().replace(/\s+/g, " ").trim();
       if (normalizedTranslation === normalizedSource || translatedWords.length >= Math.ceil(sourceWords.length * 0.75)) return "invalid_translation_source_language_unchanged";
     }
-    var leadingAscii = (translated.match(/^[\x20-\x7e]{8,}/) || [""])[0].trim();
-    if (hasTargetScript && leadingAscii && source.toLowerCase().indexOf(leadingAscii.toLowerCase()) === 0 && !/\bet\s+al\.?\s*(?:\d{4})?/i.test(leadingAscii) && /[A-Za-z]{3,}\s+[A-Za-z]{2,}/.test(leadingAscii)) return "invalid_translation_leading_source_carryover";
-    var leadingLowercaseFragment = (translated.match(/^([a-z]{4,})(?=[\u3400-\u9fff])/) || [""])[0];
-    if (leadingLowercaseFragment && source.toLowerCase().indexOf(leadingLowercaseFragment) === 0 && !/^(?:kbol|lbol|ledd|mbh|agn|jwst|wfc)$/i.test(leadingLowercaseFragment)) return "invalid_translation_leading_source_carryover";
+    // Mirror the export validator: compare prose after exact protected citations.
+    var sourceProse = source;
+    var translatedProse = translated;
+    var citation;
+    while ((citation = sourceProse.match(/^\((?=[^)]*\b(?:19|20)\d{2}[a-z]?\b)[^)]{3,260}\)/i)) && translatedProse.indexOf(citation[0]) === 0) {
+      sourceProse = sourceProse.slice(citation[0].length).trimStart();
+      translatedProse = translatedProse.slice(citation[0].length).trimStart();
+    }
+    var leadingAscii = (translatedProse.match(/^[\x20-\x7e]{8,}/) || [""])[0].trim();
+    var leadingMathExpression = /[=_^+*/<>]/.test(leadingAscii);
+    var leadingProperNameTokens = leadingAscii.split(/\s+/).filter(Boolean);
+    var leadingProperName = (/^(?:(?:de|del|de la|van|von|le|la)\s+)?[A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-öø-ÿ'’-]+$/i.test(leadingAscii)
+      && /[A-ZÀ-ÖØ-Þ]/.test(leadingAscii)) || (
+      leadingProperNameTokens.length >= 2 && leadingProperNameTokens.length <= 4 &&
+      !/^(?:the|this|these|those|we|our|a|an)\b/i.test(leadingAscii) &&
+      leadingProperNameTokens.every(function (token) {
+        return /^(?:[A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-öø-ÿ'’.\-]*|[A-Z]{2,}|[A-Za-z]+[A-Z][A-Za-z]*)$/.test(token);
+      })
+    );
+    if (hasTargetScript && leadingAscii && sourceProse.toLowerCase().indexOf(leadingAscii.toLowerCase()) === 0 && !leadingMathExpression && !leadingProperName && !/\bet\s+al\.?\s*(?:\d{4})?/i.test(leadingAscii) && /[A-Za-z]{3,}\s+[A-Za-z]{2,}/.test(leadingAscii)) return "invalid_translation_leading_source_carryover";
+    // A lone retained term cannot establish missing translation without more evidence.
     return "";
   }
 
@@ -1645,46 +1827,23 @@ function isPdfOverlayCandidate(segment) {
 
   function buildPdfExportResultMessage(result) {
     var summary = result && result.pipelineDebugSummary ? result.pipelineDebugSummary : {};
-    var totalPages = Number(summary.totalPages || 0);
-    var pagesWithSegments = Number(summary.pagesWithSegments || 0);
-    var missingLayouts = Array.isArray(summary.missingPageLayouts) ? summary.missingPageLayouts : [];
-    var warningCount = Number(summary.crossPageSegmentCount || 0) +
-      Number(summary.oversizedSegmentCount || 0) +
-      Number(summary.failedSegmentCount || 0) +
-      missingLayouts.length;
-    var progressMode = result && result.pipelineConfigSummary && result.pipelineConfigSummary.progressMode ||
-      summary.pipelineConfigSummary && summary.pipelineConfigSummary.progressMode ||
-      (result && result.pdfTranslationMode === "paper_pdf" || summary.pdfTranslationMode === "paper_pdf" ? "paper" : "simple");
-    var progressText = progressMode === "paper"
-      ? buildPaperPdfProgress(Object.assign({}, summary, result, { warningCount: warningCount }))
-      : buildSimplePdfProgress(Object.assign({}, summary, result));
+    var translated = Number(result.translatedSegments || summary.translatedSegments || result.doneSegments || 0);
+    var translatable = Number(result.translatableSegments || summary.translatableSegments || result.totalSegments || 0);
+    var written = Number(result.exportedSegments || result.writtenCount || summary.writtenSegments || 0);
+    var isolated = Number(result.writeIsolatedFailureCount || summary.writeIsolatedFailureCount || 0);
     var parts = [
-      "导出成功：" + result.filePath,
-      "模式 " + (result.pipelineLabel || summary.pipelineLabel || (getPdfTranslationModeDef(state.pdfTranslationMode) || {}).label || "未指定"),
-      progressText,
-      "待翻译正文 " + Number(result.pendingTranslatableSegments || summary.pendingTranslatableSegments || 0),
-      "页覆盖 " + pagesWithSegments + "/" + totalPages,
-      "警告 " + warningCount,
+      "PDF 已生成：" + result.filePath,
+      "翻译 " + translated + "/" + translatable + (result.translationComplete ? "（完成）" : "（部分）"),
+      "写入 " + written + (result.writeComplete ? "（完成）" : "（部分）"),
     ];
-    if (result.partialRegressionMode) {
-      parts.push("40%回归模式，pending不计失败");
-    }
-    if (Number(result.promptLeakCount || summary.promptLeakCount || 0) > 0) {
-      parts.push("已拦截疑似提示词泄漏 " + Number(result.promptLeakCount || summary.promptLeakCount || 0));
-    }
-    if (result.segmentReportsPath) parts.push("分析报告 " + result.segmentReportsPath);
-    if (result.pipelineDebugPath) parts.push("调试 " + result.pipelineDebugPath);
-    if (result.sidecarWriteStatus === 'fail') parts.push("⚠ JSON调试文件写入失败：" + (result.sidecarWriteError || '未知错误'));
-    if (warningCount > 0 || (totalPages && pagesWithSegments < totalPages) || missingLayouts.length) {
-      parts.push("导出完成但存在结构识别警告，请查看 pipelineDebug.json");
-    }
+    if (isolated > 0) parts.push(isolated + " 段写入隔离，原位保留原文");
     return parts.join(" · ");
   }
 
   function updatePdfExportButton() {
     var exportBtn = document.getElementById("btnExportPdfTranslation");
     if (!exportBtn) return;
-    exportBtn.disabled = !state.pdfTranslationMode || (!hasTranslatedPdfSegments() && !state.segments.length) || state.pdfTranslating;
+    exportBtn.disabled = !state.pdfTranslationMode || (!hasTranslatedPdfSegments() && !state.segments.length) || Boolean(state.pdfExporting);
     updatePdfModeStepLabels();
   }
 
@@ -1834,6 +1993,7 @@ function isPdfOverlayCandidate(segment) {
         status: segment.status,
         translatedText: String(segment.translatedText || "").trim(),
         pdfTranslationMode: state.pdfTranslationMode,
+        translationProviderConnection: segment.translationProviderConnection || null,
       });
     }
     function serializePdfSegment(segment) {
@@ -1850,6 +2010,11 @@ function isPdfOverlayCandidate(segment) {
         layoutType: segment.layoutType || "single_column",
         sourceLanguageHint: segment.sourceLanguageHint || "",
         targetLanguage: state.pdfTargetLang,
+        translationProviderConnection: segment.translationProviderConnection || null,
+        paragraphIdentityTranslationGroupId: segment.paragraphIdentityTranslationGroupId || "",
+        paragraphIdentityTranslationAuthorityVersion: segment.paragraphIdentityTranslationAuthorityVersion || "",
+        paragraphIdentityTranslationMemberPageNumber: Number(segment.paragraphIdentityTranslationMemberPageNumber || 0),
+        paragraphIdentityTranslationSourceCombined: Boolean(segment.paragraphIdentityTranslationSourceCombined),
         lines: Array.isArray(segment.lines) ? segment.lines : [],
         lineBoxes: Array.isArray(segment.lineBoxes) ? segment.lineBoxes : [],
         sourceLineNumbers: Array.isArray(segment.sourceLineNumbers) ? segment.sourceLineNumbers : [],
@@ -1921,12 +2086,8 @@ function isPdfOverlayCandidate(segment) {
      }),
      allSegments: state.segments.map(isSimple ? serializeSimplePdfSegment : serializePdfSegment),
    }, getPdfTranslationModePayload());
-   // debugFailExport is a paper_pdf-only dev inspection flag — never attach it (or its
-   // allowLayoutPlanDebugFailExport companion) to a simple_pdf payload, which has its own strict
-   // field whitelist enforced by assertSimplePdfPayloadClean below.
-   if (!isSimple && options && options.debugFailExport) {
-     payload.debugFailExport = true;
-     payload.allowLayoutPlanDebugFailExport = true;
+   if (options && options.developerDiagnosticsRequested) {
+     payload.developerDiagnosticsRequested = true;
    }
    return isSimple ? assertSimplePdfPayloadClean(payload) : payload;
  }
@@ -2054,24 +2215,26 @@ function isPdfOverlayCandidate(segment) {
       if (warning) warning.classList.toggle("hidden", hasTranslatedSimplePdfSegments() && simpleCounts.doneSegments >= simpleCounts.totalSegments);
       if (meta) meta.textContent = hasTranslatedSimplePdfSegments()
         ? "将导出已翻译完成的 " + getSimplePdfTranslatedEntries().length + " 个普通文档段落。"
-        : "暂无可导出的已翻译普通文档段落，请先完成至少一段翻译。";
+        : "尚无已完成译文，将保存当前数据与原文。";
     } else {
       if (warning) warning.classList.toggle("hidden", hasTranslatedPdfOverlaySegments() && getPaperExportCompletenessStrict().doneSegments >= getPaperExportCompletenessStrict().totalSegments);
       if (meta) meta.textContent = hasTranslatedPdfOverlaySegments()
-        ? "只导出已翻译完成的 " + getPaperOverlaySegmentEntriesStrict().length + " 个 PDF 回填段落。"
-        : "暂无可导出的已翻译 PDF 段落，请先完成至少一段翻译。";
+        ? "保存当前进度，已完成 " + getPaperOverlaySegmentEntriesStrict().length + " 个回填段落。"
+        : "尚无已完成译文，将保存当前数据与原文。";
     }
-    var debugFailBtn = document.getElementById("btnExportPdfDebugFail");
-    if (debugFailBtn) debugFailBtn.classList.toggle("hidden", state.pdfTranslationMode === "simple_pdf");
+    var diagnosticsBtn = document.getElementById("btnExportDeveloperDiagnostics");
+    if (diagnosticsBtn) diagnosticsBtn.classList.toggle("hidden", !state.developerMode);
     if (!modal) return;
     modal.classList.remove("hidden");
     modal.setAttribute("aria-hidden", "false");
   }
 
   async function exportPdfTranslationByFormat(format) {
+    if (state.pdfExporting) return;
+    state.pdfExporting = true;
     cleanupPdfExportTransientModals();
     try {
-      var isDebugFailFormat = format === "pdf_debug_fail";
+      var isDeveloperDiagnostics = format === "developer_diagnostics";
       var modeMessage = requirePdfTranslationModeMessage();
       if (modeMessage) {
         var modeMetaEl = document.getElementById("pdfFileMeta");
@@ -2079,98 +2242,16 @@ function isPdfOverlayCandidate(segment) {
         window.alert(modeMessage);
         return;
       }
-      var isDiagnosticFormat = format === "debug_linebox" || format === "debug_mask_area" || format === "mask_linebox_test";
-      if (!isDiagnosticFormat && !isDebugFailFormat && format !== "pdf" && !hasTranslatedPdfSegments()) {
-        var emptyMessage = "暂无已翻译内容，请先完成至少一段翻译。";
-        var emptyMetaEl = document.getElementById("pdfFileMeta");
-        if (emptyMetaEl) emptyMetaEl.textContent = emptyMessage;
-        window.alert(emptyMessage);
-        return;
-      }
-      if (isDiagnosticFormat && !state.segments.length) {
+      if (!state.segments.length) {
         var noSegmentMessage = "暂无可导出的 PDF 分段，请先提取 PDF。";
         var noSegmentMetaEl = document.getElementById("pdfFileMeta");
         if (noSegmentMetaEl) noSegmentMetaEl.textContent = noSegmentMessage;
         window.alert(noSegmentMessage);
         return;
       }
-      if (isDebugFailFormat) {
-        // debugFail is a paper_pdf-only dev inspection path: it must never pop the normal
-        // "继续翻译 / 仅导出已翻译部分 / 取消" incomplete-translation dialog, and it must not
-        // require every translatable segment to already be done — that's exactly the gate that
-        // blocks debugging an in-progress or layoutPlan-failing export. It only needs *something*
-        // (a translated overlay segment, or at least extracted segments) to build a report from.
-        if (state.pdfTranslationMode === "simple_pdf") {
-          var noDebugSimpleMessage = "调试失败样本导出仅适用于论文版（paper_pdf）。";
-          var noDebugSimpleMetaEl = document.getElementById("pdfFileMeta");
-          if (noDebugSimpleMetaEl) noDebugSimpleMetaEl.textContent = noDebugSimpleMessage;
-          window.alert(noDebugSimpleMessage);
-          return;
-        }
-        if (!hasTranslatedPdfOverlaySegments() && !state.segments.length) {
-          var noDebugSegMessage = "暂无可用于调试导出的 PDF 段落，请先提取 PDF。";
-          var noDebugSegMetaEl = document.getElementById("pdfFileMeta");
-          if (noDebugSegMetaEl) noDebugSegMetaEl.textContent = noDebugSegMessage;
-          window.alert(noDebugSegMessage);
-          return;
-        }
-      } else if (format === "pdf") {
-        if (state.pdfTranslationMode === "simple_pdf") {
-          if (!hasTranslatedSimplePdfSegments()) {
-            var noSimpleTranslatedMessage = "暂无可导出的已翻译普通文档段落，请先完成至少一段翻译。";
-            var noSimpleTranslatedMetaEl = document.getElementById("pdfFileMeta");
-            if (noSimpleTranslatedMetaEl) noSimpleTranslatedMetaEl.textContent = noSimpleTranslatedMessage;
-            window.alert(noSimpleTranslatedMessage);
-            return;
-          }
-          var simpleCounts = getSimplePdfTranslationCompleteness();
-          if (simpleCounts.doneSegments < simpleCounts.totalSegments) {
-            var simpleAction = await chooseIncompletePdfExportAction(simpleCounts);
-            if (simpleAction === "cancel") return;
-            if (simpleAction === "continue") {
-              closePdfExportModal();
-              var simpleFinished = await startPdfSegmentTranslation({ onlyRemaining: true });
-              if (!simpleFinished || !hasTranslatedSimplePdfSegments()) {
-                var simpleTranslateFailMessage = "暂无可导出的已翻译普通文档段落，请先完成至少一段翻译。";
-                var simpleTranslateFailMetaEl = document.getElementById("pdfFileMeta");
-                if (simpleTranslateFailMetaEl) simpleTranslateFailMetaEl.textContent = simpleTranslateFailMessage;
-                window.alert(simpleTranslateFailMessage);
-                return;
-              }
-            }
-          }
-        } else {
-        if (!hasTranslatedPdfOverlaySegments()) {
-          var noPdfTranslatedMessage = "暂无可导出的已翻译 PDF 段落，请先完成至少一段翻译。";
-          var noPdfTranslatedMetaEl = document.getElementById("pdfFileMeta");
-          if (noPdfTranslatedMetaEl) noPdfTranslatedMetaEl.textContent = noPdfTranslatedMessage;
-          window.alert(noPdfTranslatedMessage);
-          return;
-        }
-        var counts = getPaperExportCompletenessStrict();
-        if (counts.doneSegments < counts.totalSegments) {
-          var action = await chooseIncompletePdfExportAction(counts);
-          if (action === "cancel") return;
-          if (action === "continue") {
-            closePdfExportModal();
-            var finished = await startPdfSegmentTranslation({ onlyRemaining: true });
-            if (!finished || !hasTranslatedPdfSegments()) {
-              var translateFailMessage = "暂无可导出的已翻译段落，请先完成至少一段翻译。";
-              var translateFailMetaEl = document.getElementById("pdfFileMeta");
-              if (translateFailMetaEl) translateFailMetaEl.textContent = translateFailMessage;
-              window.alert(translateFailMessage);
-              return;
-            }
-          } else if (action === "partial" && counts.bodyHeadingNotDone > 0) {
-            var confirmed = window.confirm(
-              "论文正文尚有 " + counts.bodyHeadingNotDone + " 段（正文段落 / 小节标题）未翻译。\n" +
-              "选择「仅导出已翻译部分」后，这些段落将在输出 PDF 中保留原始英文，不会被遮盖或替换。\n\n" +
-              "确认继续导出吗？"
-            );
-            if (!confirmed) return;
-          }
-        }
-        }
+      if (isDeveloperDiagnostics && !state.developerMode) {
+        if (document.getElementById("pdfFileMeta")) document.getElementById("pdfFileMeta").textContent = "请先在设置中开启开发者模式。";
+        return;
       }
       closePdfExportModal();
       var ipc = getElectronIpc();
@@ -2185,102 +2266,38 @@ function isPdfOverlayCandidate(segment) {
         var result;
         if (format === "docx") {
           result = await ipc.invoke("pdf:export-translated-docx", buildTranslatedDocxPayload());
-        } else if (format === "pdf" || isDebugFailFormat) {
-          // Same IPC channel as the normal export — main.js distinguishes the request via the
-          // debugFailExport/allowLayoutPlanDebugFailExport payload flags, not a separate channel.
-          var pdfPayload = buildTranslatedPdfPayload({ debugFailExport: isDebugFailFormat });
+        } else if (format === "pdf" || isDeveloperDiagnostics) {
+          var pdfPayload = buildTranslatedPdfPayload({ developerDiagnosticsRequested: isDeveloperDiagnostics });
           result = await ipc.invoke("pdf:export-translated-pdf", pdfPayload);
-        } else if (format === "debug_bbox") {
-          result = await ipc.invoke("pdf:export-debug-bbox", buildPdfDiagnosticPayload());
-        } else if (format === "mask_test") {
-          result = await ipc.invoke("pdf:export-mask-test", buildPdfDiagnosticPayload());
-        } else if (format === "debug_linebox") {
-          result = await ipc.invoke("pdf:export-debug-linebox", buildPdfDiagnosticPayload());
-        } else if (format === "debug_mask_area") {
-          result = await ipc.invoke("pdf:export-debug-mask-area", buildPdfDiagnosticPayload());
-        } else if (format === "mask_linebox_test") {
-          result = await ipc.invoke("pdf:export-mask-linebox-test", buildPdfDiagnosticPayload());
         } else {
           result = await ipc.invoke("pdf:export-translated-txt", Object.assign({ fileName: fileName, content: content }, getPdfTranslationModePayload()));
         }
-        if (isDebugFailFormat && result && result.ok) {
-          // Explicit debugFail request that completed: main.js returns ok:true + debugFailExport:true.
-          // Two sub-cases:
-          //   manualOrPartialExportDebug=true → partial visual debug (translation incomplete, ops
-          //     were executed for done segments, [PENDING] markers drawn for the rest)
-          //   manualOrPartialExportDebug falsy → formal blocked debug (translation complete but
-          //     layoutPlan failed, no masks/writes applied, original PDF content preserved)
-          if (fileMetaEl) {
-            var _paths = result.filePath +
-              (result.segmentReportsPath ? " · 分析报告：" + result.segmentReportsPath : "") +
-              (result.pipelineDebugPath ? " · 调试：" + result.pipelineDebugPath : "");
-            var _sidecarNote = result.sidecarWriteStatus === 'fail' ? "（⚠ JSON写入失败：" + (result.sidecarWriteError || '未知') + "）" : "";
-            if (result.manualOrPartialExportDebug) {
-              var _written = result.debugFailVisualWriteAppliedCount || 0;
-              var _pending = result.debugFailVisualPendingMarkedCount || 0;
-              var _translated = result.translatedSegments || 0;
-              var _total = result.translatableSegments || 0;
-              fileMetaEl.textContent = "翻译未完成（已翻译 " + _translated + "/" + _total + " 段）—— 已生成可视化调试 PDF：" +
-                _paths + _sidecarNote + "（执行了 " + _written + " 段写入，标注了 " + _pending + " 个 [PENDING] 段落，未生成正式译文 PDF）";
-            } else {
-              fileMetaEl.textContent = "论文版 layoutPlan 未通过校验，未执行遮罩写入。已生成调试失败样本：" +
-                _paths + _sidecarNote + "（内容不完整，仅供调试查看，未生成正式译文 PDF）";
-            }
-          }
-        } else if (result && result.ok) {
-          if (format === "pdf") {
+        if (result && result.ok && result.exportGenerated) {
+          if (isDeveloperDiagnostics) {
+            state.diagnosticsDirectory = String(result.diagnosticsDirectory || "");
+            if (fileMetaEl) fileMetaEl.textContent = "开发诊断已生成：" + result.filePath +
+              (result.segmentReportsPath ? " · segment 状态：" + result.segmentReportsPath : "") +
+              (result.pipelineDebugPath ? " · layout 报告：" + result.pipelineDebugPath : "") +
+              (result.snapshotPath ? " · snapshot：" + result.snapshotPath : "") +
+              (result.textPath ? " · transcript：" + result.textPath : "");
+          } else {
             if (fileMetaEl) fileMetaEl.textContent = buildPdfExportResultMessage(result);
             state.lastPdfOutputPath = String(result.filePath || "");
             writePdfRecentJob("已导出", state.lastPdfOutputPath);
             var openOutputBtn = document.getElementById("btnOpenPdfOutput");
             if (openOutputBtn) openOutputBtn.disabled = !state.lastPdfOutputPath;
-          } else if (format === "debug_bbox") {
-            if (fileMetaEl) fileMetaEl.textContent = "BBox 调试 PDF：" + result.filePath + " · 标注 " + (result.boxedCount || 0) + " 段";
-          } else if (format === "mask_test") {
-            if (fileMetaEl) fileMetaEl.textContent = "遮罩测试 PDF：" + result.filePath + " · 覆盖 " + (result.maskedCount || 0) + " 段 / " + (result.lineCount || 0) + " 行";
-          } else if (format === "debug_linebox") {
-            if (fileMetaEl) fileMetaEl.textContent = "LineBox 调试 PDF：" + result.filePath + " · 标注 " + (result.lineCount || 0) + " 行";
-          } else if (format === "debug_mask_area") {
-            if (fileMetaEl) fileMetaEl.textContent = "遮罩区域调试 PDF：" + result.filePath + " · 总 " + (result.totalLineBoxes || 0) + " 行 · 遮罩 " + (result.maskedLineBoxes || 0) + " 行 · 跳过 " + (result.skippedLineBoxes || 0) + " 行 · 公式 " + (result.formulaLikeLineBoxes || 0) + " 行 · 均值 " + (result.averageFontSize || 0);
-          } else if (format === "mask_linebox_test") {
-            if (fileMetaEl) fileMetaEl.textContent = "LineBox 遮罩测试 PDF：" + result.filePath + " · 总 " + (result.totalLineBoxes || 0) + " 行 · 遮罩 " + (result.maskedLineBoxes || 0) + " 行 · 跳过 " + (result.skippedLineBoxes || 0) + " 行 · 公式 " + (result.formulaLikeLineBoxes || 0) + " 行 · 均值 " + (result.averageFontSize || 0);
-          } else if (fileMetaEl) {
-            fileMetaEl.textContent = "导出成功：" + result.filePath;
           }
         } else if (result && result.canceled) {
           if (fileMetaEl) fileMetaEl.textContent = "已取消导出。";
-        } else if (format === "pdf" && result && result.layoutPlanDebugFail) {
-          // The normal xxx_translated.pdf is intentionally withheld when the paper layoutPlan gate
-          // fails on the *unflagged* "pdf" request (result.ok === false here) — but the export
-          // pipeline still wrote a debugFail PDF plus its two JSON sidecars to disk under the same
-          // path with a _debugFail suffix. Without this branch the generic "导出失败" message below
-          // hid that real output, making it look like nothing was produced at all.
-          if (fileMetaEl) {
-            var _failPaths = result.filePath +
-              (result.segmentReportsPath ? " · 分析报告：" + result.segmentReportsPath : "") +
-              (result.pipelineDebugPath ? " · 调试：" + result.pipelineDebugPath : "");
-            var _failSidecarNote = result.sidecarWriteStatus === 'fail' ? "（⚠ JSON写入失败：" + (result.sidecarWriteError || '未知') + "）" : "";
-            fileMetaEl.textContent = "论文版 layoutPlan 未通过校验，未生成正式 xxx_translated.pdf。" +
-              "已生成调试失败样本：" + _failPaths + _failSidecarNote + "（内容不完整，仅供调试查看）";
-          }
-        } else if (result && result.filePath) {
-          // Export failed but a PDF (or debugFail PDF) was written — show all available paths
-          // so the user can find the output and JSON sidecars.
-          var _errPaths = result.filePath +
-            (result.segmentReportsPath ? " · 分析报告：" + result.segmentReportsPath : "") +
-            (result.pipelineDebugPath ? " · 调试：" + result.pipelineDebugPath : "");
-          var _errSidecarNote = (result.sidecarWriteStatus && result.sidecarWriteStatus !== 'pass' && result.sidecarWriteStatus !== 'fallback_pass')
-            ? "（⚠ JSON:" + (result.sidecarWriteError || result.sidecarWriteStatus) + "）" : "";
-          if (fileMetaEl) fileMetaEl.textContent = "导出不完整：" + (result.error || "unknown") +
-            " · " + _errPaths + _errSidecarNote;
         } else {
-          if (fileMetaEl) fileMetaEl.textContent = "导出失败：" + ((result && result.error) || "unknown");
+          if (fileMetaEl) fileMetaEl.textContent = "PDF 未生成：" + ((result && result.error) || "unknown");
         }
       } catch (err) {
         cleanupPdfExportTransientModals();
         if (fileMetaEl) fileMetaEl.textContent = "导出失败：" + String(err && err.message ? err.message : err);
       }
     } finally {
+      state.pdfExporting = false;
       cleanupPdfExportTransientModals();
       updatePdfExportButton();
     }
@@ -2479,7 +2496,11 @@ function isPdfOverlayCandidate(segment) {
       matches.forEach(function (match) { addProtectedCitationToken(tokens, match); });
     });
     tokens.sort(function (a, b) { return b.raw.length - a.raw.length; });
-    return tokens;
+    return tokens.filter(function (token, index, entries) {
+      return !entries.slice(0, index).some(function (parent) {
+        return parent.raw.indexOf(token.raw) >= 0;
+      });
+    });
   }
 
   function replaceCitationTokensBeforeTranslate(text, tokens) {
@@ -2496,9 +2517,15 @@ function isPdfOverlayCandidate(segment) {
     var text = String(translatedText || "");
     var failed = [];
     (tokens || []).forEach(function (token, index) {
-      var pattern = new RegExp("__\\s*CITATION\\s*_" + index + "\\s*__", "gi");
+      var patterns = [
+        new RegExp("__\\s*CITATION\\s*_" + index + "\\s*__", "gi"),
+        new RegExp("[【\\[]\\s*" + index + "\\s*[†:]?\\s*CITATION\\s*[】\\]]", "gi"),
+        new RegExp("\\bCITATION\\s*[_:#-]?\\s*" + index + "(?!\\d)", "gi"),
+      ];
       var before = text;
-      text = text.replace(pattern, token.raw);
+      patterns.forEach(function (pattern) {
+        text = text.replace(pattern, token.raw);
+      });
       if (before === text && text.indexOf(token.raw) < 0) failed.push(token.raw);
     });
     return { text: text, failed: failed };
@@ -2545,6 +2572,7 @@ function isPdfOverlayCandidate(segment) {
     var providerIpc = getElectronIpc();
     if (!providerIpc) throw new Error("统一 Provider 仅可在桌面应用中使用");
     var data = await providerIpc.invoke("lingoflow-provider:translate", payload);
+    translateSegmentSourceText.lastProviderConnection = data && data.providerConnection || null;
     if (signal && signal.aborted) {
       var abortedAfterProvider = new Error("translation aborted");
       abortedAfterProvider.name = "AbortError";
@@ -2565,6 +2593,11 @@ function isPdfOverlayCandidate(segment) {
         citationNameMutationRiskCount: citationRestored.failed.length,
         citationTokenRestoreFailedExamples: citationRestored.failed.slice(0, 5),
       };
+      if (citationRestored.failed.length) {
+        var citationError = new Error("引用保护内容未完整返回，请重试翻译。");
+        citationError.code = "PDF_CITATION_INTEGRITY_FAILED";
+        throw citationError;
+      }
     }
     debugPdfLog("[pdf] translated segment target100=", translated.slice(0, 100), "sourceLang=", sourceLang, "targetLang=", targetLang);
     return translated;
@@ -2572,12 +2605,25 @@ function isPdfOverlayCandidate(segment) {
 
   function isRetryablePdfTranslationError(err) {
     if (!err || err.name === "AbortError") return false;
+    if (err.code === "PDF_CITATION_INTEGRITY_FAILED") return true;
     var status = Number(err.httpStatus || 0);
     if ([408, 425, 429, 500, 502, 503, 504].indexOf(status) >= 0) return true;
     if (status >= 400 && status < 500) return false;
     var message = String(err.message || err || "").toLowerCase();
     if (/quota|insufficient|unauthorized|forbidden|invalid token|same language/.test(message)) return false;
-    return !status && /network|fetch|timeout|timed out|socket|connection|temporar|empty translation|server endpoint unavailable/.test(message);
+    return !status && /network|fetch|timeout|timed out|socket|connection|temporar|empty translation|server endpoint unavailable|\btypeerror:\s*terminated\b/.test(message);
+  }
+
+  function isTerminalPdfTranslationProviderError(err) {
+    if (!err || err.name === "AbortError") return false;
+    var status = Number(err.httpStatus || 0);
+    var message = String(err.message || err || "").toLowerCase();
+    if (!status) {
+      var statusMatch = message.match(/(?:provider\s+)?http\s+(401|402|403)\b/);
+      status = statusMatch ? Number(statusMatch[1]) : 0;
+    }
+    return [401, 402, 403].indexOf(status) >= 0
+      || /insufficient balance|payment required|unauthorized|forbidden|invalid token/.test(message);
   }
 
   function waitForPdfTranslationRetry(delayMs, signal) {
@@ -2646,6 +2692,7 @@ function buildPaperPdfTranslationPrompt() {
   return [
     "Translate this PDF paragraph naturally and accurately for formal document reading.",
     "Preserve professional terms, numbers, formulas, citations, units, symbols, and proper nouns.",
+    "Copy every __CITATION_N__ and __FORMULA_N__ placeholder exactly once per source occurrence, in source order. Never omit or rewrite a placeholder, even at the beginning of a fragment.",
     "Do not summarize, expand, omit, rewrite, or add information that is not present in the source.",
     "For academic papers, translate titles, abstracts, keywords, and body text in a formal academic Chinese style when the target language is Chinese.",
     "Keep untranslatable proper nouns in English.",
@@ -3026,6 +3073,9 @@ function resetPdfDocumentState(fileId) {
   }
 
   function setPdfWorkflowState(stateName, file) {
+    if (stateName === "translated" && state.pdfTranslationMode === "paper_pdf") {
+      stateName = resolvePaperTranslationCompletion(getPaperExportCompletenessStrict(), false).stateName;
+    }
     var statusEl = document.getElementById("pdfWorkflowStatus");
     var fileNameEl = document.getElementById("pdfFileName");
     var fileMetaEl = document.getElementById("pdfFileMeta");
@@ -3041,6 +3091,11 @@ function resetPdfDocumentState(fileId) {
     var progressTrack = progressBar && progressBar.parentElement;
     var completeStage = document.getElementById("pdfCompleteStage");
     var translationStage = document.getElementById("pdfTranslationStage");
+    var incompleteExportBtn = document.getElementById("btnExportPdfIncomplete");
+    if (incompleteExportBtn) {
+      incompleteExportBtn.hidden = !state.pdfTranslationMode || !state.segments.length || stateName === "translated";
+      incompleteExportBtn.disabled = Boolean(state.pdfExporting) || !state.segments.length;
+    }
     var workView = document.getElementById("pdfWorkView");
     var percent = Math.max(0, Math.min(100, Number(state.progress && state.progress.percent || 0)));
 
@@ -3051,13 +3106,13 @@ function resetPdfDocumentState(fileId) {
       var key = step.getAttribute("data-step");
       var activeKey = stateName === "idle" || stateName === "staged" ? "select"
         : stateName === "translated" ? "complete"
-        : ["prepared", "translating", "canceled"].indexOf(stateName) >= 0 ? "translate" : "extract";
+        : ["prepared", "translating", "canceled", "incomplete"].indexOf(stateName) >= 0 ? "translate" : "extract";
       step.classList.toggle("is-active", key === activeKey);
       step.classList.toggle(
         "is-done",
         (stateName === "staged" && key === "select") ||
         (stateName === "extracted" && key === "select") ||
-        (["prepared", "translating", "translated", "canceled"].indexOf(stateName) >= 0 && (key === "select" || key === "extract")) ||
+        (["prepared", "translating", "translated", "canceled", "incomplete"].indexOf(stateName) >= 0 && (key === "select" || key === "extract")) ||
         (stateName === "translated" && (key === "translate" || key === "complete")),
       );
       step.classList.toggle("is-disabled", !step.classList.contains("is-active") && !step.classList.contains("is-done"));
@@ -3111,6 +3166,21 @@ function resetPdfDocumentState(fileId) {
     }
 
     if (stateName === "extracted") writePdfRecentJob("已提取");
+
+    if (stateName === "incomplete") {
+      var incompleteCounts = getPaperExportCompletenessStrict();
+      var incompleteMessage = "已完成 " + incompleteCounts.doneSegments + "/" + incompleteCounts.totalSegments +
+        " 段 · 失败 " + incompleteCounts.failedSegments + " 段 · 待处理 " + incompleteCounts.pendingSegments + " 段。可重试未完成内容。";
+      if (statusEl) { statusEl.textContent = "未全部完成"; statusEl.setAttribute("data-state", "idle"); }
+      if (fileNameEl) fileNameEl.textContent = file && file.fileName ? file.fileName : "已选择 PDF";
+      if (fileMetaEl) fileMetaEl.textContent = incompleteMessage;
+      if (progressTitle) progressTitle.textContent = "本轮翻译已结束，仍有未完成段落";
+      if (progressSummary) progressSummary.textContent = incompleteMessage;
+      if (prepareBtn) { prepareBtn.disabled = false; setButtonText(prepareBtn, "重试未完成段落"); }
+      if (clearBtn) clearBtn.disabled = false;
+      writePdfRecentJob("未全部完成");
+      return;
+    }
 
     if (stateName === "translated") {
       if (statusEl) {
@@ -3235,6 +3305,11 @@ function resetPdfDocumentState(fileId) {
 
   async function startPdfSegmentTranslation(options) {
   options = options || {};
+  if (!isActiveProviderConnected()) {
+    setProviderFeedback('当前服务商未连接，请先在设置页点击“连接”。', 'error');
+    window.alert('当前服务商未连接。请先到设置页点击“连接”，连接成功后再开始翻译。');
+    return false;
+  }
   var mode = state.pdfTranslationMode;
   if (mode === "simple_pdf") return startSimplePdfSegmentTranslation(options);
   if (mode === "paper_pdf") return startPaperPdfSegmentTranslation(options);
@@ -3374,6 +3449,93 @@ function resetPdfDocumentState(fileId) {
     });
   }
 
+  function joinPaperParagraphIdentitySourceParts(parts) {
+    return (parts || []).reduce(function (joined, part) {
+      var next = String(part || '').trim();
+      if (!next) return joined;
+      if (!joined) return next;
+      if (/-\s*$/.test(joined) && /^[a-z]/.test(next)) {
+        return joined.replace(/-\s*$/, '') + next;
+      }
+      return joined + ' ' + next;
+    }, '');
+  }
+
+  function splitPaperParagraphIdentityTextByWeights(text, weights) {
+    var value = String(text || '').trim();
+    var normalizedWeights = (weights || []).map(function (weight) { return Math.max(1, Number(weight || 0)); });
+    if (normalizedWeights.length <= 1) return [value];
+    var totalWeight = normalizedWeights.reduce(function (sum, weight) { return sum + weight; }, 0);
+    var pieces = [];
+    var consumedWeight = 0;
+    var start = 0;
+    for (var index = 0; index < normalizedWeights.length - 1; index += 1) {
+      consumedWeight += normalizedWeights[index];
+      var ideal = Math.max(start + 1, Math.min(value.length - (normalizedWeights.length - index - 1), Math.round(value.length * consumedWeight / totalWeight)));
+      var searchRadius = Math.max(16, Math.min(80, Math.round(value.length * 0.08)));
+      var min = Math.max(start + 1, ideal - searchRadius);
+      var max = Math.min(value.length - (normalizedWeights.length - index - 1), ideal + searchRadius);
+      var best = ideal;
+      var bestScore = Number.POSITIVE_INFINITY;
+      for (var cursor = min; cursor <= max; cursor += 1) {
+        var previousChar = value.charAt(cursor - 1);
+        var nextChar = value.charAt(cursor);
+        var boundaryRank = /[。！？!?；;]/.test(previousChar) ? 0
+          : (/[，,：:]/.test(previousChar) ? 1 : (/\s/.test(previousChar) || /\s/.test(nextChar) ? 2 : 4));
+        var score = boundaryRank * (searchRadius + 1) + Math.abs(cursor - ideal);
+        if (score < bestScore) {
+          bestScore = score;
+          best = cursor;
+        }
+      }
+      pieces.push(value.slice(start, best).trim());
+      start = best;
+    }
+    pieces.push(value.slice(start).trim());
+    return pieces;
+  }
+
+  function applyPaperParagraphIdentityTranslationResult(group, translated, providerConnection, protectionReport) {
+    var members = group && Array.isArray(group.members) ? group.members : [];
+    var memberPieces = splitPaperParagraphIdentityTextByWeights(
+      translated,
+      members.map(function (member) { return String(member && member.sourceText || '').length; })
+    );
+    members.forEach(function (member, memberIndex) {
+      var memberSegments = (member.segmentIds || []).map(function (segmentId) {
+        return state.segments.find(function (entry) { return String(entry && entry.id || '') === String(segmentId || ''); });
+      }).filter(Boolean);
+      var segmentPieces = splitPaperParagraphIdentityTextByWeights(
+        memberPieces[memberIndex] || '',
+        memberSegments.map(function (entry) { return String(entry && entry.sourceText || '').length; })
+      );
+      memberSegments.forEach(function (entry, segmentIndex) {
+        entry.translatedText = String(segmentPieces[segmentIndex] || '').trim();
+        entry.status = 'done';
+        entry.error = '';
+        entry.translationProviderConnection = providerConnection || null;
+        entry.paragraphIdentityTranslationGroupId = String(group.logicalParagraphId || '');
+        entry.paragraphIdentityTranslationAuthorityVersion = String(group.authorityVersion || 'paper-paragraph-identity-recovery/v1');
+        entry.paragraphIdentityTranslationMemberPageNumber = Number(member.pageNumber || entry.pageNumber || 0);
+        entry.paragraphIdentityTranslationSourceCombined = true;
+        entry.citationTokenProtectedCount = Number(protectionReport && protectionReport.citationTokenProtectedCount || 0);
+        entry.citationTokenRestoreFailedCount = Number(protectionReport && protectionReport.citationTokenRestoreFailedCount || 0);
+        entry.citationNameMutationRiskCount = Number(protectionReport && protectionReport.citationNameMutationRiskCount || 0);
+        entry.citationTokenRestoreFailedExamples = protectionReport && protectionReport.citationTokenRestoreFailedExamples || [];
+      });
+    });
+  }
+
+  async function getPaperParagraphIdentityTranslationPlan() {
+    var ipc = getElectronIpc();
+    if (!ipc) return { authorityVersion: 'paper-paragraph-identity-recovery/v1', groups: [] };
+    var plan = await ipc.invoke('pdf:paragraph-identity-translation-plan', {
+      segments: state.segments,
+      semanticStructureArtifact: state.semanticStructureArtifact,
+    });
+    return plan && Array.isArray(plan.groups) ? plan : { authorityVersion: 'paper-paragraph-identity-recovery/v1', groups: [] };
+  }
+
   async function waitWhilePdfTranslationPaused(taskId, fileId) {
     while (state.pdfTranslatePaused && !state.pdfTranslateCancelRequested) {
       if (taskId !== state.pdfTranslateTaskSeq || fileId !== state.pdfCurrentFileId) return false;
@@ -3469,14 +3631,25 @@ function resetPdfDocumentState(fileId) {
     });
     if (!targetIndexes.length) {
       state.pdfTranslating = false;
-      state.progress = { current: state.segments.length, total: state.segments.length, percent: 100 };
-      setPdfWorkflowState("translated", state.pdfExtract);
-      return true;
+      var emptyCompletion = resolvePaperTranslationCompletion(getPaperExportCompletenessStrict(), false);
+      state.progress = emptyCompletion.progress;
+      setPdfWorkflowState(emptyCompletion.stateName, state.pdfExtract);
+      return emptyCompletion.stateName === "translated";
     }
     setPdfWorkflowState("translating", state.pdfExtract);
     setPdfPreviewMode("segments");
     var _consecutiveFailCount = 0;
     var _translationAttemptSequence = 0;
+    var paragraphIdentityTranslationPlan = await getPaperParagraphIdentityTranslationPlan();
+    var paragraphIdentityGroupBySegmentId = new Map();
+    (paragraphIdentityTranslationPlan.groups || []).forEach(function (group) {
+      (group.members || []).forEach(function (member) {
+        (member.segmentIds || []).forEach(function (segmentId) {
+          paragraphIdentityGroupBySegmentId.set(String(segmentId || ''), group);
+        });
+      });
+    });
+    var completedParagraphIdentityTranslationGroups = new Set();
 
     for (var i = 0; i < state.segments.length; i += 1) {
       if (taskId !== state.pdfTranslateTaskSeq || fileId !== state.pdfCurrentFileId) return false;
@@ -3506,6 +3679,39 @@ function resetPdfDocumentState(fileId) {
       try {
         state.pdfTranslateAbortController = new AbortController();
         segment.error = "";
+        var paragraphIdentityGroup = paragraphIdentityGroupBySegmentId.get(String(segment.id || ''));
+        if (paragraphIdentityGroup && !completedParagraphIdentityTranslationGroups.has(String(paragraphIdentityGroup.logicalParagraphId || ''))) {
+          var identitySourceText = joinPaperParagraphIdentitySourceParts((paragraphIdentityGroup.members || []).map(function (member) {
+            return String(member && member.sourceText || '');
+          }));
+          var identityRetryResult = await translatePaperSegmentWithRetry(identitySourceText, state.pdfTranslateAbortController.signal);
+          var identityTranslated = identityRetryResult.translated;
+          var identityInvalidReason = identityRetryResult.invalidReason || getInvalidTranslationReason(identitySourceText, identityTranslated);
+          if (identityInvalidReason) {
+            markInvalidTranslationSegment(segment, identityInvalidReason, identityTranslated);
+            throw Object.assign(new Error(identityInvalidReason), { handledInvalidTranslation: true });
+          }
+          var identityProviderConnection = translateSegmentSourceText.lastProviderConnection || null;
+          var identityProtectionReport = translateSegmentSourceText.lastProtectionReport || {};
+          applyPaperParagraphIdentityTranslationResult(
+            paragraphIdentityGroup,
+            identityTranslated,
+            identityProviderConnection,
+            identityProtectionReport
+          );
+          completedParagraphIdentityTranslationGroups.add(String(paragraphIdentityGroup.logicalParagraphId || ''));
+          state.pdfTranslateAbortController = null;
+          _consecutiveFailCount = 0;
+          var identityCounts = getSegmentStatusCounts();
+          state.progress = {
+            current: identityCounts.done + identityCounts.failed,
+            total: state.segments.length,
+            percent: Math.round(((identityCounts.done + identityCounts.failed) / state.segments.length) * 100),
+          };
+          setPdfWorkflowState("translating", state.pdfExtract);
+          renderPdfSegmentsPreview();
+          continue;
+        }
         var translationRequestText = getPaperTranslationRequestText(segment);
         _translationAttemptSequence += 1;
         var translationAttemptId = ["paper", String(fileId || "file"), String(taskId), String(_translationAttemptSequence), String(segment.id || i)].join(":");
@@ -3525,6 +3731,7 @@ function resetPdfDocumentState(fileId) {
         }
         var translationRetryResult = await translatePaperSegmentWithRetry(translationRequestText, state.pdfTranslateAbortController.signal);
         var translated = translationRetryResult.translated;
+        segment.translationProviderConnection = translateSegmentSourceText.lastProviderConnection || null;
         var invalidReason = translationRetryResult.invalidReason || getInvalidTranslationReason(translationRequestText, translated);
         segment.translationAutomaticRetryCount = Number(translationRetryResult.retryCount || 0);
         segment.translationAutomaticRetryReasons = translationRetryResult.retryReasons || [];
@@ -3586,6 +3793,15 @@ function resetPdfDocumentState(fileId) {
           break;
         }
         if (!err || !err.handledInvalidTranslation) {
+          if (isTerminalPdfTranslationProviderError(err)) {
+            _consecutiveFailCount = 0;
+            segment.status = "failed";
+            segment.translatedText = "";
+            segment.error = String(err && err.message ? err.message : err);
+            state.error = segment.error;
+            debugPdfWarn("[pdf] terminal provider error; translation stopped with remaining segments pending", segment.id, segment.error);
+            break;
+          }
           var _is404NotFound = err && err.message === '"Not Found"';
           if (_is404NotFound) {
             _consecutiveFailCount += 1;
@@ -3630,8 +3846,10 @@ function resetPdfDocumentState(fileId) {
       return segment.status === "done";
     });
     renderPdfSegmentsPreview();
-    setPdfWorkflowState(state.pdfTranslateCancelRequested ? "canceled" : "translated", state.pdfExtract);
-    return !state.pdfTranslateCancelRequested;
+    var completion = resolvePaperTranslationCompletion(getPaperExportCompletenessStrict(), state.pdfTranslateCancelRequested);
+    state.progress = completion.progress;
+    setPdfWorkflowState(completion.stateName, state.pdfExtract);
+    return completion.stateName === "translated";
   }
 
   function setupPdfLanguageControls() {
@@ -3835,6 +4053,8 @@ function resetPdfDocumentState(fileId) {
       exportBtn.addEventListener("click", openPdfExportModal);
       updatePdfExportButton();
     }
+    var incompleteExportBtn = document.getElementById("btnExportPdfIncomplete");
+    if (incompleteExportBtn) incompleteExportBtn.addEventListener("click", openPdfExportModal);
 
     setPdfWorkflowState("idle");
 
@@ -3848,10 +4068,7 @@ function resetPdfDocumentState(fileId) {
     var closeExportModalBtn = document.getElementById("btnClosePdfExportModal");
     var cancelExportBtn = document.getElementById("btnCancelPdfExport");
     var exportPdfBtn = document.getElementById("btnExportPdfOnly");
-    var exportPdfDebugFailBtn = document.getElementById("btnExportPdfDebugFail");
-    var exportDebugLineBoxBtn = document.getElementById("btnExportDebugLineBox");
-    var exportDebugMaskAreaBtn = document.getElementById("btnExportDebugMaskArea");
-    var exportMaskLineBoxBtn = document.getElementById("btnExportMaskLineBox");
+    var exportDeveloperDiagnosticsBtn = document.getElementById("btnExportDeveloperDiagnostics");
     if (rawBtn) rawBtn.addEventListener("click", function () { setPdfPreviewMode("raw"); });
     if (segmentBtn) segmentBtn.addEventListener("click", function () { setPdfPreviewMode("segments"); });
     if (closeModalBtn) closeModalBtn.addEventListener("click", closePdfSegmentModal);
@@ -3864,10 +4081,7 @@ function resetPdfDocumentState(fileId) {
     if (closeExportModalBtn) closeExportModalBtn.addEventListener("click", closePdfExportModal);
     if (cancelExportBtn) cancelExportBtn.addEventListener("click", closePdfExportModal);
     if (exportPdfBtn) exportPdfBtn.addEventListener("click", function () { exportPdfTranslationByFormat("pdf"); });
-    if (exportPdfDebugFailBtn) exportPdfDebugFailBtn.addEventListener("click", function () { exportPdfTranslationByFormat("pdf_debug_fail"); });
-    if (exportDebugLineBoxBtn) exportDebugLineBoxBtn.addEventListener("click", function () { exportPdfTranslationByFormat("debug_linebox"); });
-    if (exportDebugMaskAreaBtn) exportDebugMaskAreaBtn.addEventListener("click", function () { exportPdfTranslationByFormat("debug_mask_area"); });
-    if (exportMaskLineBoxBtn) exportMaskLineBoxBtn.addEventListener("click", function () { exportPdfTranslationByFormat("mask_linebox_test"); });
+    if (exportDeveloperDiagnosticsBtn) exportDeveloperDiagnosticsBtn.addEventListener("click", function () { exportPdfTranslationByFormat("developer_diagnostics"); });
     try {
       if (typeof process !== "undefined" && process.env && process.env.PDF_AUTO_RUN === "1") {
         setTimeout(async function () {
@@ -4085,6 +4299,7 @@ function resetPdfDocumentState(fileId) {
         state.pdfTranslateAbortController = new AbortController();
         segment.error = "";
         var translated = await translateSegmentSourceText(segment.sourceText||"", state.pdfTranslateAbortController.signal);
+        segment.translationProviderConnection = translateSegmentSourceText.lastProviderConnection || null;
         var invalidReason = getInvalidTranslationReason(segment.sourceText||"", translated);
         if (invalidReason) { markInvalidTranslationSegment(segment, invalidReason, translated); throw Object.assign(new Error(invalidReason), {handledInvalidTranslation:true}); }
         state.pdfTranslateAbortController = null;
@@ -4100,7 +4315,15 @@ function resetPdfDocumentState(fileId) {
         if (taskId!==state.pdfTranslateTaskSeq||fileId!==state.pdfCurrentFileId) return false;
         state.pdfTranslateAbortController = null;
         if (state.pdfTranslateCancelRequested||(err&&err.name==="AbortError")) { segment.status = "pending"; break; }
-        if (!err||!err.handledInvalidTranslation) { segment.status = "failed"; segment.translatedText = ""; segment.error = String(err&&err.message?err.message:err); }
+        if (!err||!err.handledInvalidTranslation) {
+          segment.status = "failed";
+          segment.translatedText = "";
+          segment.error = String(err&&err.message?err.message:err);
+          if (isTerminalPdfTranslationProviderError(err)) {
+            state.error = segment.error;
+            break;
+          }
+        }
       }
       var after = getSimplePdfTranslationCompleteness();
       state.progress = { current: after.doneSegments+after.failedSegments, total: after.totalSegments, percent: after.totalSegments ? Math.round(((after.doneSegments+after.failedSegments)/after.totalSegments)*100) : 0 };
@@ -4140,6 +4363,7 @@ async function boot() {
     setupWindowControls();
     setupAppNav();
     await loadSharedConfig();
+    setupDeveloperModeControls();
     await setupTranslatePage();
     await setupProviderSettingsPage();
     setupPdfModule();

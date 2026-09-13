@@ -24,7 +24,7 @@ const sharedConfig = JSON.parse(fs.readFileSync(path.join(projectRoot, 'config/l
 
 test('shared config establishes one local-first OpenAI-compatible provider artifact', () => {
   assert.equal(sharedConfig.provider.type, 'openai_compatible');
-  assert.match(sharedConfig.provider.preset, /^(deepseek|openai|openrouter|ollama|custom)$/);
+  assert.match(sharedConfig.provider.preset, /^(deepseek|qwen|hunyuan|kimi|openai|custom)$/);
   assert.equal(typeof sharedConfig.provider.baseUrl, 'string');
   assert.equal(typeof sharedConfig.provider.apiKey, 'string');
   assert.equal(typeof sharedConfig.provider.model, 'string');
@@ -50,7 +50,9 @@ test('settings polishes the existing multi-provider flow without changing provid
   assert.match(rendererSource, /lingoflow-provider:activate/);
   assert.match(rendererSource, /lingoflow-provider:test/);
   assert.match(rendererSource, /连接失败/);
-  for (const preset of ['DeepSeek', 'OpenAI', 'OpenRouter', 'Ollama', 'Custom']) assert.match(htmlSource, new RegExp(`>${preset}<`));
+  for (const preset of ['DeepSeek', '阿里百炼（Qwen）', '腾讯混元', 'Kimi', 'OpenAI', '自定义']) assert.match(htmlSource, new RegExp(`>${preset}<`));
+  assert.doesNotMatch(htmlSource, />OpenRouter</);
+  assert.doesNotMatch(htmlSource, />Ollama</);
   assert.match(mainSource, /deepseek-v4-flash/);
   assert.match(mainSource, /serializeProviderError/);
   assert.match(mainSource, /responseBody/);
@@ -67,8 +69,8 @@ test('settings polishes the existing multi-provider flow without changing provid
   assert.match(rendererSource, /function connectProviderProfile/);
   assert.match(rendererSource, /updateProviderConnectionUi\(profile\.id, "connecting"\)/);
   assert.match(rendererSource, /provider-connect-action/);
-  assert.match(rendererSource, /Provider 已连接 ·/);
-  assert.match(rendererSource, /result\.provider \|\| "Custom"/);
+  assert.match(rendererSource, /服务商已连接 ·/);
+  assert.match(rendererSource, /result\.provider \|\| "自定义"/);
   assert.match(rendererSource, /function providerFormSignature/);
   assert.match(rendererSource, /saveButton\.disabled = providerFormSignature\(\) === state\.providerFormBaseline/);
   const settingsSetup = rendererSource.slice(

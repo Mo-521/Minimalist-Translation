@@ -21,30 +21,52 @@ function extractFunction(source, name) {
   throw new Error(`Unable to extract ${name}`);
 }
 
-test('layout validation failure writes the planned diagnostic PDF instead of copying the source unchanged', () => {
-  const gateStart = mainSource.indexOf('_layoutPlanExecutionBlocked = isPaperExport');
+test('one rejected segment preserves its original while unrelated segments stay writable', () => {
+  const context = vm.createContext({ String, Boolean, Array, Set, Map });
+  vm.runInContext(extractFunction(mainSource, 'getPaperOperationOwnerIds'), context);
+  vm.runInContext(extractFunction(mainSource, 'isolatePaperMaskWriteOperations'), context);
+  const failed = { id: 'failed', layoutPlanValidationStatus: 'failed', maskApplied: true, writeApplied: true };
+  const healthy = { id: 'healthy', layoutPlanValidationStatus: 'pass', maskApplied: false, writeApplied: false };
+  const reports = new Map([['failed', failed], ['healthy', healthy]]);
+  const masks = [{ meta: { segmentId: 'failed' } }, { meta: { segmentId: 'healthy' } }];
+  const writes = [{ meta: { segmentId: 'failed' } }, { meta: { segmentId: 'healthy' } }];
+  const result = context.isolatePaperMaskWriteOperations(masks, writes, reports, { violations: [] });
+  assert.equal(result.authorizedMaskOps.length, 1);
+  assert.equal(result.authorizedWriteOps.length, 1);
+  assert.equal(result.authorizedWriteOps[0].meta.segmentId, 'healthy');
+  assert.equal(failed.maskApplied, false);
+  assert.equal(failed.writeApplied, false);
+  assert.equal(failed.visualResidualRisk, false);
+  assert.equal(writes[0].writeIsolationState, 'isolated_preserve_original');
+  assert.equal(writes[1].writeIsolationState, 'authorized');
+});
+
+test('layout validation failures are isolated before mask and write execution', () => {
+  const gateStart = mainSource.indexOf('_paperWriteIsolationPlan = isolatePaperMaskWriteOperations');
   const gateEnd = mainSource.indexOf('_captionGroupLifecycleAudits = finalizeCaptionGroupLifecycleAudits', gateStart);
   assert.notEqual(gateStart, -1);
   assert.notEqual(gateEnd, -1);
   const gate = mainSource.slice(gateStart, gateEnd);
 
-  assert.match(gate, /if \(!_layoutPlanExecutionBlocked\)\s*\{\s*executePaperMasks\(\);\s*executePaperWrites\(\);/s);
-  assert.match(gate, /else if \(_layoutPlanExecutionBlocked\)\s*\{[\s\S]*executePaperMasks\(\);\s*executePaperWrites\(\);/);
-  assert.doesNotMatch(gate, /else if \(debugFailExportRequested && paperTranslationReadiness && !paperTranslationReadiness\.ready\)/);
-  assert.match(gate, /complete_translation_layout_validation_failed/);
+  assert.match(gate, /isolatePaperMaskWriteOperations\([\s\S]*executePaperMasks\(\);\s*executePaperWrites\(\);/);
+  assert.match(mainSource, /if \(op\.writeIsolationState === 'isolated_preserve_original'\) return/);
+  assert.doesNotMatch(gate, /_layoutPlanExecutionBlocked\s*=\s*true/);
 });
 
-test('failed layout still cannot be emitted as a normal translated PDF', () => {
-  assert.match(mainSource, /if \(isPaperExport && _layoutPlanValidationStats\.layoutPlanValidationStatus === 'failed'\)\s*\{\s*_paperLayoutDebugFail = true;\s*outputFilePath = outputFilePath\.replace\(\/\\\.pdf\$\/i, '_debugFail\.pdf'\);/s);
-  assert.match(mainSource, /const layoutPlanHardFail = Boolean\(isPaperExport && _paperLayoutDebugFail\)/);
+test('local write failure cannot rename or downgrade the generated user PDF', () => {
+  assert.doesNotMatch(mainSource, /outputFilePath\s*=\s*outputFilePath\.replace\([^\n]*debugFail/);
+  assert.doesNotMatch(mainSource, /fs\.renameSync\(outputFilePath/);
+  assert.match(mainSource, /exportSummary\.exportGenerated = exportGenerated/);
+  assert.match(mainSource, /ok: exportGenerated/);
 });
 
-test('guaranteed fallback sidecar carries the diagnostic run and current snapshot', () => {
+test('fallback sidecar is developer diagnostics only', () => {
   const fallbackStart = mainSource.indexOf('// ── Guaranteed fallback sidecar');
   const fallbackEnd = mainSource.indexOf('// ── end fallback sidecar', fallbackStart);
   assert.notEqual(fallbackStart, -1);
   assert.notEqual(fallbackEnd, -1);
   const fallback = mainSource.slice(fallbackStart, fallbackEnd);
+  assert.match(fallback, /if \(developerDiagnosticsRequested && isPaperExport && exportedPdfSize > 0\)/);
   assert.match(fallback, /const fallbackDiagnosticPlatform = diagnosticRuntime\.snapshot\(\)/);
   assert.match(fallback, /diagnosticRunId: diagnosticRuntime\.context\.runId/);
   assert.match(fallback, /extra: \{ diagnosticPlatform: fallbackDiagnosticPlatform \}/);

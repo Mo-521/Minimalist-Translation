@@ -17,6 +17,7 @@
 /release-evidence/
 /lingoflow-client/tmp/
 /lingoflow-client/.tmp/
+/lingoflow-client/.qa/
 **/__pycache__/
 **/*.pyc
 **/*.log
@@ -37,6 +38,7 @@
 # Local agent, editor, and OS state
 **/.claude/settings.local.json
 /.claude/
+/.cursor/
 /.governance/
 .DS_Store
 Thumbs.db

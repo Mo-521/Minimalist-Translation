@@ -36,9 +36,11 @@ function sampleSegments() {
       id: "seg-3",
       pageNumber: 2,
       column: "single",
-      type: "reference",
+      type: "heading",
       sourceText: "References",
       classificationReason: "reference_heading",
+      referenceHeading: true,
+      referenceRole: "heading",
       referenceModeApplied: true,
       bbox: { x: 48, y: 100, width: 120, height: 18 },
       lineBoxes: [{ pageNumber: 2, x: 48, y: 100, width: 120, height: 18, sourceLineText: "References" }],
@@ -63,8 +65,10 @@ test("producer independently emits a complete deterministic paper artifact and d
   assert.equal(first.segmentCount, segments.length);
   assert.equal(first.artifactId, second.artifactId);
   assert.equal(first.contentHash, second.contentHash);
-  assert.deepEqual(first.segments.map((segment) => segment.semanticType), ["title", "body", "reference"]);
-  assert.deepEqual(first.segments.map((segment) => segment.policy.translationDisposition), ["translate", "translate", "preserve"]);
+  assert.deepEqual(first.segments.map((segment) => segment.semanticType), ["title", "body", "heading"]);
+  assert.deepEqual(first.segments.map((segment) => segment.policy.translationDisposition), ["translate", "translate", "translate"]);
+  assert.equal(first.segments[2].referenceRole, "heading");
+  assert.equal(first.segments[2].referenceHeading, true);
   first.segments.forEach((segment) => {
     assert.match(segment.semanticDecisionId, /^semantic-decision-sha256:/);
     assert.match(segment.sourceOwnership.sourceTextHash, /^[a-f0-9]{64}$/);
@@ -126,6 +130,45 @@ test("paper line semantic precedence is owned by Structure Authority", () => {
   const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
   assert.match(mainSource, /semanticStructureProducerStages\.classifyPaperLineEvidence\(\{/);
   assert.doesNotMatch(mainSource, /function getPdfNoiseLineType|function getTopMatterLineType/);
+});
+
+test("strict equation blocks are classified by Structure Authority before freeze", () => {
+  const candidates = [
+    { id: "seg-equation", type: "body", sourceText: "−λ −λ", classificationReason: "body_continuation_merged" },
+    { id: "seg-prose", type: "body", sourceText: "The value remains invariant.", classificationReason: "body_continuation_merged" },
+  ];
+  const classified = authority.semanticStructureProducerStages.applyPaperFormulaClassification(candidates, [
+    { segmentIndex: 0, strictPureEquationBlock: true },
+    { segmentIndex: 1, strictPureEquationBlock: false },
+  ]);
+  assert.equal(candidates[0].type, "body", "producer stage must not mutate its input");
+  assert.equal(classified[0].type, "formula");
+  assert.equal(classified[0].classificationReason, "strict_pure_equation_block");
+  assert.equal(classified[1].type, "body");
+
+  const artifact = authority.produceSemanticStructureArtifact({ mode: "paper_pdf", segments: classified });
+  assert.equal(artifact.segments[0].semanticType, "formula");
+  assert.equal(artifact.segments[0].policy.translationDisposition, "preserve");
+  assert.equal(artifact.segments[1].policy.translationDisposition, "translate");
+});
+
+test("runtime export consumes frozen formula disposition without a second formula type decision", () => {
+  const mainSource = fs.readFileSync(path.join(root, "electron-app/main.js"), "utf8");
+  const pipelineStart = mainSource.indexOf("function runPdfExtractionPipeline(");
+  const pipelineEnd = mainSource.indexOf("\nasync function extractPdfTextWithPdfJs", pipelineStart);
+  const pipelineSource = mainSource.slice(pipelineStart, pipelineEnd);
+  assert.match(pipelineSource, /applyPaperFormulaClassification\([\s\S]*?produceSemanticStructureArtifact\(/);
+
+  const skipStart = mainSource.indexOf("function getPdfExportSkipReason(");
+  const skipEnd = mainSource.indexOf("\nfunction isPdfReportCompleteWriteApplied", skipStart);
+  const skipSource = mainSource.slice(skipStart, skipEnd);
+  assert.doesNotMatch(skipSource, /isFormulaProtectedSegment|isStrictPureEquationBlock/);
+
+  const reportsStart = mainSource.indexOf("const segmentReports = allSegments.map(");
+  const reportsEnd = mainSource.indexOf("\n  const pageLayouts =", reportsStart);
+  const reportsSource = mainSource.slice(reportsStart, reportsEnd);
+  assert.match(reportsSource, /const preserveOriginal = semanticTranslationDisposition === "preserve";/);
+  assert.doesNotMatch(reportsSource, /preserveOriginal\s*=.*strictPureEquationBlock/);
 });
 
 test("paper segment noise reclassification is written only by Structure Authority", () => {
@@ -397,9 +440,19 @@ test("paper Abstract finalizer roles are mapped to semantic types only by Struct
 
 test("paper Reference chain roles are mapped to semantic types only by Structure Authority", () => {
   const classify = authority.semanticStructureProducerStages.applyPaperReferenceChainClassification;
-  assert.equal(classify({}, { structureRole: "paper_reference_chain_heading" }).type, "reference");
-  assert.equal(classify({}, { structureRole: "paper_reference_chain_entry" }).type, "reference");
+  const heading = classify({}, { structureRole: "paper_reference_chain_heading" });
+  const entry = classify({}, { structureRole: "paper_reference_chain_entry" });
+  assert.equal(heading.type, "heading");
+  assert.equal(heading.referenceRole, "heading");
+  assert.equal(heading.referenceHeading, true);
+  assert.equal(entry.type, "reference");
+  assert.equal(entry.referenceRole, "entry");
+  assert.equal(entry.referenceHeading, false);
   assert.equal(classify({}, { structureRole: "paper_reference_mode_retag" }).type, "reference");
+  const sectionEnd = classify({ type: "heading" }, { structureRole: "paper_reference_section_end", inheritedSemanticType: "heading" });
+  assert.equal(sectionEnd.type, "heading");
+  assert.equal(sectionEnd.referenceSectionBoundary, "end");
+  assert.equal(sectionEnd.referenceRole, "");
   assert.throws(
     () => classify({}, { structureRole: "paper_reference_chain_unknown" }),
     (error) => error && error.code === "SEMANTIC_PAPER_REFERENCE_CHAIN_ROLE_UNKNOWN",
@@ -417,8 +470,28 @@ test("paper Reference chain roles are mapped to semantic types only by Structure
   const retagEnd = mainSource.indexOf("\nfunction applyReferenceMode(", retagStart + 1);
   const retagSource = mainSource.slice(retagStart, retagEnd);
   assert.match(retagSource, /applyPaperReferenceChainClassification\(/);
-  assert.match(retagSource, /structureRole: "paper_reference_mode_retag"/);
+  assert.match(retagSource, /paper_reference_chain_heading/);
+  assert.match(retagSource, /paper_reference_mode_retag/);
   assert.doesNotMatch(retagSource, /type: "reference"/);
+});
+
+test("Reference heading and entry freeze with distinct canonical roles and policies", () => {
+  const classify = authority.semanticStructureProducerStages.applyPaperReferenceChainClassification;
+  const artifact = authority.produceSemanticStructureArtifact({
+    mode: "paper_pdf",
+    segments: [
+      { id: "ref-heading", pageNumber: 2, sourceText: "References", ...classify({}, { structureRole: "paper_reference_chain_heading" }) },
+      { id: "ref-entry", pageNumber: 2, sourceText: "Doe, J. 2025.", ...classify({}, { structureRole: "paper_reference_chain_entry" }) },
+    ],
+  });
+  assert.deepEqual(artifact.segments.map((segment) => segment.semanticType), ["heading", "reference"]);
+  assert.deepEqual(artifact.segments.map((segment) => segment.referenceRole), ["heading", "entry"]);
+  assert.deepEqual(artifact.segments.map((segment) => segment.policy.translationDisposition), ["translate", "preserve"]);
+  assert.deepEqual(artifact.segments.map((segment) => segment.policy.writeDisposition), ["translate_then_write", "do_not_write"]);
+  assert.throws(() => authority.produceSemanticStructureArtifact({
+    mode: "paper_pdf",
+    segments: [{ id: "bad-ref", type: "reference", referenceRole: "heading", sourceText: "References" }],
+  }), (error) => error && error.code === "SEMANTIC_REFERENCE_HEADING_TYPE_MISMATCH");
 });
 
 test("paper coverage recovery roles are mapped to semantic types only by Structure Authority", () => {
@@ -630,6 +703,8 @@ test("main extraction publishes the canonical artifact directly and keeps compar
     Map,
     runSimplePdfSimplifiedCore: () => simpleLegacy,
     buildStructuredPdfText: () => paperLegacy,
+    isStrictPureEquationBlock: () => false,
+    semanticStructureProducerStages: { applyPaperFormulaClassification: (segments) => segments },
     produceSemanticStructureArtifact: (input) => {
       calls.push(input);
       return { frozen: true, mode: input.mode, segments: input.segments };

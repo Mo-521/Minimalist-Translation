@@ -230,6 +230,31 @@ test('a gutter-edge inline tail keeps the adjacent column identity through basel
   assert.match(columnDetector, /middleItems\.splice\(0, middleItems\.length, \.\.\.unresolvedMiddleItems\)/);
 });
 
+test('continuous English body lines prevent PDF text fragments from fabricating two columns', () => {
+  const context = vm.createContext({ Number, Math });
+  const lines = Array.from({ length: 8 }, (_, index) => ({
+    bbox: { x: 55, y: 80 + index * 13, width: 500, height: 10 },
+    avgFontSize: 10,
+    items: [
+      { x: 55, width: 245, fontSize: 10 },
+      { x: 302, width: 253, fontSize: 10 },
+    ],
+  }));
+  context.filterHeaderFooterItems = items => items;
+  context.getPageBounds = () => ({ x: 55, y: 80, width: 500, height: 104, right: 555, bottom: 184 });
+  context.mergeTextItemsIntoLines = () => lines;
+  context.detectPageLayout = () => ({ layoutType: 'single_column', languageHint: 'en', confidence: 0.9, columnCount: 1 });
+  vm.runInContext(extractFunction(mainSource, 'detectPageColumns'), context);
+  const items = Array.from({ length: 30 }, (_, index) => ({
+    x: index % 2 ? 302 : 55, y: 80 + Math.floor(index / 2) * 13, width: index % 2 ? 253 : 245,
+    pageWidth: 612, pageHeight: 792, pageNumber: 11,
+  }));
+  const columns = context.detectPageColumns(items);
+  assert.equal(columns.length, 1);
+  assert.equal(columns[0].name, 'single');
+  assert.ok(columns[0].items.every(item => item.column === 'single'));
+});
+
 test('translated duplicate formula prefix is removed while translated prose remains', () => {
   const context = vm.createContext({ String, Array, RegExp, Set, Number, Math });
   context.normalizePdfLineBoxes = (segment) => segment.lineBoxes || [];
@@ -281,7 +306,7 @@ test('translation acceptance rejects refusal, unchanged prose, and leading sourc
   );
   assert.equal(
     context.getTranslationOutputSemanticFailure('tion is kbol approximately 32', 'tion是kbol ≈32，且热光度'),
-    'invalid_translation_leading_source_carryover'
+    '' // One word alone cannot distinguish a source fragment from a permitted term.
   );
   assert.equal(
     context.getTranslationOutputSemanticFailure('Marconi et al. 2004). The resulting correction', 'Marconi et al. 2004）。由此产生的热改正'),

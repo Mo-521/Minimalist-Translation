@@ -35,6 +35,7 @@
       "index.html",
       "main.js",
       "renderer.js",
+      "provider-help-content.js",
       "styles.css",
       "tailwind.css",
       "paper-layout-authority.js",

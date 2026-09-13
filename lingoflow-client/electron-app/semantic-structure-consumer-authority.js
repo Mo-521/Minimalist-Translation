@@ -184,6 +184,17 @@ function compareConsumerCarrierSegments(inputSegments, artifact, options = {}) {
     if (carrierType && carrierType !== canonical.semanticType) {
       differences.push(makeDifference("semantic_type", segmentId, canonical.semanticType, carrierType, "consumer_semantic_type_drift"));
     }
+    const carrierReferenceRole = String(segment.referenceRole || segment.semanticReferenceRole || "");
+    if (carrierReferenceRole && carrierReferenceRole !== String(canonical.referenceRole || "")) {
+      differences.push(makeDifference("reference_role", segmentId, canonical.referenceRole || "", carrierReferenceRole, "consumer_reference_role_drift"));
+    }
+    if (Object.prototype.hasOwnProperty.call(segment, "referenceHeading") && Boolean(segment.referenceHeading) !== Boolean(canonical.referenceHeading)) {
+      differences.push(makeDifference("reference_role", segmentId, Boolean(canonical.referenceHeading), Boolean(segment.referenceHeading), "consumer_reference_heading_drift"));
+    }
+    const carrierReferenceBoundary = String(segment.referenceSectionBoundary || "");
+    if (carrierReferenceBoundary && carrierReferenceBoundary !== String(canonical.referenceSectionBoundary || "")) {
+      differences.push(makeDifference("reference_boundary", segmentId, canonical.referenceSectionBoundary || "", carrierReferenceBoundary, "consumer_reference_boundary_drift"));
+    }
     if (segment.segmentIdentity && stableStringify(segment.segmentIdentity) !== stableStringify(canonical.segmentIdentity)) {
       differences.push(makeDifference("identity", segmentId, canonical.segmentIdentity, segment.segmentIdentity, "consumer_segment_identity_drift"));
     }
@@ -267,6 +278,10 @@ function bindSemanticStructureConsumerSegments(inputSegments, inputArtifact, opt
     defineAuthorityField(segment, "type", () => canonical.semanticType, segmentId, stage);
     defineAuthorityField(segment, "semanticType", () => canonical.semanticType, segmentId, stage);
     defineAuthorityField(segment, "semanticPolicy", () => canonical.policy, segmentId, stage);
+    defineAuthorityField(segment, "referenceRole", () => canonical.referenceRole || "", segmentId, stage);
+    defineAuthorityField(segment, "semanticReferenceRole", () => canonical.referenceRole || "", segmentId, stage);
+    defineAuthorityField(segment, "referenceHeading", () => Boolean(canonical.referenceHeading), segmentId, stage);
+    defineAuthorityField(segment, "referenceSectionBoundary", () => canonical.referenceSectionBoundary || "", segmentId, stage);
     defineAuthorityField(segment, "semanticDecisionId", () => canonical.semanticDecisionId, segmentId, stage);
     defineAuthorityField(segment, "semanticSourceOwnership", () => canonical.sourceOwnership, segmentId, stage);
     defineAuthorityField(segment, "semanticStructureArtifactId", () => artifact.artifactId, segmentId, stage);

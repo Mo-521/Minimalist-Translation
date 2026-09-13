@@ -155,6 +155,7 @@
         <div class="pdf-stage-actions">
           <button id="btnPreparePdfTranslation" type="button" class="pdf-primary-btn" disabled><span class="material-symbols-outlined text-base">play_arrow</span><span>开始翻译</span></button>
           <button id="btnPausePdfTranslation" type="button" class="pdf-secondary-action" disabled><span class="material-symbols-outlined" aria-hidden="true">pause</span><span>暂停</span></button>
+          <button id="btnExportPdfIncomplete" type="button" class="pdf-secondary-action" hidden disabled><span class="material-symbols-outlined" aria-hidden="true">ios_share</span><span>导出当前结果</span></button>
           <button id="btnClearPdfFile" type="button" class="pdf-secondary-action" disabled><span class="material-symbols-outlined" aria-hidden="true">close</span><span>取消</span></button>
         </div>
       </section>
@@ -175,7 +176,7 @@
     <section class="glass-panel settings-provider-card provider-settings-final">
       <div class="settings-provider-head">
         <div>
-          <h2>Provider 设置</h2>
+          <h2>服务商设置</h2>
           <p>管理本机模型服务配置，PDF 与桌面翻译共同使用当前连接。</p>
         </div>
         <span id="providerReadyBadge" class="provider-status-badge" data-state="disconnected">未连接</span>
@@ -185,48 +186,91 @@
         <span class="material-symbols-outlined" aria-hidden="true">add</span>
         <span>新建配置</span>
       </button>
-      <div id="providerFeedback" class="provider-feedback provider-page-feedback" role="status" aria-live="polite" data-state="idle">选择配置即可切换当前 Provider。</div>
+      <div id="providerFeedback" class="provider-feedback provider-page-feedback" role="status" aria-live="polite" data-state="idle">选择配置即可切换当前服务商。</div>
+    </section>
+    <section class="glass-panel developer-mode-card">
+      <div>
+        <h2>开发者模式</h2>
+        <p>开启后显示独立的开发诊断入口。诊断只记录证据，不影响用户 PDF 的生成。</p>
+      </div>
+      <label class="developer-mode-switch">
+        <input id="developerModeToggle" type="checkbox">
+        <span>启用</span>
+      </label>
+      <button id="btnOpenDiagnosticsDirectory" type="button" class="provider-secondary-action" hidden>打开 diagnostics 目录</button>
     </section>
     <dialog id="providerConfigDialog" class="provider-config-dialog" aria-labelledby="providerConfigDialogTitle">
       <form id="providerSettingsForm" class="provider-settings-form provider-dialog-form" autocomplete="off">
         <div class="provider-dialog-head">
           <div><h3 id="providerConfigDialogTitle">新建配置</h3><p>配置只保存在本机。</p></div>
-          <button id="btnCloseProviderDialog" type="button" class="provider-dialog-close" aria-label="关闭配置窗口">
-            <span class="material-symbols-outlined" aria-hidden="true">close</span>
-          </button>
+          <div class="provider-dialog-head-actions">
+            <button id="btnOpenProviderHelp" type="button" class="provider-help-trigger" aria-label="打开配置帮助" aria-controls="providerHelpPanel" aria-expanded="false">
+              <span class="material-symbols-outlined" aria-hidden="true">help</span>
+            </button>
+            <button id="btnCloseProviderDialog" type="button" class="provider-dialog-close" aria-label="关闭配置窗口">
+              <span class="material-symbols-outlined" aria-hidden="true">close</span>
+            </button>
+          </div>
         </div>
-        <input id="providerProfileId" type="hidden">
-        <label class="provider-field">
-          <span>名称</span>
-          <input id="providerProfileName" type="text" placeholder="例如：我的 DeepSeek" spellcheck="false" required>
-        </label>
-        <label class="provider-field">
-          <span>Provider</span>
-          <select id="providerPreset" required>
-            <option value="deepseek">DeepSeek</option><option value="openai">OpenAI</option><option value="openrouter">OpenRouter</option><option value="ollama">Ollama</option><option value="custom">Custom</option>
-          </select>
-        </label>
-        <label class="provider-field">
-          <span>API Key</span>
-          <span class="provider-secret-row">
-            <input id="providerApiKey" type="password" placeholder="输入 API Key；留空可继续使用已保存密钥" spellcheck="false">
-            <button id="btnToggleProviderKey" type="button" class="provider-key-toggle" aria-pressed="false">显示</button>
-          </span>
-          <small id="providerApiKeyHint">密钥只保存在本机。</small>
-        </label>
-        <details id="providerAdvancedSettings" class="provider-advanced-settings provider-advanced-polish">
-          <summary><span>高级选项</span><span class="material-symbols-outlined provider-disclosure-arrow" aria-hidden="true">expand_more</span></summary>
-          <div class="provider-advanced-content">
-            <div class="provider-advanced-inner">
-              <label class="provider-field"><span>Base URL</span><input id="providerBaseUrl" type="url" placeholder="https://api.example.com/v1" spellcheck="false" required></label>
-              <label class="provider-field"><span>Model</span><input id="providerModel" type="text" placeholder="模型名称" spellcheck="false" required></label>
+        <div class="provider-dialog-layout">
+          <div class="provider-dialog-fields">
+            <input id="providerProfileId" type="hidden">
+            <label class="provider-field">
+              <span>配置名称</span>
+              <input id="providerProfileName" type="text" placeholder="例如：我的 DeepSeek" spellcheck="false" required>
+              <small id="providerProfileNameHint">仅用于在本机识别这项配置，不影响接口调用。</small>
+            </label>
+            <label class="provider-field" data-help-topic="openai-compatible">
+              <span>服务商</span>
+              <select id="providerPreset" required data-help-topic="openai-compatible">
+                <option value="deepseek">DeepSeek</option><option value="qwen">阿里百炼（Qwen）</option><option value="hunyuan">腾讯混元</option><option value="kimi">Kimi</option><option value="openai">OpenAI</option><option value="custom">自定义</option>
+              </select>
+            </label>
+            <label class="provider-field" data-help-topic="api-key">
+              <span>API 密钥</span>
+              <span class="provider-secret-row">
+                <input id="providerApiKey" type="password" placeholder="输入 API 密钥；留空可继续使用已保存密钥" spellcheck="false" data-help-topic="api-key">
+                <button id="btnToggleProviderKey" type="button" class="provider-key-toggle" aria-pressed="false">显示</button>
+              </span>
+              <small id="providerApiKeyHint">密钥只保存在本机。</small>
+            </label>
+            <details id="providerAdvancedSettings" class="provider-advanced-settings provider-advanced-polish">
+              <summary><span>高级选项</span><span class="material-symbols-outlined provider-disclosure-arrow" aria-hidden="true">expand_more</span></summary>
+              <div class="provider-advanced-content">
+                <div class="provider-advanced-inner">
+                  <label class="provider-field" data-help-topic="base-url"><span>接口地址</span><input id="providerBaseUrl" type="url" placeholder="例如：https://api.example.com/v1" spellcheck="false" required data-help-topic="base-url"></label>
+                  <label class="provider-field" data-help-topic="model"><span>模型</span><input id="providerModel" type="text" placeholder="填写服务商提供的模型名称" spellcheck="false" required data-help-topic="model"></label>
+                </div>
+              </div>
+            </details>
+            <div id="providerDialogFeedback" class="provider-feedback provider-dialog-feedback hidden" role="status" aria-live="polite" data-state="idle"></div>
+            <div class="provider-dialog-actions">
+              <button id="btnCancelProviderDialog" type="button" class="provider-secondary-action">取消</button>
+              <button id="btnSaveProvider" type="submit" class="provider-primary-action" disabled>保存</button>
             </div>
           </div>
-        </details>
-        <div id="providerDialogFeedback" class="provider-feedback provider-dialog-feedback hidden" role="status" aria-live="polite" data-state="idle"></div>
-        <div class="provider-dialog-actions">
-          <button id="btnCancelProviderDialog" type="button" class="provider-secondary-action">取消</button>
-          <button id="btnSaveProvider" type="submit" class="provider-primary-action" disabled>保存</button>
+          <button id="providerHelpScrim" type="button" class="provider-help-scrim" aria-label="关闭配置帮助"></button>
+          <aside id="providerHelpPanel" class="provider-help-panel" aria-labelledby="providerHelpTitle" aria-live="polite" aria-hidden="true" tabindex="-1">
+            <div class="provider-help-head">
+              <div><span class="provider-help-eyebrow">配置帮助</span><h4 id="providerHelpTitle"></h4></div>
+              <button id="btnCloseProviderHelp" type="button" class="provider-help-close" aria-label="关闭配置帮助">
+                <span class="material-symbols-outlined" aria-hidden="true">close</span>
+              </button>
+            </div>
+            <section class="provider-help-section" aria-labelledby="providerHelpWhatLabel">
+              <h5 id="providerHelpWhatLabel">这是什么</h5><p id="providerHelpWhat"></p>
+            </section>
+            <section class="provider-help-section" aria-labelledby="providerHelpExampleLabel">
+              <h5 id="providerHelpExampleLabel">例如</h5><p id="providerHelpExample"></p>
+            </section>
+            <section class="provider-help-section" aria-labelledby="providerHelpHowLabel">
+              <h5 id="providerHelpHowLabel">如何获取</h5><ol id="providerHelpHow"></ol>
+            </section>
+            <section id="providerHelpNoteSection" class="provider-help-section" aria-labelledby="providerHelpNoteLabel">
+              <h5 id="providerHelpNoteLabel">注意事项</h5><p id="providerHelpNote"></p>
+            </section>
+            <div id="providerHelpLinks" class="provider-help-links hidden"></div>
+          </aside>
         </div>
       </form>
     </dialog>
@@ -265,27 +309,28 @@
   <div class="pdf-export-dialog" role="dialog" aria-modal="true" aria-labelledby="pdfExportModalTitle">
     <div class="pdf-export-head">
       <div>
-        <h3 id="pdfExportModalTitle">选择导出格式</h3>
-        <p id="pdfExportModalMeta">只导出已翻译完成的译文段落。</p>
+        <h3 id="pdfExportModalTitle">导出当前译文 PDF</h3>
+        <p id="pdfExportModalMeta">已完成译文原位写入；未完成或无法安全写入的段落保留原文。</p>
       </div>
       <button id="btnClosePdfExportModal" type="button" class="pdf-export-close">
         <span class="material-symbols-outlined" data-icon="close">close</span>
       </button>
     </div>
-    <div id="pdfExportModalWarning" class="pdf-export-warning hidden">当前还有未翻译或失败段落，将仅导出已翻译内容。</div>
+    <div id="pdfExportModalWarning" class="pdf-export-warning hidden">当前仍有未完成段落；生成的 PDF 会在对应位置保留原文。</div>
     <div class="pdf-export-options">
       <button id="btnExportPdfOnly" type="button" class="pdf-export-option">
         <span class="material-symbols-outlined">picture_as_pdf</span>
-        <span>导出 PDF</span>
+        <span>导出当前译文 PDF</span>
       </button>
-      <button id="btnExportPdfDebugFail" type="button" class="pdf-export-option">
+      <button id="btnExportDeveloperDiagnostics" type="button" class="pdf-export-option hidden">
         <span class="material-symbols-outlined">bug_report</span>
-        <span>导出调试失败样本</span>
+        <span>导出开发诊断</span>
       </button>
     </div>
     <button id="btnCancelPdfExport" type="button" class="pdf-export-cancel">取消</button>
   </div>
 </div>
+<script src="provider-help-content.js"></script>
 <script src="renderer.js"></script>
 </body></html>
 

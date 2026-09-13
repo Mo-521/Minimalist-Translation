@@ -89,7 +89,10 @@ test('export audit rejects missing, stale, or member-overridden display artifact
 
 test('fourth-batch source boundary keeps export read-only and layout/write/render implementations untouched', () => {
   assert.match(rendererSource, /captionDisplayArtifact:\s*segment\.captionDisplayArtifact/);
-  assert.match(mainSource, /CAPTION_DISPLAY_ARTIFACT_INVALID/);
+  assert.match(mainSource, /\[LINGOFLOW\]\[CAPTION DISPLAY ARTIFACT INVALID\]/);
+  assert.match(mainSource, /_exportAuthorityIsolatedSegmentIds\.add\(String\(violation\.segmentId\)\)/);
+  assert.match(mainSource, /caption_authority_artifact_invalid_preserve_original/);
+  assert.doesNotMatch(mainSource, /error\.code = 'CAPTION_DISPLAY_ARTIFACT_INVALID'/);
   const displayBlockStart = mainSource.indexOf("if (_captionGroupRole && _captionGroupRole.role === 'canonical')");
   const displayBlockEnd = mainSource.indexOf('captionGroupWriteKind', displayBlockStart);
   const displayBlock = mainSource.slice(displayBlockStart, displayBlockEnd);

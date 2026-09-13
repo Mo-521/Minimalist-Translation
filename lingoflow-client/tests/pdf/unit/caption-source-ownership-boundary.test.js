@@ -98,6 +98,27 @@ test('layout blocking consumes exact caption-owned boxes instead of the union re
   assert.match(blocking, /bbox: owned/);
 });
 
+test('reference blocking uses entry line geometry below the heading instead of a contaminated aggregate bbox', () => {
+  const blocking = extractFunction(mainSource, 'buildPaperLayoutBlockingZones');
+  assert.match(blocking, /referenceEntryStartByPage/);
+  assert.match(blocking, /getPaperNonWritableSourceBoxes\(seg, referenceEntryStartByPage\)/);
+  assert.match(blocking, /blockingBoxes\.forEach/);
+  const preciseGeometry = extractFunction(mainSource, 'getPaperNonWritableSourceBoxes');
+  assert.match(preciseGeometry, /String\(segment\.type \|\| ''\) === 'reference'/);
+  assert.match(preciseGeometry, /lineY >= entryStartY - 1/);
+  const downstreamStart = mainSource.indexOf('function collectPaperNonWritableZoneEntriesByPage(');
+  const downstreamEnd = mainSource.indexOf('function findPaperNonWritableZoneHits(', downstreamStart);
+  assert.match(mainSource.slice(downstreamStart, downstreamEnd), /getPaperNonWritableSourceBoxes\(seg, referenceEntryStartByPage\)/);
+  const sourceMaskStart = mainSource.indexOf('function getPaperSourceMaskPreserveBoxes(');
+  const sourceMaskEnd = mainSource.indexOf('function buildPaperSourceCoverPlan(', sourceMaskStart);
+  assert.match(mainSource.slice(sourceMaskStart, sourceMaskEnd), /getPaperNonWritableSourceBoxes\(segment, referenceEntryStartByPage\)/);
+  const validationStart = mainSource.indexOf('function validateLayoutPlanBeforeExecution(');
+  const validationEnd = mainSource.indexOf('function getPaperOperationOwnerIds(', validationStart);
+  const validation = mainSource.slice(validationStart, validationEnd);
+  assert.match(validation, /preserveSourceBoxesBySegmentId/);
+  assert.match(validation, /preserveSourceBoxes\.some/);
+});
+
 test('coverage audit excludes caption-owned raw lines before building body recovery segments', () => {
   const coverageStart = mainSource.indexOf('// === paper_pdf source-line coverage audit & segment recovery ===');
   const coverageEnd = mainSource.indexOf('// === P0: post-recovery global ID uniqueness audit ===', coverageStart);
