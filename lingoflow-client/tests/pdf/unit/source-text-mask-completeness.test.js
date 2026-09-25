@@ -243,6 +243,7 @@ test('continuous English body lines prevent PDF text fragments from fabricating 
   context.filterHeaderFooterItems = items => items;
   context.getPageBounds = () => ({ x: 55, y: 80, width: 500, height: 104, right: 555, bottom: 184 });
   context.mergeTextItemsIntoLines = () => lines;
+  context.mergeTextItemsIntoColumnEvidenceLines = () => lines;
   context.detectPageLayout = () => ({ layoutType: 'single_column', languageHint: 'en', confidence: 0.9, columnCount: 1 });
   vm.runInContext(extractFunction(mainSource, 'detectPageColumns'), context);
   const items = Array.from({ length: 30 }, (_, index) => ({

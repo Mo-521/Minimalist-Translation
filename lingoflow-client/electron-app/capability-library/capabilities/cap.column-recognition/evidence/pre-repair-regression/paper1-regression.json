@@ -1,0 +1,1507 @@
+{
+  "schemaVersion": "column-pilot-regression/v1",
+  "runtimeDecisionUse": "forbidden",
+  "sampleId": "sample.column-pilot.paper1",
+  "results": [
+    {
+      "sampleId": "sample.column-pilot.paper1",
+      "pageNumber": 1,
+      "expected": "double_column",
+      "actual": "single_column",
+      "status": "finding",
+      "codeLocation": "main.js:detectPageColumns / buildStructuredPdfText",
+      "evidence": {
+        "pageNumber": 1,
+        "pageIndex": 0,
+        "pageWidth": 612,
+        "pageHeight": 792,
+        "rawTextItemCount": 155,
+        "lineCount": 45,
+        "blockCount": 10,
+        "segmentCount": 20,
+        "layoutType": "single_column",
+        "columns": [
+          "single"
+        ],
+        "textItemBboxRange": {
+          "xMin": 32,
+          "yMin": 58.82,
+          "xMax": 561.95,
+          "yMax": 726.09
+        },
+        "lineBboxRange": {
+          "xMin": 50.74,
+          "yMin": 58.82,
+          "xMax": 561.95,
+          "yMax": 726.09
+        },
+        "segmentBboxRange": {
+          "xMin": 49.74,
+          "yMin": 56.83,
+          "xMax": 562.95,
+          "yMax": 726.09
+        },
+        "zones": [
+          {
+            "type": "footerZone",
+            "bbox": {
+              "x": 0,
+              "y": 728.64,
+              "width": 612,
+              "height": 63.36
+            },
+            "reason": "page_edge",
+            "segmentIds": []
+          },
+          {
+            "type": "marginZone",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "width": 36.72,
+              "height": 792
+            },
+            "reason": "page_margin",
+            "segmentIds": []
+          },
+          {
+            "type": "fullWidthTopZone",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "width": 612,
+              "height": 269.28000000000003
+            },
+            "reason": "first_page_top",
+            "segmentIds": []
+          },
+          {
+            "type": "titleZone",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "width": 612,
+              "height": 174.24
+            },
+            "reason": "first_page_title",
+            "segmentIds": [
+              "seg-2",
+              "seg-3",
+              "seg-4",
+              "seg-5",
+              "seg-6"
+            ]
+          },
+          {
+            "type": "abstractZone",
+            "bbox": {
+              "x": 0,
+              "y": 126.72,
+              "width": 612,
+              "height": 174.24
+            },
+            "reason": "first_page_abstract",
+            "segmentIds": [
+              "seg-7",
+              "seg-8",
+              "seg-9"
+            ]
+          },
+          {
+            "type": "twoColumnBodyZone",
+            "bbox": {
+              "x": 36.72,
+              "y": 63.36,
+              "width": 538.5600000000001,
+              "height": 649.4399999999999
+            },
+            "reason": "aastex_twocolumn",
+            "segmentIds": [
+              "seg-11",
+              "seg-12",
+              "seg-13",
+              "seg-14",
+              "seg-15",
+              "seg-16",
+              "seg-17",
+              "seg-18",
+              "seg-19",
+              "seg-20"
+            ]
+          },
+          {
+            "type": "figureZone",
+            "bbox": {
+              "x": 328.05,
+              "y": 139.63,
+              "width": 8.97,
+              "height": 8.97
+            },
+            "reason": "pdfjs-operator-list",
+            "segmentIds": []
+          },
+          {
+            "type": "sideMarkZone",
+            "bbox": null,
+            "reason": "aastex_or_arxiv_signal",
+            "segmentIds": []
+          }
+        ],
+        "imageRegions": [
+          {
+            "schemaVersion": "pdf-image-geometry-v1",
+            "coordinateSpace": "pdf-page-top-left-points",
+            "source": "pdfjs-operator-list",
+            "pageNumber": 1,
+            "operatorIndex": 60,
+            "operatorName": "paintImageXObject",
+            "imageObjectId": "img_p0_1",
+            "instanceIndex": 0,
+            "matrix": [
+              8.9672,
+              0,
+              0,
+              8.9672,
+              328.051,
+              643.399
+            ],
+            "x": 328.05,
+            "y": 139.63,
+            "width": 8.97,
+            "height": 8.97,
+            "geometryId": "image:p1:op60:i0",
+            "geometryHash": "882cd7129bd1677c283e66a2938ddcb32f26c068f0da07694634a23c72d0ce17"
+          }
+        ],
+        "imageGeometrySchemaVersion": "pdf-image-geometry-v1",
+        "imageGeometryCoordinateSpace": "pdf-page-top-left-points",
+        "imageGeometrySource": "pdfjs-operator-list",
+        "imageGeometryHash": "bd1a454a7dc17fef1537bef776c727d4ced7a5e9b60d21e7cd98a78c2b44d094",
+        "unsupportedImageOperators": [],
+        "captionSegments": [],
+        "figurePageDetected": true,
+        "defaultWriteStrategySegments": [],
+        "bodyCrossColumnSegments": [],
+        "oversizedBodySegments": [
+          "seg-12",
+          "seg-13",
+          "seg-14",
+          "seg-15",
+          "seg-16",
+          "seg-17"
+        ],
+        "referenceModeActive": false,
+        "hasAastexHeader": true,
+        "warnings": [],
+        "uncoveredSourceLineCount": 0,
+        "uncoveredSourceLineIds": [],
+        "recoveredUncoveredBodySegmentCount": 0,
+        "recoveredUncoveredBodySegmentIds": [],
+        "recoveredDuplicateRejectedCount": 0,
+        "recoveredDuplicateRejectedSegmentIds": [],
+        "recoveredDuplicateRejectedReasons": [],
+        "recoveredRejectedByPreserveZoneCount": 0,
+        "recoveredRejectedByPreserveZoneSegmentIds": [],
+        "recoveredRejectedByReferenceZoneCount": 0,
+        "recoveredRejectedByReferenceZoneSegmentIds": [],
+        "recoveredRejectedByLicenseZoneCount": 0,
+        "recoveredRejectedByLicenseZoneSegmentIds": [],
+        "recoveredRejectedDoiLikeCount": 0,
+        "recoveredRejectedDoiLikeSegmentIds": [],
+        "recoveredRejectedNeighborPreserveZoneCount": 0,
+        "recoveredRejectedNeighborPreserveZoneSegmentIds": [],
+        "recoveredZoneRejectedDetails": [],
+        "sourceLineCoverageFalsePositiveCount": 0,
+        "formulaLikeLineMaskMissingCount": 0,
+        "formulaLikeLineMaskMissingIds": [],
+        "mixedFormulaLineRecoveredCount": 0,
+        "formulaTokenRedrawCount": 0,
+        "sourceLineCoverageRatio": 1,
+        "captionRegions": [],
+        "uncoveredLineMaskBoxes": []
+      }
+    },
+    {
+      "sampleId": "sample.column-pilot.paper1",
+      "pageNumber": 2,
+      "expected": "double_column",
+      "actual": "double_column",
+      "status": "pass",
+      "codeLocation": "main.js:detectPageColumns / buildStructuredPdfText",
+      "evidence": {
+        "pageNumber": 2,
+        "pageIndex": 1,
+        "pageWidth": 612,
+        "pageHeight": 792,
+        "rawTextItemCount": 188,
+        "lineCount": 101,
+        "blockCount": 12,
+        "segmentCount": 29,
+        "layoutType": "double_column",
+        "columns": [
+          "left",
+          "right"
+        ],
+        "textItemBboxRange": {
+          "xMin": 50.74,
+          "yMin": 51.62,
+          "xMax": 561.95,
+          "yMax": 726.93
+        },
+        "lineBboxRange": {
+          "xMin": 50.74,
+          "yMin": 51.62,
+          "xMax": 561.95,
+          "yMax": 726.93
+        },
+        "segmentBboxRange": {
+          "xMin": 49.74,
+          "yMin": 72.07,
+          "xMax": 562.95,
+          "yMax": 729.42
+        },
+        "zones": [
+          {
+            "type": "footerZone",
+            "bbox": {
+              "x": 0,
+              "y": 728.64,
+              "width": 612,
+              "height": 63.36
+            },
+            "reason": "page_edge",
+            "segmentIds": []
+          },
+          {
+            "type": "marginZone",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "width": 36.72,
+              "height": 792
+            },
+            "reason": "page_margin",
+            "segmentIds": []
+          },
+          {
+            "type": "twoColumnBodyZone",
+            "bbox": {
+              "x": 36.72,
+              "y": 63.36,
+              "width": 538.5600000000001,
+              "height": 649.4399999999999
+            },
+            "reason": "paper_twocolumn",
+            "segmentIds": [
+              "seg-21",
+              "seg-22",
+              "seg-23",
+              "seg-24",
+              "seg-25",
+              "seg-26",
+              "seg-27",
+              "seg-28",
+              "seg-29",
+              "seg-30",
+              "seg-31",
+              "seg-32",
+              "seg-33",
+              "seg-36",
+              "seg-37",
+              "seg-38",
+              "seg-39",
+              "seg-40",
+              "seg-41",
+              "seg-42",
+              "seg-43",
+              "seg-44",
+              "seg-45",
+              "seg-46",
+              "seg-47",
+              "seg-48",
+              "seg-49",
+              "seg-50",
+              "seg-51"
+            ]
+          }
+        ],
+        "imageRegions": [],
+        "imageGeometrySchemaVersion": "pdf-image-geometry-v1",
+        "imageGeometryCoordinateSpace": "pdf-page-top-left-points",
+        "imageGeometrySource": "pdfjs-operator-list",
+        "imageGeometryHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "unsupportedImageOperators": [],
+        "captionSegments": [
+          "seg-50"
+        ],
+        "figurePageDetected": false,
+        "defaultWriteStrategySegments": [],
+        "bodyCrossColumnSegments": [],
+        "oversizedBodySegments": [
+          "seg-32",
+          "seg-40",
+          "seg-41",
+          "seg-44"
+        ],
+        "referenceModeActive": false,
+        "hasAastexHeader": false,
+        "warnings": [],
+        "uncoveredSourceLineCount": 12,
+        "uncoveredSourceLineIds": [
+          "uncovered-pg2-1",
+          "uncovered-pg2-2",
+          "uncovered-pg2-3",
+          "uncovered-pg2-4",
+          "uncovered-pg2-5",
+          "uncovered-pg2-6",
+          "uncovered-pg2-7",
+          "uncovered-pg2-8",
+          "uncovered-pg2-9",
+          "uncovered-pg2-10",
+          "uncovered-pg2-11",
+          "uncovered-pg2-12"
+        ],
+        "recoveredUncoveredBodySegmentCount": 0,
+        "recoveredUncoveredBodySegmentIds": [],
+        "recoveredDuplicateRejectedCount": 2,
+        "recoveredDuplicateRejectedSegmentIds": [
+          "seg-143",
+          "seg-144"
+        ],
+        "recoveredDuplicateRejectedReasons": [
+          {
+            "id": "seg-143",
+            "reason": "normalized_ngram_overlap",
+            "duplicateWithSegmentId": "seg-33",
+            "textOverlap": 1,
+            "bboxOverlap": 0.0191
+          },
+          {
+            "id": "seg-144",
+            "reason": "normalized_ngram_overlap",
+            "duplicateWithSegmentId": "seg-49",
+            "textOverlap": 0.75,
+            "bboxOverlap": 0.055
+          }
+        ],
+        "recoveredRejectedByPreserveZoneCount": 0,
+        "recoveredRejectedByPreserveZoneSegmentIds": [],
+        "recoveredRejectedByReferenceZoneCount": 0,
+        "recoveredRejectedByReferenceZoneSegmentIds": [],
+        "recoveredRejectedByLicenseZoneCount": 0,
+        "recoveredRejectedByLicenseZoneSegmentIds": [],
+        "recoveredRejectedDoiLikeCount": 0,
+        "recoveredRejectedDoiLikeSegmentIds": [],
+        "recoveredRejectedNeighborPreserveZoneCount": 0,
+        "recoveredRejectedNeighborPreserveZoneSegmentIds": [],
+        "recoveredZoneRejectedDetails": [],
+        "sourceLineCoverageFalsePositiveCount": 2,
+        "formulaLikeLineMaskMissingCount": 0,
+        "formulaLikeLineMaskMissingIds": [],
+        "mixedFormulaLineRecoveredCount": 0,
+        "formulaTokenRedrawCount": 0,
+        "sourceLineCoverageRatio": 0.88,
+        "captionRegions": [],
+        "uncoveredLineMaskBoxes": [
+          {
+            "x": 316.58,
+            "y": 78.84280000000001,
+            "width": 249.36,
+            "height": 22.908
+          },
+          {
+            "x": 316.58,
+            "y": 91.7012,
+            "width": 249.36,
+            "height": 20.7288
+          },
+          {
+            "x": 316.58,
+            "y": 104.1512,
+            "width": 249.36,
+            "height": 20.7288
+          },
+          {
+            "x": 316.58,
+            "y": 116.6012,
+            "width": 249.36,
+            "height": 20.7288
+          },
+          {
+            "x": 316.58,
+            "y": 129.0612,
+            "width": 249.37,
+            "height": 20.7288
+          },
+          {
+            "x": 316.58,
+            "y": 141.5112,
+            "width": 249.36,
+            "height": 20.7288
+          },
+          {
+            "x": 316.58,
+            "y": 153.56279999999998,
+            "width": 249.36,
+            "height": 22.908
+          },
+          {
+            "x": 316.58,
+            "y": 166.4212,
+            "width": 249.36,
+            "height": 20.7288
+          },
+          {
+            "x": 316.58,
+            "y": 178.8712,
+            "width": 249.36,
+            "height": 20.7288
+          },
+          {
+            "x": 316.58,
+            "y": 671.8412,
+            "width": 249.36,
+            "height": 20.7288
+          },
+          {
+            "x": 316.58,
+            "y": 684.2911999999999,
+            "width": 249.36,
+            "height": 20.7288
+          },
+          {
+            "x": 316.58,
+            "y": 696.7511999999999,
+            "width": 249.36,
+            "height": 20.7288
+          }
+        ]
+      }
+    },
+    {
+      "sampleId": "sample.column-pilot.paper1",
+      "pageNumber": 3,
+      "expected": "double_column",
+      "actual": "double_column",
+      "status": "pass",
+      "codeLocation": "main.js:detectPageColumns / buildStructuredPdfText",
+      "evidence": {
+        "pageNumber": 3,
+        "pageIndex": 2,
+        "pageWidth": 612,
+        "pageHeight": 792,
+        "rawTextItemCount": 159,
+        "lineCount": 53,
+        "blockCount": 14,
+        "segmentCount": 13,
+        "layoutType": "double_column",
+        "columns": [
+          "single",
+          "left",
+          "right"
+        ],
+        "textItemBboxRange": {
+          "xMin": 50.74,
+          "yMin": 51.62,
+          "xMax": 561.95,
+          "yMax": 726.93
+        },
+        "lineBboxRange": {
+          "xMin": 50.74,
+          "yMin": 51.62,
+          "xMax": 561.95,
+          "yMax": 726.93
+        },
+        "segmentBboxRange": {
+          "xMin": 49.74,
+          "yMin": 260.38,
+          "xMax": 562.95,
+          "yMax": 726.93
+        },
+        "zones": [
+          {
+            "type": "footerZone",
+            "bbox": {
+              "x": 0,
+              "y": 728.64,
+              "width": 612,
+              "height": 63.36
+            },
+            "reason": "page_edge",
+            "segmentIds": []
+          },
+          {
+            "type": "marginZone",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "width": 36.72,
+              "height": 792
+            },
+            "reason": "page_margin",
+            "segmentIds": []
+          },
+          {
+            "type": "twoColumnBodyZone",
+            "bbox": {
+              "x": 36.72,
+              "y": 63.36,
+              "width": 538.5600000000001,
+              "height": 649.4399999999999
+            },
+            "reason": "paper_twocolumn",
+            "segmentIds": [
+              "seg-56",
+              "seg-57",
+              "seg-58",
+              "seg-59",
+              "seg-60",
+              "seg-61",
+              "seg-62",
+              "seg-63",
+              "seg-64",
+              "seg-66",
+              "seg-67"
+            ]
+          },
+          {
+            "type": "figureZone",
+            "bbox": {
+              "x": 90.61,
+              "y": 62.11,
+              "width": 434.52,
+              "height": 184.57
+            },
+            "reason": "pdfjs-operator-list",
+            "segmentIds": []
+          },
+          {
+            "type": "figureZone",
+            "bbox": {
+              "x": 70.38,
+              "y": 301.22,
+              "width": 205.16,
+              "height": 223.21
+            },
+            "reason": "pdfjs-operator-list",
+            "segmentIds": []
+          },
+          {
+            "type": "captionZone",
+            "bbox": {
+              "x": 50.74,
+              "y": 262.62,
+              "width": 41.94,
+              "height": 8.97
+            },
+            "reason": "caption_marker",
+            "segmentIds": [
+              "seg-52",
+              "seg-53"
+            ]
+          },
+          {
+            "type": "captionZone",
+            "bbox": {
+              "x": 50.74,
+              "y": 540.38,
+              "width": 241.36,
+              "height": 8.97
+            },
+            "reason": "caption_marker",
+            "segmentIds": [
+              "seg-52",
+              "seg-53"
+            ]
+          }
+        ],
+        "imageRegions": [
+          {
+            "schemaVersion": "pdf-image-geometry-v1",
+            "coordinateSpace": "pdf-page-top-left-points",
+            "source": "pdfjs-operator-list",
+            "pageNumber": 3,
+            "operatorIndex": 18,
+            "operatorName": "paintImageXObject",
+            "imageObjectId": "img_p2_1",
+            "instanceIndex": 0,
+            "matrix": [
+              434.5176,
+              0,
+              0,
+              184.57032,
+              90.615,
+              545.322
+            ],
+            "x": 90.61,
+            "y": 62.11,
+            "width": 434.52,
+            "height": 184.57,
+            "geometryId": "image:p3:op18:i0",
+            "geometryHash": "73f7da531df6994a202acdd2fcc2bb732bae21e020d4a8464aee94de6499b74e"
+          },
+          {
+            "schemaVersion": "pdf-image-geometry-v1",
+            "coordinateSpace": "pdf-page-top-left-points",
+            "source": "pdfjs-operator-list",
+            "pageNumber": 3,
+            "operatorIndex": 66,
+            "operatorName": "paintImageXObject",
+            "imageObjectId": "img_p2_2",
+            "instanceIndex": 0,
+            "matrix": [
+              205.1568,
+              0,
+              0,
+              223.210598,
+              70.377,
+              267.565
+            ],
+            "x": 70.38,
+            "y": 301.22,
+            "width": 205.16,
+            "height": 223.21,
+            "geometryId": "image:p3:op66:i0",
+            "geometryHash": "d8f62b277b77de0b7192dc1c51b7505840a1efb73873b52b841a75681eb56bc3"
+          }
+        ],
+        "imageGeometrySchemaVersion": "pdf-image-geometry-v1",
+        "imageGeometryCoordinateSpace": "pdf-page-top-left-points",
+        "imageGeometrySource": "pdfjs-operator-list",
+        "imageGeometryHash": "c59075a579aa7794cabf1205170bc06c34c6bc0010b6e2b52692f3162d95cb38",
+        "unsupportedImageOperators": [],
+        "captionSegments": [
+          "seg-52",
+          "seg-53"
+        ],
+        "figurePageDetected": true,
+        "defaultWriteStrategySegments": [],
+        "bodyCrossColumnSegments": [],
+        "oversizedBodySegments": [],
+        "referenceModeActive": false,
+        "hasAastexHeader": false,
+        "warnings": [],
+        "uncoveredSourceLineCount": 7,
+        "uncoveredSourceLineIds": [
+          "uncovered-pg3-1",
+          "uncovered-pg3-2",
+          "uncovered-pg3-3",
+          "uncovered-pg3-4",
+          "uncovered-pg3-5",
+          "uncovered-pg3-6",
+          "uncovered-pg3-7"
+        ],
+        "recoveredUncoveredBodySegmentCount": 0,
+        "recoveredUncoveredBodySegmentIds": [],
+        "recoveredDuplicateRejectedCount": 1,
+        "recoveredDuplicateRejectedSegmentIds": [
+          "seg-145"
+        ],
+        "recoveredDuplicateRejectedReasons": [
+          {
+            "id": "seg-145",
+            "reason": "normalized_ngram_overlap",
+            "duplicateWithSegmentId": "seg-64",
+            "textOverlap": 0.9718,
+            "bboxOverlap": 0.0231
+          }
+        ],
+        "recoveredRejectedByPreserveZoneCount": 0,
+        "recoveredRejectedByPreserveZoneSegmentIds": [],
+        "recoveredRejectedByReferenceZoneCount": 0,
+        "recoveredRejectedByReferenceZoneSegmentIds": [],
+        "recoveredRejectedByLicenseZoneCount": 0,
+        "recoveredRejectedByLicenseZoneSegmentIds": [],
+        "recoveredRejectedDoiLikeCount": 0,
+        "recoveredRejectedDoiLikeSegmentIds": [],
+        "recoveredRejectedNeighborPreserveZoneCount": 0,
+        "recoveredRejectedNeighborPreserveZoneSegmentIds": [],
+        "recoveredZoneRejectedDetails": [],
+        "sourceLineCoverageFalsePositiveCount": 1,
+        "formulaLikeLineMaskMissingCount": 4,
+        "formulaLikeLineMaskMissingIds": [
+          "formula-uncovered-pg3-1",
+          "formula-uncovered-pg3-2",
+          "formula-uncovered-pg3-3",
+          "formula-uncovered-pg3-4"
+        ],
+        "mixedFormulaLineRecoveredCount": 0,
+        "formulaTokenRedrawCount": 0,
+        "sourceLineCoverageRatio": 0.8654,
+        "captionRegions": [
+          {
+            "pageNumber": 3,
+            "x": 49.74,
+            "y": 258.81,
+            "width": 513.2,
+            "height": 47.90999999999997,
+            "source": "caption-group-final-geometry",
+            "column": "left",
+            "segmentId": "seg-52",
+            "captionGroupId": "capgroup-seg-52",
+            "geometryLineCount": 11,
+            "finalizedAfterCaptionGrouping": true,
+            "spatialWriteBoxes": [
+              {
+                "x": 97.03,
+                "y": 262.62,
+                "width": 351.5,
+                "height": 8.97
+              },
+              {
+                "x": 50.74,
+                "y": 284.54,
+                "width": 511.2,
+                "height": 8.97
+              },
+              {
+                "x": 50.74,
+                "y": 262.62,
+                "width": 41.94,
+                "height": 8.97
+              },
+              {
+                "x": 50.74,
+                "y": 273.58,
+                "width": 244.69,
+                "height": 8.97
+              },
+              {
+                "x": 50.74,
+                "y": 295.5,
+                "width": 105.1,
+                "height": 8.97
+              },
+              {
+                "x": 448.02,
+                "y": 258.81,
+                "width": 113.92,
+                "height": 12.78
+              },
+              {
+                "x": 301.22,
+                "y": 273.58,
+                "width": 260.72,
+                "height": 8.97
+              },
+              {
+                "x": 49.74,
+                "y": 260.38,
+                "width": 513.2,
+                "height": 13.46
+              },
+              {
+                "x": 49.74,
+                "y": 271.34,
+                "width": 513.2,
+                "height": 13.46
+              },
+              {
+                "x": 49.74,
+                "y": 282.3,
+                "width": 513.2,
+                "height": 13.46
+              },
+              {
+                "x": 49.74,
+                "y": 293.26,
+                "width": 107.1,
+                "height": 13.46
+              }
+            ],
+            "disconnectedSourceBoxes": [],
+            "sourceGeometryEnvelope": {
+              "x": 49.74,
+              "y": 258.81,
+              "width": 513.2,
+              "height": 47.90999999999997
+            },
+            "spatialIsolationApplied": false,
+            "disconnectedSourceGeometryCount": 0,
+            "blockingBoxes": [
+              {
+                "x": 97.03,
+                "y": 262.62,
+                "width": 351.5,
+                "height": 8.97
+              },
+              {
+                "x": 50.74,
+                "y": 284.54,
+                "width": 511.2,
+                "height": 8.97
+              },
+              {
+                "x": 50.74,
+                "y": 262.62,
+                "width": 41.94,
+                "height": 8.97
+              },
+              {
+                "x": 50.74,
+                "y": 273.58,
+                "width": 244.69,
+                "height": 8.97
+              },
+              {
+                "x": 50.74,
+                "y": 295.5,
+                "width": 105.1,
+                "height": 8.97
+              },
+              {
+                "x": 448.02,
+                "y": 258.81,
+                "width": 113.92,
+                "height": 12.78
+              },
+              {
+                "x": 301.22,
+                "y": 273.58,
+                "width": 260.72,
+                "height": 8.97
+              }
+            ]
+          },
+          {
+            "pageNumber": 3,
+            "x": 49.74,
+            "y": 538.14,
+            "width": 243.37,
+            "height": 57.29000000000008,
+            "source": "caption-group-final-geometry",
+            "column": "left",
+            "segmentId": "seg-53",
+            "captionGroupId": "capgroup-seg-53",
+            "geometryLineCount": 15,
+            "finalizedAfterCaptionGrouping": true,
+            "spatialWriteBoxes": [
+              {
+                "x": 50.74,
+                "y": 540.38,
+                "width": 241.36,
+                "height": 8.97
+              },
+              {
+                "x": 50.74,
+                "y": 551.33,
+                "width": 241.36,
+                "height": 8.97
+              },
+              {
+                "x": 50.74,
+                "y": 562.29,
+                "width": 241.37,
+                "height": 8.97
+              },
+              {
+                "x": 50.74,
+                "y": 573.25,
+                "width": 241.37,
+                "height": 8.97
+              },
+              {
+                "x": 50.74,
+                "y": 584.21,
+                "width": 135.63,
+                "height": 8.97
+              },
+              {
+                "x": 49.74,
+                "y": 538.14,
+                "width": 243.36,
+                "height": 13.46
+              },
+              {
+                "x": 49.74,
+                "y": 549.17,
+                "width": 243.36,
+                "height": 13.29
+              },
+              {
+                "x": 49.74,
+                "y": 560.1,
+                "width": 243.37,
+                "height": 13.36
+              },
+              {
+                "x": 49.74,
+                "y": 571.01,
+                "width": 243.37,
+                "height": 13.46
+              },
+              {
+                "x": 49.74,
+                "y": 581.97,
+                "width": 137.63,
+                "height": 13.46
+              },
+              {
+                "x": 49.74,
+                "y": 549.17,
+                "width": 243.36,
+                "height": 13.29
+              },
+              {
+                "x": 49.74,
+                "y": 560.1,
+                "width": 243.37,
+                "height": 13.36
+              },
+              {
+                "x": 49.74,
+                "y": 571.01,
+                "width": 243.37,
+                "height": 13.46
+              },
+              {
+                "x": 49.74,
+                "y": 581.97,
+                "width": 137.63,
+                "height": 13.46
+              }
+            ],
+            "disconnectedSourceBoxes": [
+              {
+                "x": 319.58,
+                "y": 525.29,
+                "width": 104.16,
+                "height": 14.94
+              }
+            ],
+            "sourceGeometryEnvelope": {
+              "x": 49.74,
+              "y": 525.29,
+              "width": 374,
+              "height": 70.1400000000001
+            },
+            "spatialIsolationApplied": true,
+            "disconnectedSourceGeometryCount": 1,
+            "blockingBoxes": [
+              {
+                "x": 50.74,
+                "y": 540.38,
+                "width": 241.36,
+                "height": 8.97
+              },
+              {
+                "x": 50.74,
+                "y": 551.33,
+                "width": 241.36,
+                "height": 8.97
+              },
+              {
+                "x": 50.74,
+                "y": 562.29,
+                "width": 241.37,
+                "height": 8.97
+              },
+              {
+                "x": 50.74,
+                "y": 573.25,
+                "width": 241.37,
+                "height": 8.97
+              },
+              {
+                "x": 50.74,
+                "y": 584.21,
+                "width": 135.63,
+                "height": 8.97
+              }
+            ]
+          }
+        ],
+        "uncoveredLineMaskBoxes": [
+          {
+            "x": 316.58,
+            "y": 544.9111999999999,
+            "width": 249.36,
+            "height": 20.7288
+          },
+          {
+            "x": 316.58,
+            "y": 557.3711999999999,
+            "width": 249.36,
+            "height": 20.7288
+          },
+          {
+            "x": 316.58,
+            "y": 569.8212,
+            "width": 249.36,
+            "height": 20.7288
+          },
+          {
+            "x": 316.58,
+            "y": 575.3026,
+            "width": 248.86,
+            "height": 31.211
+          },
+          {
+            "x": 316.58,
+            "y": 587.7444,
+            "width": 248.86,
+            "height": 31.233999999999998
+          },
+          {
+            "x": 316.58,
+            "y": 600.1944000000001,
+            "width": 249.36,
+            "height": 31.233999999999998
+          },
+          {
+            "x": 316.58,
+            "y": 619.2328,
+            "width": 198.65,
+            "height": 22.908
+          }
+        ]
+      }
+    },
+    {
+      "sampleId": "sample.column-pilot.paper1",
+      "pageNumber": 4,
+      "expected": "double_column",
+      "actual": "double_column",
+      "status": "pass",
+      "codeLocation": "main.js:detectPageColumns / buildStructuredPdfText",
+      "evidence": {
+        "pageNumber": 4,
+        "pageIndex": 3,
+        "pageWidth": 612,
+        "pageHeight": 792,
+        "rawTextItemCount": 413,
+        "lineCount": 104,
+        "blockCount": 12,
+        "segmentCount": 28,
+        "layoutType": "double_column",
+        "columns": [
+          "single",
+          "left",
+          "right"
+        ],
+        "textItemBboxRange": {
+          "xMin": 50.74,
+          "yMin": 51.62,
+          "xMax": 561.95,
+          "yMax": 726.93
+        },
+        "lineBboxRange": {
+          "xMin": 50.74,
+          "yMin": 51.62,
+          "xMax": 561.95,
+          "yMax": 726.93
+        },
+        "segmentBboxRange": {
+          "xMin": 49.74,
+          "yMin": 68.23,
+          "xMax": 562.95,
+          "yMax": 729.42
+        },
+        "zones": [
+          {
+            "type": "footerZone",
+            "bbox": {
+              "x": 0,
+              "y": 728.64,
+              "width": 612,
+              "height": 63.36
+            },
+            "reason": "page_edge",
+            "segmentIds": []
+          },
+          {
+            "type": "marginZone",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "width": 36.72,
+              "height": 792
+            },
+            "reason": "page_margin",
+            "segmentIds": []
+          },
+          {
+            "type": "twoColumnBodyZone",
+            "bbox": {
+              "x": 36.72,
+              "y": 63.36,
+              "width": 538.5600000000001,
+              "height": 649.4399999999999
+            },
+            "reason": "paper_twocolumn",
+            "segmentIds": [
+              "seg-68",
+              "seg-69",
+              "seg-70",
+              "seg-71",
+              "seg-72",
+              "seg-73",
+              "seg-74",
+              "seg-75",
+              "seg-76",
+              "seg-77",
+              "seg-78",
+              "seg-80",
+              "seg-81",
+              "seg-82",
+              "seg-79",
+              "seg-83",
+              "seg-84",
+              "seg-85",
+              "seg-86",
+              "seg-87",
+              "seg-88",
+              "seg-89",
+              "seg-90",
+              "seg-91",
+              "seg-92",
+              "seg-93",
+              "seg-94",
+              "seg-95"
+            ]
+          }
+        ],
+        "imageRegions": [],
+        "imageGeometrySchemaVersion": "pdf-image-geometry-v1",
+        "imageGeometryCoordinateSpace": "pdf-page-top-left-points",
+        "imageGeometrySource": "pdfjs-operator-list",
+        "imageGeometryHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "unsupportedImageOperators": [],
+        "captionSegments": [],
+        "figurePageDetected": false,
+        "defaultWriteStrategySegments": [],
+        "bodyCrossColumnSegments": [],
+        "oversizedBodySegments": [
+          "seg-69",
+          "seg-73",
+          "seg-76",
+          "seg-81",
+          "seg-84"
+        ],
+        "referenceModeActive": false,
+        "hasAastexHeader": false,
+        "warnings": [],
+        "uncoveredSourceLineCount": 0,
+        "uncoveredSourceLineIds": [],
+        "recoveredUncoveredBodySegmentCount": 0,
+        "recoveredUncoveredBodySegmentIds": [],
+        "recoveredDuplicateRejectedCount": 0,
+        "recoveredDuplicateRejectedSegmentIds": [],
+        "recoveredDuplicateRejectedReasons": [],
+        "recoveredRejectedByPreserveZoneCount": 0,
+        "recoveredRejectedByPreserveZoneSegmentIds": [],
+        "recoveredRejectedByReferenceZoneCount": 0,
+        "recoveredRejectedByReferenceZoneSegmentIds": [],
+        "recoveredRejectedByLicenseZoneCount": 0,
+        "recoveredRejectedByLicenseZoneSegmentIds": [],
+        "recoveredRejectedDoiLikeCount": 0,
+        "recoveredRejectedDoiLikeSegmentIds": [],
+        "recoveredRejectedNeighborPreserveZoneCount": 0,
+        "recoveredRejectedNeighborPreserveZoneSegmentIds": [],
+        "recoveredZoneRejectedDetails": [],
+        "sourceLineCoverageFalsePositiveCount": 0,
+        "formulaLikeLineMaskMissingCount": 0,
+        "formulaLikeLineMaskMissingIds": [],
+        "mixedFormulaLineRecoveredCount": 0,
+        "formulaTokenRedrawCount": 0,
+        "sourceLineCoverageRatio": 1,
+        "captionRegions": [],
+        "uncoveredLineMaskBoxes": []
+      }
+    },
+    {
+      "sampleId": "sample.column-pilot.paper1",
+      "pageNumber": 5,
+      "expected": "double_column",
+      "actual": "double_column",
+      "status": "pass",
+      "codeLocation": "main.js:detectPageColumns / buildStructuredPdfText",
+      "evidence": {
+        "pageNumber": 5,
+        "pageIndex": 4,
+        "pageWidth": 612,
+        "pageHeight": 792,
+        "rawTextItemCount": 121,
+        "lineCount": 87,
+        "blockCount": 7,
+        "segmentCount": 32,
+        "layoutType": "double_column",
+        "columns": [
+          "left",
+          "right"
+        ],
+        "textItemBboxRange": {
+          "xMin": 50.74,
+          "yMin": 51.62,
+          "xMax": 561.95,
+          "yMax": 723.03
+        },
+        "lineBboxRange": {
+          "xMin": 50.74,
+          "yMin": 51.62,
+          "xMax": 561.95,
+          "yMax": 709.41
+        },
+        "segmentBboxRange": {
+          "xMin": 49.74,
+          "yMin": 72.07,
+          "xMax": 562.95,
+          "yMax": 711.66
+        },
+        "zones": [
+          {
+            "type": "footerZone",
+            "bbox": {
+              "x": 0,
+              "y": 728.64,
+              "width": 612,
+              "height": 63.36
+            },
+            "reason": "page_edge",
+            "segmentIds": []
+          },
+          {
+            "type": "marginZone",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "width": 36.72,
+              "height": 792
+            },
+            "reason": "page_margin",
+            "segmentIds": []
+          },
+          {
+            "type": "twoColumnBodyZone",
+            "bbox": {
+              "x": 36.72,
+              "y": 63.36,
+              "width": 538.5600000000001,
+              "height": 649.4399999999999
+            },
+            "reason": "paper_twocolumn",
+            "segmentIds": [
+              "seg-96",
+              "seg-97",
+              "seg-98",
+              "seg-99",
+              "seg-111",
+              "seg-112",
+              "seg-113",
+              "seg-114",
+              "seg-115",
+              "seg-116",
+              "seg-117"
+            ]
+          },
+          {
+            "type": "referenceZone",
+            "bbox": null,
+            "reason": "references_heading",
+            "segmentIds": [
+              "seg-100",
+              "seg-101",
+              "seg-103",
+              "seg-104",
+              "seg-105",
+              "seg-107",
+              "seg-108",
+              "seg-109",
+              "seg-118",
+              "seg-119",
+              "seg-120",
+              "seg-121",
+              "seg-122",
+              "seg-123",
+              "seg-124",
+              "seg-125",
+              "seg-126",
+              "seg-127"
+            ]
+          }
+        ],
+        "imageRegions": [],
+        "imageGeometrySchemaVersion": "pdf-image-geometry-v1",
+        "imageGeometryCoordinateSpace": "pdf-page-top-left-points",
+        "imageGeometrySource": "pdfjs-operator-list",
+        "imageGeometryHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "unsupportedImageOperators": [],
+        "captionSegments": [],
+        "figurePageDetected": false,
+        "defaultWriteStrategySegments": [],
+        "bodyCrossColumnSegments": [],
+        "oversizedBodySegments": [],
+        "referenceModeActive": true,
+        "hasAastexHeader": false,
+        "warnings": [],
+        "uncoveredSourceLineCount": 1,
+        "uncoveredSourceLineIds": [
+          "uncovered-pg5-1"
+        ],
+        "recoveredUncoveredBodySegmentCount": 0,
+        "recoveredUncoveredBodySegmentIds": [],
+        "recoveredDuplicateRejectedCount": 0,
+        "recoveredDuplicateRejectedSegmentIds": [],
+        "recoveredDuplicateRejectedReasons": [],
+        "recoveredRejectedByPreserveZoneCount": 0,
+        "recoveredRejectedByPreserveZoneSegmentIds": [],
+        "recoveredRejectedByReferenceZoneCount": 0,
+        "recoveredRejectedByReferenceZoneSegmentIds": [],
+        "recoveredRejectedByLicenseZoneCount": 0,
+        "recoveredRejectedByLicenseZoneSegmentIds": [],
+        "recoveredRejectedDoiLikeCount": 1,
+        "recoveredRejectedDoiLikeSegmentIds": [
+          "seg-146"
+        ],
+        "recoveredRejectedNeighborPreserveZoneCount": 0,
+        "recoveredRejectedNeighborPreserveZoneSegmentIds": [],
+        "recoveredZoneRejectedDetails": [
+          {
+            "id": "seg-146",
+            "reason": "doi_like_text",
+            "preserveType": "",
+            "text": "doi: 10.1117/12.447161"
+          }
+        ],
+        "sourceLineCoverageFalsePositiveCount": 1,
+        "formulaLikeLineMaskMissingCount": 1,
+        "formulaLikeLineMaskMissingIds": [
+          "formula-uncovered-pg5-1"
+        ],
+        "mixedFormulaLineRecoveredCount": 0,
+        "formulaTokenRedrawCount": 0,
+        "sourceLineCoverageRatio": 0.9884,
+        "captionRegions": [],
+        "uncoveredLineMaskBoxes": [
+          {
+            "x": 325.79,
+            "y": 373.7946,
+            "width": 100.15,
+            "height": 20.631
+          }
+        ]
+      }
+    },
+    {
+      "sampleId": "sample.column-pilot.paper1",
+      "pageNumber": 6,
+      "expected": "double_column",
+      "actual": "double_column",
+      "status": "pass",
+      "codeLocation": "main.js:detectPageColumns / buildStructuredPdfText",
+      "evidence": {
+        "pageNumber": 6,
+        "pageIndex": 5,
+        "pageWidth": 612,
+        "pageHeight": 792,
+        "rawTextItemCount": 31,
+        "lineCount": 30,
+        "blockCount": 2,
+        "segmentCount": 15,
+        "layoutType": "double_column",
+        "columns": [
+          "left",
+          "right"
+        ],
+        "textItemBboxRange": {
+          "xMin": 50.74,
+          "yMin": 51.62,
+          "xMax": 554.57,
+          "yMax": 277.8
+        },
+        "lineBboxRange": {
+          "xMin": 50.74,
+          "yMin": 51.62,
+          "xMax": 554.57,
+          "yMax": 277.8
+        },
+        "segmentBboxRange": {
+          "xMin": 49.74,
+          "yMin": 72.32,
+          "xMax": 555.57,
+          "yMax": 280.05
+        },
+        "zones": [
+          {
+            "type": "footerZone",
+            "bbox": {
+              "x": 0,
+              "y": 728.64,
+              "width": 612,
+              "height": 63.36
+            },
+            "reason": "page_edge",
+            "segmentIds": []
+          },
+          {
+            "type": "marginZone",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "width": 36.72,
+              "height": 792
+            },
+            "reason": "page_margin",
+            "segmentIds": []
+          },
+          {
+            "type": "twoColumnBodyZone",
+            "bbox": {
+              "x": 36.72,
+              "y": 63.36,
+              "width": 538.5600000000001,
+              "height": 649.4399999999999
+            },
+            "reason": "paper_twocolumn",
+            "segmentIds": []
+          }
+        ],
+        "imageRegions": [],
+        "imageGeometrySchemaVersion": "pdf-image-geometry-v1",
+        "imageGeometryCoordinateSpace": "pdf-page-top-left-points",
+        "imageGeometrySource": "pdfjs-operator-list",
+        "imageGeometryHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "unsupportedImageOperators": [],
+        "captionSegments": [],
+        "figurePageDetected": false,
+        "defaultWriteStrategySegments": [],
+        "bodyCrossColumnSegments": [],
+        "oversizedBodySegments": [],
+        "referenceModeActive": true,
+        "hasAastexHeader": false,
+        "warnings": [],
+        "uncoveredSourceLineCount": 0,
+        "uncoveredSourceLineIds": [],
+        "recoveredUncoveredBodySegmentCount": 0,
+        "recoveredUncoveredBodySegmentIds": [],
+        "recoveredDuplicateRejectedCount": 0,
+        "recoveredDuplicateRejectedSegmentIds": [],
+        "recoveredDuplicateRejectedReasons": [],
+        "recoveredRejectedByPreserveZoneCount": 0,
+        "recoveredRejectedByPreserveZoneSegmentIds": [],
+        "recoveredRejectedByReferenceZoneCount": 0,
+        "recoveredRejectedByReferenceZoneSegmentIds": [],
+        "recoveredRejectedByLicenseZoneCount": 0,
+        "recoveredRejectedByLicenseZoneSegmentIds": [],
+        "recoveredRejectedDoiLikeCount": 0,
+        "recoveredRejectedDoiLikeSegmentIds": [],
+        "recoveredRejectedNeighborPreserveZoneCount": 0,
+        "recoveredRejectedNeighborPreserveZoneSegmentIds": [],
+        "recoveredZoneRejectedDetails": [],
+        "sourceLineCoverageFalsePositiveCount": 0,
+        "formulaLikeLineMaskMissingCount": 0,
+        "formulaLikeLineMaskMissingIds": [],
+        "mixedFormulaLineRecoveredCount": 0,
+        "formulaTokenRedrawCount": 0,
+        "sourceLineCoverageRatio": 1,
+        "captionRegions": [],
+        "uncoveredLineMaskBoxes": []
+      }
+    }
+  ],
+  "findingCount": 1,
+  "limitations": [
+    "Region geometry and ownership require explicit reviewed region/object oracles; page matches alone do not certify them.",
+    "No Issue lifecycle or runtime decisions are modified."
+  ]
+}

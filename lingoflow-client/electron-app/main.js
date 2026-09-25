@@ -1,4 +1,4 @@
-﻿const { app, BrowserWindow, ipcMain, dialog } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const { spawn, execFile } = require("child_process");
 const { shell } = require("electron");
 const fs = require("fs");
@@ -10,6 +10,7 @@ const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
 const fontkit = require("@pdf-lib/fontkit");
 const { createPdfDiagnosticRuntime, findingsFromAudit } = require("./pdf-pipeline-diagnostics");
 const paperLayoutAuthority = require("./paper-layout-authority");
+const columnAuthority = require("./column-authority");
 const { produceSemanticStructureArtifact, compareCandidateSemanticStructure, semanticStructureProducerStages } = require("./semantic-structure-authority");
 const {
   bindSemanticStructureConsumerPayload,
@@ -1135,8 +1136,9 @@ function detectPageLayout(pageLineBoxes, pageWidth, pageHeight) {
   let confidence = Math.min(0.98, singleConfidence);
   let columnCount = 1;
   if (doubleConfidence > 0.75) {
-    const topWideLines = wideLines.filter((line) => Number(line.bbox.y || 0) < pageHeight * 0.38);
-    layoutType = topWideLines.length >= 3 ? "mixed" : "double_column";
+    const wideBodyLines = bodyLines.filter((line) => Number(line.bbox.width || 0) > pageWidth * 0.55);
+    // Independent regions never upgrade the body-flow layout to mixed.
+    layoutType = wideBodyLines.length >= 3 ? "mixed" : "double_column";
     confidence = Math.min(0.98, doubleConfidence);
     columnCount = 2;
   }
@@ -1896,15 +1898,19 @@ function isMarginTextItem(item) {
   return Boolean(leftMargin && abnormalShape);
 }
 
-function detectPageColumns(items) {
+function detectPageColumns(items, authorityOverride = null) {
   const filtered = filterHeaderFooterItems(items);
-  if (filtered.length < 24) return [{ name: "single", items: filtered }];
+  if (!filtered.length) return [{ name: "single", items: filtered }];
 
   const bounds = getPageBounds(filtered);
   const pageWidth = Number(filtered[0] && filtered[0].pageWidth) || (bounds.x + bounds.width);
   const pageHeight = Number(filtered[0] && filtered[0].pageHeight) || (bounds.y + bounds.height);
-  const preliminaryLines = mergeTextItemsIntoLines(filtered.map((item) => ({ ...item, column: "single" })));
+  const preliminaryLines = mergeTextItemsIntoColumnEvidenceLines(filtered.map((item) => ({ ...item, column: "single" })), pageWidth);
   const pageLayout = detectPageLayout(preliminaryLines, pageWidth, pageHeight);
+  if (authorityOverride === "single_column") {
+    const layout = { ...pageLayout, layoutType: "single_column", columnCount: 1, confidence: Math.max(pageLayout.confidence || 0, 0.9), authorityOverride };
+    return [{ name: "single", layout, items: filtered.map((item) => ({ ...item, column: "single", layoutType: layout.layoutType, sourceLanguageHint: layout.languageHint })) }];
+  }
   // Text runs inside a genuinely single-column English line are often emitted as several PDF
   // items. Counting those item centres as independent column evidence splits one physical line
   // into overlapping left/right paragraphs. Keep the item-level fallback for real two-column
@@ -1926,26 +1932,29 @@ function detectPageColumns(items) {
   });
   const strongContinuousSingleColumnEvidence = pageLayout.layoutType === "single_column" &&
     continuousSpanningLines.length >= Math.max(4, Math.ceil(preliminaryLines.length * 0.12));
-  if (pageLayout.layoutType === "single_column" && (pageLayout.languageHint === "zh" || strongContinuousSingleColumnEvidence)) {
-    return [{ name: "single", layout: pageLayout, items: filtered.map((item) => ({ ...item, column: "single", layoutType: pageLayout.layoutType, sourceLanguageHint: pageLayout.languageHint })) }];
-  }
   const singleItems = [];
   const leftItems = [];
   const rightItems = [];
   const middleItems = [];
 
+  const itemEvidenceOwner = new Map();
+  preliminaryLines.forEach((line) => {
+    let owner = line.columnEvidenceSide || "";
+    if (!owner && Number(line.bbox && line.bbox.width || 0) > pageWidth * 0.55) owner = "single";
+    for (const item of line.items || []) itemEvidenceOwner.set(item, owner);
+  });
+
   filtered.forEach((item) => {
     const x = Number(item.x || 0);
     const y = Number(item.y || 0);
     const width = Number(item.width || 0);
-    const pageHeight = Number(item.pageHeight || 0);
     const center = x + width / 2;
-    const firstPageTopMatter = Number(item.pageNumber || 0) === 1 && pageHeight > 0 && y < pageHeight * 0.58;
-    if (firstPageTopMatter || width > pageWidth * 0.55) {
+    const evidenceOwner = itemEvidenceOwner.get(item);
+    if (evidenceOwner === "single" || width > pageWidth * 0.55) {
       singleItems.push({ ...item, column: "single", layoutType: pageLayout.layoutType, sourceLanguageHint: pageLayout.languageHint });
-    } else if (center < pageWidth * 0.45) {
+    } else if (evidenceOwner === "left" || center < pageWidth * 0.45) {
       leftItems.push({ ...item, column: "left", layoutType: pageLayout.layoutType, sourceLanguageHint: pageLayout.languageHint });
-    } else if (center > pageWidth * 0.50) {
+    } else if (evidenceOwner === "right" || center > pageWidth * 0.50) {
       rightItems.push({ ...item, column: "right", layoutType: pageLayout.layoutType, sourceLanguageHint: pageLayout.languageHint });
     } else {
       middleItems.push({ ...item, column: "single", layoutType: pageLayout.layoutType, sourceLanguageHint: pageLayout.languageHint });
@@ -1953,10 +1962,16 @@ function detectPageColumns(items) {
   });
 
   const narrowCount = leftItems.length + rightItems.length;
+  const stableGutterLines = preliminaryLines.filter((line) => line.columnEvidenceSide === "left" || line.columnEvidenceSide === "right");
+  const stableGutterPairs = Math.floor(stableGutterLines.length / 2);
   const hasTwoColumns =
-    narrowCount >= 20 &&
-    leftItems.length > narrowCount * 0.25 &&
-    rightItems.length > narrowCount * 0.25;
+    authorityOverride === "double_column" || (
+      !strongContinuousSingleColumnEvidence &&
+      (pageLayout.layoutType === "double_column" || pageLayout.layoutType === "mixed" || stableGutterPairs >= 4) &&
+      narrowCount >= 8 &&
+      leftItems.length > narrowCount * 0.25 &&
+      rightItems.length > narrowCount * 0.25
+    );
 
   if (!hasTwoColumns) {
     const singleLayout = { ...pageLayout, layoutType: "single_column", columnCount: 1, confidence: Math.max(pageLayout.confidence, 0.78) };
@@ -2004,9 +2019,10 @@ function detectPageColumns(items) {
   const columns = [];
   const resolvedLayout = {
     ...pageLayout,
-    layoutType: pageLayout.layoutType === "mixed" ? "mixed" : "double_column",
+    layoutType: authorityOverride === "double_column" ? "double_column" : (pageLayout.layoutType === "mixed" ? "mixed" : "double_column"),
     columnCount: 2,
     confidence: Math.max(pageLayout.confidence || 0, 0.78),
+    authorityOverride: authorityOverride || null,
   };
   singleItems.forEach((item) => {
     item.layoutType = resolvedLayout.layoutType;
@@ -2029,6 +2045,119 @@ function detectPageColumns(items) {
   if (leftItems.length) columns.push({ name: "left", layout: resolvedLayout, items: leftItems });
   if (rightItems.length) columns.push({ name: "right", layout: resolvedLayout, items: rightItems });
   return columns;
+}
+
+function getDetectedPageLayoutType(columns) {
+  return String(columns && columns.find((column) => column && column.layout) && columns.find((column) => column && column.layout).layout.layoutType || "single_column");
+}
+
+function buildDocumentColumnLayoutOverrides(initialColumnsByPage, pageCount) {
+  const detectedTwoColumnPages = [];
+  for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
+    const layoutType = getDetectedPageLayoutType(initialColumnsByPage.get(pageNumber));
+    if (layoutType === "double_column" || layoutType === "mixed") detectedTwoColumnPages.push(pageNumber);
+  }
+
+  const overrides = new Map();
+  const dominantTemplateThreshold = Math.max(3, Math.ceil(pageCount * 0.25));
+  if (detectedTwoColumnPages.length >= dominantTemplateThreshold) {
+    const first = detectedTwoColumnPages[0];
+    const last = detectedTwoColumnPages[detectedTwoColumnPages.length - 1];
+    const supportedEnd = Math.min(pageCount, last + 1);
+    for (let pageNumber = first; pageNumber <= supportedEnd; pageNumber += 1) overrides.set(pageNumber, "double_column");
+    return overrides;
+  }
+
+  // A lone central-gap coincidence is not a page model. It needs an adjacent page carrying the
+  // same body-flow template; this rejects isolated figures/tables without weakening real runs.
+  const detectedSet = new Set(detectedTwoColumnPages);
+  detectedTwoColumnPages.forEach((pageNumber) => {
+    if (!detectedSet.has(pageNumber - 1) && !detectedSet.has(pageNumber + 1)) {
+      overrides.set(pageNumber, "single_column");
+    }
+  });
+  return overrides;
+}
+
+function getIndependentRegionsFromPageZones(pageNumber, zones) {
+  const zoneTypeMap = {
+    titleZone: "title",
+    abstractZone: "abstract",
+    figureZone: "figure",
+    captionZone: "figure_caption",
+    tableZone: "table",
+    referencesSectionHeaderZone: "references_section_header",
+  };
+  return (zones || []).flatMap((zone, index) => {
+    const type = zoneTypeMap[String(zone && zone.type || "")];
+    if (!type) return [];
+    return [{
+      id: `page-${pageNumber}-independent-${index + 1}`,
+      type,
+      bbox: zone && zone.bbox || null,
+      source: "paper-page-zone",
+    }];
+  });
+}
+
+function getIndependentRegionsFromPageSegments(pageNumber, segments) {
+  return (segments || []).flatMap((segment, index) => {
+    const type = String(segment && segment.type || "");
+    let regionType = "";
+    if (type === "title") regionType = "title";
+    else if (["abstract", "abstract-title", "keywords"].includes(type)) regionType = "abstract";
+    else if (type === "caption") regionType = "figure_caption";
+    else if (type === "table") regionType = "table";
+    else if (segment && (segment.referenceHeading || segment.referenceChainStart)) regionType = "references_section_header";
+    else if (["imageRegion", "imageText"].includes(type)) regionType = "figure";
+    else if (segment && isPaperFullWidthSegmentType(segment) && !["body", "heading", "reference"].includes(type)) regionType = "other_independent";
+    if (!regionType) return [];
+    return [{
+      id: `page-${pageNumber}-segment-independent-${index + 1}`,
+      type: regionType,
+      bbox: segment && segment.bbox || null,
+      source: "semantic-structure",
+    }];
+  });
+}
+
+function deduplicateIndependentRegions(regions) {
+  const seen = new Set();
+  return (regions || []).filter((region) => {
+    const bbox = region && region.bbox || {};
+    const key = [region && region.type, Number(bbox.x || 0).toFixed(1), Number(bbox.y || 0).toFixed(1), Number(bbox.width || 0).toFixed(1), Number(bbox.height || 0).toFixed(1)].join("|");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function bindSegmentsToPageColumnModels(segments, pageColumnModelsByPage) {
+  return (segments || []).map((segment) => {
+    const pageNumber = Number(segment && segment.pageNumber || 0);
+    const model = columnAuthority.assertPageColumnModel(pageColumnModelsByPage.get(pageNumber), pageNumber);
+    const currentColumn = String(segment.column || "single");
+    const fullWidth = isPaperFullWidthSegmentType(segment);
+    let column = currentColumn;
+    if (model.layoutType === "single_column" || model.layoutType === "scanned_or_image" || fullWidth) {
+      column = "single";
+    } else if (!["left", "right"].includes(column)) {
+      const centerX = Number(segment.bbox && segment.bbox.x || 0) + Number(segment.bbox && segment.bbox.width || 0) / 2;
+      const leftCenter = Number(model.columnGeometry && model.columnGeometry.left && model.columnGeometry.left.center || 0);
+      const rightCenter = Number(model.columnGeometry && model.columnGeometry.right && model.columnGeometry.right.center || 0);
+      column = Math.abs(centerX - leftCenter) <= Math.abs(centerX - rightCenter) ? "left" : "right";
+    }
+    return {
+      ...segment,
+      column,
+      layoutType: model.layoutType,
+      pageColumnModelRef: `${model.schemaVersion}:page-${pageNumber}`,
+      columnAuthority: model.authority,
+      columnAuthorityFrozen: true,
+      lineBoxes: (segment.lineBoxes || []).map((line) => ({ ...line, column, layoutType: model.layoutType })),
+      lines: (segment.lines || []).map((line) => ({ ...line, column, layoutType: model.layoutType })),
+    };
+  });
 }
 
 let currentPdfIgnoredNoiseLines = 0;
@@ -4022,24 +4151,14 @@ function repairPaperSegmentColumnByBbox(segment, pageWidth, reason) {
     };
   }
   const mismatch = currentColumn !== inferredColumn;
-  if (!mismatch) {
-    return {
-      ...segment,
-      inferredColumnFromBbox: inferredColumn,
-      bboxColumnMismatch: false,
-    };
-  }
   return {
     ...segment,
-    previousColumn: currentColumn,
-    column: inferredColumn,
     inferredColumnFromBbox: inferredColumn,
-    columnReassignedByBbox: true,
-    columnReassignReason: reason || (inferredColumn === 'right' ? 'bbox_center_in_right_column' : 'bbox_center_in_left_column'),
-    bboxColumnMismatch: true,
-    warnings: [...(segment.warnings || []), 'paper_column_repaired_before_clip'],
-    lineBoxes: (segment.lineBoxes || []).map((line) => ({ ...line, column: inferredColumn })),
-    lines: (segment.lines || []).map((line) => ({ ...line, column: inferredColumn })),
+    bboxColumnMismatch: mismatch,
+    columnReassignedByBbox: false,
+    columnReassignReason: "",
+    columnValidationReason: mismatch ? (reason || "bbox_column_mismatch") : "bbox_column_match",
+    warnings: mismatch ? [...(segment.warnings || []), "paper_column_authority_mismatch"] : (segment.warnings || []),
   };
 }
 
@@ -4463,6 +4582,62 @@ function isPaperReferenceHeadingText(text) {
 function detectReferenceHeadingSegment(segments) {
   return (segments || []).filter((segment) => segment && (segment.referenceHeading || segment.referenceChainStart || isPaperReferenceHeadingText(segment.sourceText || "")))
     .sort((a, b) => Number(a.pageNumber || 0) - Number(b.pageNumber || 0) || Number(a.bbox && a.bbox.y || 0) - Number(b.bbox && b.bbox.y || 0))[0] || null;
+}
+
+function buildColumnEvidenceLine(items, sourceLine, columnEvidenceSide) {
+  const lineItems = (items || []).slice().sort((a, b) => Number(a.x || 0) - Number(b.x || 0));
+  if (!lineItems.length) return null;
+  const dominantFontSize = getDominantLineFontSize(lineItems);
+  const dominantBaselineY = getDominantLineBaselineY(lineItems, dominantFontSize);
+  const text = normalizeExtractedPdfText(buildLineTextFromPositionedItems(lineItems, dominantFontSize, dominantBaselineY));
+  if (!text) return null;
+  return {
+    ...sourceLine,
+    text,
+    items: lineItems,
+    bbox: makeBBox(lineItems),
+    avgFontSize: lineItems.reduce((sum, item) => sum + Number(item.fontSize || 0), 0) / Math.max(1, lineItems.length),
+    columnEvidenceSide,
+  };
+}
+
+// Column evidence is formed before ordinary line assembly can erase the gutter.
+// PDF generators commonly emit left and right fragments at the same baseline.
+function mergeTextItemsIntoColumnEvidenceLines(items, pageWidth) {
+  const mergedLines = mergeTextItemsIntoLines(items);
+  if (!mergedLines.length || !(pageWidth > 0)) return mergedLines;
+
+  const splitCandidates = new Map();
+  mergedLines.forEach((line) => {
+    const lineItems = (line.items || []).slice().sort((a, b) => Number(a.x || 0) - Number(b.x || 0));
+    let best = null;
+    for (let index = 1; index < lineItems.length; index += 1) {
+      const leftItem = lineItems[index - 1];
+      const rightItem = lineItems[index];
+      const leftEdge = Number(leftItem.x || 0) + Number(leftItem.width || 0);
+      const rightEdge = Number(rightItem.x || 0);
+      const gap = rightEdge - leftEdge;
+      const fontSize = Math.max(1, Number(leftItem.fontSize || leftItem.height || 0), Number(rightItem.fontSize || rightItem.height || 0));
+      const crossesPageCenter = leftEdge <= pageWidth * 0.53 && rightEdge >= pageWidth * 0.47;
+      const stableWhitespace = gap >= Math.max(14, fontSize * 1.65);
+      if (!crossesPageCenter || !stableWhitespace) continue;
+      if (!best || gap > best.gap) best = { index, gap };
+    }
+    if (best) splitCandidates.set(line, best);
+  });
+
+  const bodyCandidateCount = mergedLines.filter((line) => getPdfLineType(line) === "body" && !isNoisePdfLine(line)).length;
+  const bodySplitCount = Array.from(splitCandidates.keys()).filter((line) => getPdfLineType(line) === "body" && !isNoisePdfLine(line)).length;
+  const minimumSupport = Math.max(4, Math.ceil(Math.max(1, bodyCandidateCount) * 0.08));
+  if (bodySplitCount < minimumSupport) return mergedLines;
+
+  return mergedLines.flatMap((line) => {
+    const split = splitCandidates.get(line);
+    if (!split) return [line];
+    const left = buildColumnEvidenceLine(line.items.slice(0, split.index), line, "left");
+    const right = buildColumnEvidenceLine(line.items.slice(split.index), line, "right");
+    return [left, right].filter(Boolean);
+  });
 }
 
 function isReferenceModeExemptSegment(segment) {
@@ -5747,7 +5922,19 @@ function buildStructuredPdfText(pageItemsByPage, pipelineConfig, imageGeometryBy
   const allLines = [];
   const allParagraphs = [];
   const pipelinePages = [];
+  const pageColumnModelsByPage = new Map();
+  const pageColumnModelDraftsByPage = new Map();
   let marginIgnoredLines = 0;
+
+  const initialPaperColumnsByPage = new Map();
+  const paperColumnLayoutOverrides = new Map();
+  if (isPaperPdfConfig(pipelineConfig)) {
+    pageItemsByPage.forEach((items, pageNumber) => {
+      initialPaperColumnsByPage.set(pageNumber, detectPageColumns(items));
+    });
+    const overrides = buildDocumentColumnLayoutOverrides(initialPaperColumnsByPage, pageItemsByPage.size);
+    overrides.forEach((layoutType, pageNumber) => paperColumnLayoutOverrides.set(pageNumber, layoutType));
+  }
 
   pageItemsByPage.forEach((items, pageNumber) => {
     marginIgnoredLines += items.filter((item) => isMarginTextItem(item)).length;
@@ -5755,7 +5942,9 @@ function buildStructuredPdfText(pageItemsByPage, pipelineConfig, imageGeometryBy
     const pageWidth = Number(items && items[0] && items[0].pageWidth || authoritativePageGeometry && authoritativePageGeometry.pageWidth || 0);
     const pageHeight = Number(items && items[0] && items[0].pageHeight || authoritativePageGeometry && authoritativePageGeometry.pageHeight || 0);
     const columns = isPaperPdfConfig(pipelineConfig)
-      ? detectPageColumns(items)
+      ? (paperColumnLayoutOverrides.has(pageNumber)
+        ? detectPageColumns(items, paperColumnLayoutOverrides.get(pageNumber))
+        : initialPaperColumnsByPage.get(pageNumber))
       : [{ name: "single", items, layout: { layoutType: "simple_document_flow", languageHint: "" } }];
     const rawTextItems = [];
     columns.forEach((column) => {
@@ -5803,6 +5992,23 @@ function buildStructuredPdfText(pageItemsByPage, pipelineConfig, imageGeometryBy
     const zones = isPaperPdfConfig(pipelineConfig)
       ? detectPaperPageZones({ pageNumber, pageWidth, pageHeight }, collectedPageLines, imageRegions, pipelineConfig)
       : [];
+    const columnModelDraft = isPaperPdfConfig(pipelineConfig)
+      ? {
+        pageNumber,
+        pageWidth,
+        pageHeight,
+        layoutType: layout.layoutType || "single_column",
+        columns: ["double_column", "mixed"].includes(layout.layoutType) ? ["left", "right"] : ["single"],
+        columnGeometry: getPaperColumnGeometry(pageWidth),
+        evidence: {
+          basis: "body_text_flow_only",
+          confidence: Number(layout.confidence || 0),
+          languageHint: String(layout.languageHint || "unknown"),
+          documentNormalization: String(layout.authorityOverride || "none"),
+        },
+      }
+      : null;
+    if (columnModelDraft) pageColumnModelDraftsByPage.set(pageNumber, columnModelDraft);
     pipelinePages.push({
       pageNumber,
       pageIndex: pageNumber - 1,
@@ -5812,8 +6018,9 @@ function buildStructuredPdfText(pageItemsByPage, pipelineConfig, imageGeometryBy
       lineCount: collectedPageLines.length,
       blockCount: pageParagraphs.length,
       segmentCount: 0,
-      layoutType: layout.layoutType || "single_column",
-      columns: columns.map((column) => column.name),
+      layoutType: columnModelDraft ? columnModelDraft.layoutType : (layout.layoutType || "single_column"),
+      columns: columnModelDraft ? [...columnModelDraft.columns] : columns.map((column) => column.name),
+      columnModel: null,
       textItemBboxRange: makeBboxRange(items),
       lineBboxRange: makeBboxRange(collectedPageLines.map((line) => line.bbox)),
       segmentBboxRange: null,
@@ -5880,7 +6087,20 @@ function buildStructuredPdfText(pageItemsByPage, pipelineConfig, imageGeometryBy
     currentPdfImageRegionsFinalizedBeforeLayoutPlan = true;
     pipelinePages.forEach((page) => {
       page.imageRegions = currentPdfImageRegionsByPage[String(page.pageNumber)] || [];
+      const pageNumber = Number(page.pageNumber || 0);
+      const draft = pageColumnModelDraftsByPage.get(pageNumber);
+      const pageSegments = segments.filter((segment) => Number(segment.pageNumber || 0) === pageNumber);
+      const independentRegions = deduplicateIndependentRegions([
+        ...getIndependentRegionsFromPageZones(pageNumber, page.zones || []),
+        ...getIndependentRegionsFromPageSegments(pageNumber, pageSegments),
+      ]);
+      const model = columnAuthority.publishPageColumnModel({ ...draft, independentRegions });
+      pageColumnModelsByPage.set(pageNumber, model);
+      page.columnModel = model;
+      page.layoutType = model.layoutType;
+      page.columns = [...model.columns];
     });
+    segments = bindSegmentsToPageColumnModels(segments, pageColumnModelsByPage);
   }
   const lineNumberByKey = new Map();
   allLines.forEach((line, index) => {
@@ -16780,35 +17000,22 @@ function getColumnLocalWriteBox(writeBox, segment, pageSize, pipelineConfig) {
   if (!["body", "heading"].includes(type)) return writeBox;
   const pageWidth = Number(pageSize.width || 0) || getPaperPageWidthFromSegment(segment, 612);
   const inferredColumn = inferPaperColumnFromBbox(segment, pageWidth);
-  let column = String(segment && segment.column || inferredColumn || "single");
+  const column = String(segment && segment.column || "single");
   let warnings = [];
-  let previousColumn = column;
-  let bboxColumnMismatch = false;
-  if (["left", "right"].includes(inferredColumn) && column !== inferredColumn) {
-    bboxColumnMismatch = true;
-    previousColumn = column;
-    column = inferredColumn;
-    warnings.push("paper_column_mismatch_before_clip", "paper_column_repaired_before_clip");
-  }
+  const previousColumn = column;
+  const bboxColumnMismatch = ["left", "right"].includes(inferredColumn) && column !== inferredColumn;
+  if (bboxColumnMismatch) warnings.push("paper_column_authority_mismatch");
   if (!["left", "right"].includes(column)) return writeBox;
   let clipped = makeColumnClippedWriteBox(writeBox, column, pageWidth);
   const tooNarrowBeforeRepair = isWriteBoxTooNarrow(clipped);
   if (tooNarrowBeforeRepair) {
-    warnings.push("paper_writebox_too_narrow_before_repair");
-    const repairedColumn = ["left", "right"].includes(inferredColumn) ? inferredColumn : (column === "left" ? "right" : "left");
-    const repaired = makeColumnClippedWriteBox({ ...writeBox, x: repairedColumn === "right" ? getPaperColumnGeometry(pageWidth).right.x : getPaperColumnGeometry(pageWidth).left.x }, repairedColumn, pageWidth);
-    if (!isWriteBoxTooNarrow(repaired)) {
-      column = repairedColumn;
-      clipped = repaired;
-      warnings.push("paper_column_repaired_before_clip");
-    }
+    warnings.push("paper_writebox_too_narrow_in_authoritative_column");
   }
   const tooNarrowAfterRepair = isWriteBoxTooNarrow(clipped);
   if (tooNarrowAfterRepair) {
     warnings.push("paper_writebox_too_narrow_after_repair");
     const geometry = getPaperColumnGeometry(pageWidth);
-    const safeColumn = ["left", "right"].includes(inferredColumn) ? inferredColumn : column;
-    const safeBox = safeColumn === "right" ? geometry.right : geometry.left;
+    const safeBox = column === "right" ? geometry.right : geometry.left;
     clipped = {
       ...clipped,
       x: safeBox.x,
@@ -16822,8 +17029,8 @@ function getColumnLocalWriteBox(writeBox, segment, pageSize, pipelineConfig) {
     previousColumn,
     repairedColumn: column,
     bboxColumnMismatch,
-    columnReassignedByBbox: bboxColumnMismatch,
-    columnReassignReason: bboxColumnMismatch ? (column === "right" ? "bbox_center_in_right_column" : "bbox_center_in_left_column") : "",
+    columnReassignedByBbox: false,
+    columnReassignReason: "",
     writeBoxTooNarrowBeforeRepair: tooNarrowBeforeRepair,
     writeBoxTooNarrowAfterRepair: tooNarrowAfterRepair && isWriteBoxTooNarrow(clipped),
     warnings,
@@ -18117,12 +18324,12 @@ function normalizeReportPageLayouts(segmentReports, pipelineDebug) {
     if (!reports.length && pipelinePage && Array.isArray(pipelinePage.columns)) {
       pipelinePage.columns.forEach((column) => columns.add(String(column || "single")));
     }
-    let layoutType = rawLayouts.has("mixed")
-      ? "mixed"
-      : (rawLayouts.has("double_column") ? "double_column" : (rawLayouts.values().next().value || pipelinePage && pipelinePage.layoutType || "single_column"));
-    if (columns.has("left") && columns.has("right")) {
-      layoutType = columns.has("single") || rawLayouts.has("mixed") ? "mixed" : "double_column";
-    }
+    const canonicalModel = pipelinePage && pipelinePage.columnModel
+      ? columnAuthority.assertPageColumnModel(pipelinePage.columnModel, pageNumber)
+      : null;
+    const layoutType = canonicalModel
+      ? canonicalModel.layoutType
+      : (pipelinePage && pipelinePage.layoutType || rawLayouts.values().next().value || "single_column");
     reports.forEach((report) => {
       report.layoutType = layoutType;
     });
@@ -18130,7 +18337,7 @@ function normalizeReportPageLayouts(segmentReports, pipelineDebug) {
       pageNumber,
       layoutType,
       segmentCount: reports.length,
-      columns: [...columns].length ? [...columns] : ["single"],
+      columns: canonicalModel ? [...canonicalModel.columns] : ([...columns].length ? [...columns] : ["single"]),
     });
   });
   return pageLayouts.sort((a, b) => a.pageNumber - b.pageNumber);

@@ -1,0 +1,310 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minimalist-translation.local/schemas/layout-geometry-oracle-v1.json",
+  "title": "Layout Geometry Oracle v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "capabilityId",
+    "catalogRole",
+    "runtimeDecisionUse",
+    "sample",
+    "coordinateContract",
+    "toleranceProfiles",
+    "pages",
+    "failureClasses",
+    "evidenceRefs",
+    "reviewHistory",
+    "authorityBoundary"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "layout-geometry-oracle/v1" },
+    "capabilityId": { "const": "cap.layout-geometry" },
+    "catalogRole": { "const": "regression_oracle" },
+    "runtimeDecisionUse": { "const": "forbidden" },
+    "sample": { "$ref": "#/$defs/sampleIdentity" },
+    "coordinateContract": { "$ref": "#/$defs/coordinateContract" },
+    "toleranceProfiles": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/toleranceProfile" }
+    },
+    "pages": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/pageOracle" }
+    },
+    "failureClasses": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": { "enum": ["identity_failure", "structural_failure", "tolerance_deviation"] },
+      "allOf": [
+        { "contains": { "const": "identity_failure" } },
+        { "contains": { "const": "structural_failure" } },
+        { "contains": { "const": "tolerance_deviation" } }
+      ]
+    },
+    "evidenceRefs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "reviewHistory": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/reviewEvent" }
+    },
+    "authorityBoundary": { "$ref": "#/$defs/authorityBoundary" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "positiveInt": { "type": "integer", "minimum": 1 },
+    "finiteNumber": { "type": "number" },
+    "box": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "$ref": "#/$defs/finiteNumber" },
+        "y": { "$ref": "#/$defs/finiteNumber" },
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "height": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "pageBox": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "$ref": "#/$defs/finiteNumber" },
+        "y": { "$ref": "#/$defs/finiteNumber" },
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "height": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "sampleIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sampleId", "sourceDocumentId", "fileName", "mediaType", "sha256", "bytes", "pageCount", "provenance"],
+      "properties": {
+        "sampleId": { "type": "string", "minLength": 1 },
+        "sourceDocumentId": { "type": "string", "minLength": 1 },
+        "fileName": { "type": "string", "minLength": 1 },
+        "mediaType": { "const": "application/pdf" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "pageCount": { "$ref": "#/$defs/positiveInt" },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "reference"],
+          "properties": {
+            "kind": { "enum": ["user_provided", "licensed", "synthetic", "public_domain"] },
+            "reference": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "coordinateContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["coordinateSpace", "unit", "origin", "xDirection", "yDirection", "rotationApplied", "cropBoxBaseline", "mediaBoxBaseline"],
+      "properties": {
+        "coordinateSpace": { "enum": ["pdf-page-top-left-points", "pdf-user-space-bottom-left-points"] },
+        "unit": { "const": "point" },
+        "origin": { "enum": ["top_left", "bottom_left"] },
+        "xDirection": { "const": "right" },
+        "yDirection": { "enum": ["down", "up"] },
+        "rotationApplied": { "enum": [0, 90, 180, 270] },
+        "cropBoxBaseline": { "$ref": "#/$defs/pageBox" },
+        "mediaBoxBaseline": { "$ref": "#/$defs/pageBox" }
+      }
+    },
+    "toleranceProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "absolutePoints", "relativeToPage", "appliesTo", "rationale", "cannotOverride"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9._-]+$" },
+        "absolutePoints": { "type": "number", "minimum": 0 },
+        "relativeToPage": { "type": "number", "minimum": 0, "maximum": 0.1 },
+        "appliesTo": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["x", "y", "width", "height", "edge_distance"] }
+        },
+        "rationale": { "type": "string", "minLength": 1 },
+        "cannotOverride": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": { "enum": ["identity_failure", "structural_failure"] },
+          "allOf": [
+            { "contains": { "const": "identity_failure" } },
+            { "contains": { "const": "structural_failure" } }
+          ]
+        }
+      }
+    },
+    "canonicalColumnRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pageColumnModelRef", "authority", "columnId"],
+      "properties": {
+        "pageColumnModelRef": { "type": "string", "pattern": "^page-column-model/v1:page-[1-9][0-9]*$" },
+        "authority": { "const": "AA-COLUMN-001" },
+        "columnId": { "enum": ["single", "left", "right"] }
+      }
+    },
+    "pageIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceDocumentId", "pageNumber", "pageId", "pageColumnModelRef", "pageColumnModelHash"],
+      "properties": {
+        "sourceDocumentId": { "type": "string", "minLength": 1 },
+        "pageNumber": { "$ref": "#/$defs/positiveInt" },
+        "pageId": { "type": "string", "minLength": 1 },
+        "pageColumnModelRef": { "type": "string", "pattern": "^page-column-model/v1:page-[1-9][0-9]*$" },
+        "pageColumnModelHash": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "regionClass": {
+      "enum": ["body_column", "independent_region", "protected_region", "writable_space_expectation"]
+    },
+    "semanticRegionType": {
+      "enum": ["title", "author_affiliation", "abstract", "keywords", "section_heading", "figure", "figure_caption", "table", "references_section_header", "other_independent"]
+    },
+    "protectedKind": {
+      "enum": ["image", "formula", "reference_entries", "header", "footer", "page_number", "margin", "watermark", "license_text", "side_mark", "authoritative_preserve"]
+    },
+    "relation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "targetRegionId"],
+      "properties": {
+        "kind": { "enum": ["inside", "contains", "disjoint", "touches", "overlaps", "left_of", "right_of", "above", "below", "subtracts_from", "bounded_by"] },
+        "targetRegionId": { "type": "string", "minLength": 1 },
+        "minimumGapPoints": { "type": "number", "minimum": 0 }
+      }
+    },
+    "regionOracle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["regionId", "regionClass", "owner", "expectedGeometry", "toleranceProfileId", "relations", "sourceProvenance", "evidenceRefs"],
+      "properties": {
+        "regionId": { "type": "string", "minLength": 1 },
+        "regionClass": { "$ref": "#/$defs/regionClass" },
+        "owner": { "type": "string", "minLength": 1 },
+        "canonicalColumnRef": { "$ref": "#/$defs/canonicalColumnRef" },
+        "semanticRegionType": { "$ref": "#/$defs/semanticRegionType" },
+        "protectedKind": { "$ref": "#/$defs/protectedKind" },
+        "expectedGeometry": { "$ref": "#/$defs/box" },
+        "toleranceProfileId": { "type": "string", "minLength": 1 },
+        "relations": { "type": "array", "items": { "$ref": "#/$defs/relation" } },
+        "sourceProvenance": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["sourceArtifactId", "producer", "coordinateSpace", "transformChain"],
+            "properties": {
+              "sourceArtifactId": { "type": "string", "minLength": 1 },
+              "producer": { "type": "string", "minLength": 1 },
+              "coordinateSpace": { "enum": ["pdf-page-top-left-points", "pdf-user-space-bottom-left-points"] },
+              "transformChain": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+            }
+          }
+        },
+        "evidenceRefs": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "regionClass": { "const": "body_column" } }, "required": ["regionClass"] },
+          "then": { "required": ["canonicalColumnRef"], "properties": { "canonicalColumnRef": { "$ref": "#/$defs/canonicalColumnRef" }, "semanticRegionType": false, "protectedKind": false } }
+        },
+        {
+          "if": { "properties": { "regionClass": { "const": "independent_region" } }, "required": ["regionClass"] },
+          "then": { "required": ["semanticRegionType"], "properties": { "semanticRegionType": { "$ref": "#/$defs/semanticRegionType" } } }
+        },
+        {
+          "if": { "properties": { "regionClass": { "const": "protected_region" } }, "required": ["regionClass"] },
+          "then": { "required": ["protectedKind"], "properties": { "protectedKind": { "$ref": "#/$defs/protectedKind" } } }
+        },
+        {
+          "if": { "properties": { "regionClass": { "const": "writable_space_expectation" } }, "required": ["regionClass"] },
+          "then": { "required": ["canonicalColumnRef"], "properties": { "canonicalColumnRef": { "$ref": "#/$defs/canonicalColumnRef" } } }
+        }
+      ]
+    },
+    "pageOracle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity", "pageSize", "rotation", "cropBox", "mediaBox", "regions"],
+      "properties": {
+        "identity": { "$ref": "#/$defs/pageIdentity" },
+        "pageSize": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "number", "exclusiveMinimum": 0 },
+            "height": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "rotation": { "enum": [0, 90, 180, 270] },
+        "cropBox": { "$ref": "#/$defs/pageBox" },
+        "mediaBox": { "$ref": "#/$defs/pageBox" },
+        "regions": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/regionOracle" } }
+      }
+    },
+    "reviewEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sequence", "action", "actor", "at", "reason", "previousHash", "hash"],
+      "properties": {
+        "sequence": { "$ref": "#/$defs/positiveInt" },
+        "action": { "enum": ["created", "review_started", "accepted", "insufficient_evidence", "superseded"] },
+        "actor": { "type": "string", "minLength": 1 },
+        "at": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})$" },
+        "reason": { "type": "string", "minLength": 1 },
+        "previousHash": {
+          "anyOf": [
+            { "type": "null" },
+            { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+          ]
+        },
+        "hash": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "authorityBoundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["geometryOwner", "columnDependency", "columnDependencyMode", "runtimeDecisionUse", "forbiddenActions"],
+      "properties": {
+        "geometryOwner": { "const": "AA-GEOMETRY-001" },
+        "columnDependency": { "const": "AA-COLUMN-001" },
+        "columnDependencyMode": { "const": "read_only_reference" },
+        "runtimeDecisionUse": { "const": "forbidden" },
+        "forbiddenActions": {
+          "type": "array",
+          "minItems": 4,
+          "uniqueItems": true,
+          "items": { "enum": ["reclassify_column", "mutate_column_truth", "auto_repair_runtime", "auto_promote_candidate", "override_identity_or_structure_with_tolerance"] },
+          "allOf": [
+            { "contains": { "const": "reclassify_column" } },
+            { "contains": { "const": "mutate_column_truth" } },
+            { "contains": { "const": "auto_repair_runtime" } },
+            { "contains": { "const": "override_identity_or_structure_with_tolerance" } }
+          ]
+        }
+      }
+    }
+  }
+}

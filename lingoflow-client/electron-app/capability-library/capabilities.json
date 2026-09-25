@@ -1,0 +1,156 @@
+{
+  "schemaVersion": "capability-library/v1",
+  "catalogRole": "evidence_and_regression_only",
+  "runtimeDecisionUse": "forbidden",
+  "capabilities": [
+    {
+      "id": "cap.semantic-structure",
+      "name": "Semantic Structure",
+      "description": "验证 canonical semantic type、对象边界和冻结后消费一致性。",
+      "architectureRecord": "AA-STRUCTURE-001",
+      "relatedArchitectureRecords": ["AA-IDENTITY-001", "AA-ORDER-001"],
+      "decisionAuthority": {
+        "owner": "Semantic Structure Authority Producer",
+        "statement": "只有 Structure Authority 可以产生 canonical semantic type；本库只提供回归证据。"
+      },
+      "status": "defined",
+      "boundaries": [
+        {"id": "boundary.structure.section-transition", "description": "正文、附录、References 等 section 转换。", "featureTags": ["section", "boundary", "cross-page"]},
+        {"id": "boundary.structure.mixed-scientific-content", "description": "正文与公式、Caption、citation 相邻或混合。", "featureTags": ["formula", "caption", "citation"]}
+      ],
+      "expectedOutcomes": [
+        {"id": "assert.structure.single-producer", "assertion": "每个 canonical semantic type 只来自唯一 Structure artifact。", "evidenceLevel": "artifact"},
+        {"id": "assert.structure.consumer-parity", "assertion": "冻结后消费者不改型，identity/type/ownership/order parity 无差异。", "evidenceLevel": "real_run"}
+      ],
+      "evidenceRequirements": ["unit_contract", "artifact", "real_run"],
+      "regressionSampleIds": []
+    },
+    {
+      "id": "cap.paragraph-object-identity",
+      "name": "Paragraph / Object Identity",
+      "description": "验证 Segment、Line、Paragraph、Layout Item 和 Write Op 的身份守恒。",
+      "architectureRecord": "AA-IDENTITY-001",
+      "relatedArchitectureRecords": ["AA-ORDER-001", "AA-FLOW-001"],
+      "decisionAuthority": {"owner": "Identity Authority", "statement": "对象身份由 Identity Authority 产生；本库只声明守恒断言。"},
+      "status": "defined",
+      "boundaries": [
+        {"id": "boundary.identity.cross-page-paragraph", "description": "段落跨页但保持物理 page ownership。", "featureTags": ["paragraph", "cross-page"]},
+        {"id": "boundary.identity.split-merge", "description": "提取碎片 split/merge 后 identity 不冲突不漂移。", "featureTags": ["split", "merge", "identity"]}
+      ],
+      "expectedOutcomes": [
+        {"id": "assert.identity.conservation", "assertion": "各阶段 identity 可追溯，无重复、孤儿或无权重编号。", "evidenceLevel": "artifact"}
+      ],
+      "evidenceRequirements": ["unit_contract", "artifact", "real_run"],
+      "regressionSampleIds": []
+    },
+    {
+      "id": "cap.geometry-layout",
+      "name": "Geometry / Layout",
+      "description": "验证坐标血统、安全区域、排版承载、冲突与溢出。",
+      "architectureRecord": "AA-GEOMETRY-001",
+      "relatedArchitectureRecords": ["AA-COLUMN-001", "AA-FLOW-001", "AA-TYPOGRAPHY-001"],
+      "decisionAuthority": {"owner": "Geometry and Layout Authorities", "statement": "本库只记录几何断言，不计算 runtime write box 或 layout decision。"},
+      "status": "defined",
+      "boundaries": [
+        {"id": "boundary.layout.dense-formula", "description": "公式密集页上的正文承载与科研对象保护。", "featureTags": ["formula", "dense", "flow"]},
+        {"id": "boundary.layout.figure-adjacent", "description": "图表/Caption 相邻区域的布局与阻塞区。", "featureTags": ["figure", "caption", "blocking-zone"]}
+      ],
+      "expectedOutcomes": [
+        {"id": "assert.layout.no-collision", "assertion": "译文无跨栏、重叠、截断或科研对象侵入。", "evidenceLevel": "pixel_visual"}
+      ],
+      "evidenceRequirements": ["unit_contract", "artifact", "pixel_visual"],
+      "regressionSampleIds": []
+    },
+    {
+      "id": "cap.mask-write",
+      "name": "Mask / Write",
+      "description": "验证 owner 级遮盖与写入原子性，以及局部失败隔离。",
+      "architectureRecord": "AA-WRITE-001",
+      "relatedArchitectureRecords": ["AA-GEOMETRY-001", "AA-IDENTITY-001"],
+      "decisionAuthority": {"owner": "Write Authority", "statement": "Mask/Write 授权仅来自 Write Authority；本库不得使段落变为可写。"},
+      "status": "defined",
+      "boundaries": [
+        {"id": "boundary.write.local-isolation", "description": "单段写入失败时保留原文且不阻断其他 owner。", "featureTags": ["write", "isolation", "fallback"]},
+        {"id": "boundary.write.source-residual", "description": "合法写入后的原文残留、误遮与背景块。", "featureTags": ["mask", "residual", "visual"]}
+      ],
+      "expectedOutcomes": [
+        {"id": "assert.write.atomic-owner", "assertion": "每个 owner 的 mask/write 同步提交，失败可追溯且不扩散。", "evidenceLevel": "real_run"}
+      ],
+      "evidenceRequirements": ["unit_contract", "artifact", "real_run", "pixel_visual"],
+      "regressionSampleIds": []
+    },
+    {
+      "id": "cap.scientific-object-fidelity",
+      "name": "Scientific Object Fidelity",
+      "description": "验证图片、公式、表格、Caption、citation 与 Reference entries 的保真。",
+      "architectureRecord": "AA-CAPTION-001",
+      "relatedArchitectureRecords": ["AA-REFERENCE-001", "AA-GEOMETRY-001", "AA-STRUCTURE-001"],
+      "decisionAuthority": {"owner": "Caption, Reference, Structure and Geometry Authorities", "statement": "本库仅聚合跨权威保真证据，不重新定义对象身份。"},
+      "status": "defined",
+      "boundaries": [
+        {"id": "boundary.scientific.caption-body", "description": "Caption 与正文紧邻、跨栏或跨页。", "featureTags": ["caption", "body", "ownership"]},
+        {"id": "boundary.scientific.reference-chain", "description": "有/无 heading 的 Reference chain，含双栏和跨页。", "featureTags": ["reference", "chain", "cross-page"]}
+      ],
+      "expectedOutcomes": [
+        {"id": "assert.scientific.object-conservation", "assertion": "科研对象主体不消失、不遮盖、不篡改。", "evidenceLevel": "pixel_visual"},
+        {"id": "assert.scientific.reference-policy", "assertion": "Reference heading 可翻，entries 保留原文，正文 citation 不被误伤。", "evidenceLevel": "real_run"}
+      ],
+      "evidenceRequirements": ["artifact", "real_run", "pixel_visual"],
+      "regressionSampleIds": []
+    },
+    {
+      "id": "cap.translation-completeness",
+      "name": "Translation Completeness",
+      "description": "验证 canonical denominator、请求、接受、重试、回填与终态守恒。",
+      "architectureRecord": "AA-TRANSLATION-001",
+      "relatedArchitectureRecords": ["AA-STRUCTURE-001", "AA-IDENTITY-001"],
+      "decisionAuthority": {"owner": "Translation Authority", "statement": "翻译成功和完整性只由 Translation Authority 裁决；本库只对比终态。"},
+      "status": "defined",
+      "boundaries": [
+        {"id": "boundary.translation.provider-partial", "description": "provider 失败、取消、重试耗尽与局部接受。", "featureTags": ["provider", "retry", "partial"]},
+        {"id": "boundary.translation.source-carryover", "description": "未改写原文、前缀原文残留和非法回应。", "featureTags": ["acceptance", "source-carryover"]}
+      ],
+      "expectedOutcomes": [
+        {"id": "assert.translation.denominator", "assertion": "所有 canonical eligible segment 都有可追溯终态，无静默跳过。", "evidenceLevel": "artifact"}
+      ],
+      "evidenceRequirements": ["unit_contract", "artifact", "real_run"],
+      "regressionSampleIds": []
+    },
+    {
+      "id": "cap.write-completeness",
+      "name": "Write Completeness",
+      "description": "验证每个已接受译文是否取得合法 write，以及保留项是否有明确原因。",
+      "architectureRecord": "AA-WRITE-001",
+      "relatedArchitectureRecords": ["AA-TRANSLATION-001", "AA-FLOW-001"],
+      "decisionAuthority": {"owner": "Write Authority", "statement": "本库不补写、不改写入资格，只验证 accepted translation 到 write 的守恒。"},
+      "status": "defined",
+      "boundaries": [
+        {"id": "boundary.write-completeness.capacity", "description": "有效译文超出当前 owner 可用空间。", "featureTags": ["capacity", "overflow"]}
+      ],
+      "expectedOutcomes": [
+        {"id": "assert.write-completeness.conservation", "assertion": "accepted translation 要么完整写入，要么以 owner 级失败明确保留原文。", "evidenceLevel": "real_run"}
+      ],
+      "evidenceRequirements": ["artifact", "real_run", "pixel_visual"],
+      "regressionSampleIds": []
+    },
+    {
+      "id": "cap.export-state",
+      "name": "Export State",
+      "description": "验证 translation complete、write complete 和 export generated 三种独立事实以及用户产物卫生。",
+      "architectureRecord": "AA-WRITE-001",
+      "relatedArchitectureRecords": ["AA-UI-001", "AA-EVIDENCE-001"],
+      "decisionAuthority": {"owner": "Write/Export Authority", "statement": "能力库不改变导出路径或成功状态，只验证三事实被分离记录。"},
+      "status": "defined",
+      "boundaries": [
+        {"id": "boundary.export.partial-content", "description": "Translation/Write partial 时仍可生成正常用户 PDF。", "featureTags": ["export", "partial", "user-artifact"]},
+        {"id": "boundary.export.diagnostics-isolation", "description": "开发诊断与用户导出目录、命名和决策链隔离。", "featureTags": ["diagnostics", "isolation"]}
+      ],
+      "expectedOutcomes": [
+        {"id": "assert.export.independent-facts", "assertion": "translationComplete、writeComplete、exportGenerated 不相互代替。", "evidenceLevel": "artifact"},
+        {"id": "assert.export.user-directory-hygiene", "assertion": "用户目录只出现用户请求的正常产物。", "evidenceLevel": "real_run"}
+      ],
+      "evidenceRequirements": ["unit_contract", "artifact", "real_run", "user_acceptance"],
+      "regressionSampleIds": []
+    }
+  ]
+}

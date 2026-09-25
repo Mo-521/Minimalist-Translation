@@ -555,12 +555,8 @@ function isPdfOverlayCandidate(segment) {
     });
 
     if (document.fonts && document.fonts.load) {
-      // Check if font is already loaded in the cache (fast path for repeat visits)
-      var alreadyLoaded = document.fonts.check("24px 'Material Symbols Outlined'");
-      if (alreadyLoaded) {
-        document.body.classList.add("icons-ready");
-        return;
-      }
+      // check() also returns true for an unregistered face. Require actual loaded faces
+      // before hiding the offline fallback, otherwise icon-only controls become blank.
       // Race: font load promise vs. 800ms fallback timeout.
       // Google Fonts CDN is unreliable in some networks — don't wait more than 800ms
       // before showing fallback characters, which are now complete for all icons.
@@ -575,7 +571,10 @@ function isPdfOverlayCandidate(segment) {
         settled = true;
         document.body.classList.add("icons-fallback");
       };
-      document.fonts.load("24px 'Material Symbols Outlined'").then(markReady).catch(markFallback);
+      document.fonts.load("24px 'Material Symbols Outlined'").then(function (faces) {
+        if (faces.length && document.fonts.check("24px 'Material Symbols Outlined'")) markReady();
+        else markFallback();
+      }).catch(markFallback);
       window.setTimeout(markFallback, 800);
       return;
     }
@@ -585,8 +584,10 @@ function isPdfOverlayCandidate(segment) {
   function setupAppNav() {
     var links = document.querySelectorAll("a.sidebar-nav-item[data-page]");
     var pages = {
+      home: document.getElementById("page-home"),
       desktop: document.getElementById("page-desktop"),
       pdf: document.getElementById("page-pdf"),
+      capabilities: document.getElementById("page-capabilities"),
       settings: document.getElementById("page-settings"),
     };
 
@@ -1067,6 +1068,152 @@ function isPdfOverlayCandidate(segment) {
         });
         targetMenu.appendChild(option);
       });
+    }
+  }
+
+  function setupCapabilityLibraryPage() {
+    // Presentation-only labels: catalog data stays frozen; UI copy mirrors sandbox denoise.
+    var displayNames = {
+      "cap.semantic-structure": "语义段落解析",
+      "cap.column-recognition": "单／双栏与混合栏识别",
+      "cap.paragraph-object-identity": "段落与对象身份追踪",
+      "cap.geometry-layout": "版面几何与安全区",
+      "cap.mask-write": "遮盖与写回一致性",
+      "cap.scientific-object-fidelity": "科学公式与图表保真",
+      "cap.translation-completeness": "翻译完整性闭环",
+      "cap.write-completeness": "写回完整性",
+      "cap.export-state": "导出状态清晰",
+    };
+    var displayDescriptions = {
+      "cap.semantic-structure": "把标题、正文、脚注等段落类型分清楚，避免后面环节认错结构。",
+      "cap.column-recognition": "验证逐页与区域的单栏、双栏、混合栏及对象归栏；最终判断仍由 Column Authority 负责。",
+      "cap.paragraph-object-identity": "保证同一段文字在提取、翻译、回写全程可对应，不丢号、不串号。",
+      "cap.geometry-layout": "控制译文落位，避免跨栏、重叠、裁切或压到图公式。",
+      "cap.mask-write": "原位置擦除与写入成对完成，局部失败不会拖垮整页。",
+      "cap.scientific-object-fidelity": "图片、公式、表格与参考文献条目保持原貌，不被误翻或遮盖。",
+      "cap.translation-completeness": "该翻的段落都有明确结果：成功、重试或有原因地保留原文。",
+      "cap.write-completeness": "已接受的译文要么完整写回，要么明确说明为何保留原文。",
+      "cap.export-state": "翻译完成、写回完成、文件导出是三件独立事实，互不冒充。",
+    };
+    var statusLabels = {
+      defined: "已定义",
+      pilot_ready: "待试点",
+      covered: "已建立回归基线",
+      deprecated: "已停用",
+    };
+    var list = document.getElementById("capabilityLibraryList");
+    if (!list) return;
+    var errorBox = document.getElementById("capabilityLibraryError");
+    try {
+      if (typeof require !== "function") throw new Error("当前预览环境不支持读取本地能力库。");
+      var library = require("./capability-library").loadCapabilityLibrary();
+      var boundaryCount = library.capabilities.reduce(function (total, capability) {
+        return total + capability.boundaries.length;
+      }, 0);
+      var authorityCount = new Set(library.capabilities.map(function (capability) {
+        return capability.architectureRecord;
+      })).size;
+      setText("capabilityLibraryCapabilityCount", String(library.capabilities.length));
+      setText("capabilityLibraryBoundaryCount", String(boundaryCount));
+      setText("capabilityLibrarySampleCount", String(library.samples.length));
+      setText("capabilityLibraryAuthorityCount", String(authorityCount));
+      setText("capabilityLibrarySchemaBadge", "数据版本 · " + library.schemaVersion.replace("capability-library-snapshot/", ""));
+      list.textContent = "";
+      library.capabilities.forEach(function (capability) {
+        var formalSamples = capability.regressionSampleIds.map(function (sampleId) {
+          return library.samples.find(function (sample) { return sample.id === sampleId; });
+        }).filter(Boolean);
+        var formalPageCount = formalSamples.reduce(function (total, sample) {
+          return total + sample.source.pageCount;
+        }, 0);
+        var card = document.createElement("article");
+        card.className = "capability-library-item";
+
+        var head = document.createElement("div");
+        head.className = "capability-library-item-head";
+        var title = document.createElement("h4");
+        title.textContent = displayNames[capability.id] || capability.name;
+        var status = document.createElement("span");
+        status.className = "capability-library-status";
+        status.dataset.state = capability.status;
+        status.textContent = statusLabels[capability.status] || capability.status;
+        head.appendChild(title);
+        head.appendChild(status);
+
+        var description = document.createElement("p");
+        description.className = "capability-library-description";
+        description.textContent = displayDescriptions[capability.id] || capability.description;
+
+        var meta = document.createElement("div");
+        meta.className = "capability-library-meta";
+        var metaLine = document.createElement("span");
+        metaLine.textContent =
+          "覆盖场景 " + capability.boundaries.length +
+          " · 验收标准 " + capability.expectedOutcomes.length +
+          " · 回归基线 " + formalSamples.length + " 个样本" +
+          (formalSamples.length ? " / " + formalPageCount + " 页" : "");
+        meta.appendChild(metaLine);
+
+        var cta = document.createElement("div");
+        cta.className = "capability-library-cta";
+        var details = document.createElement("details");
+        details.className = "capability-library-details";
+        var summary = document.createElement("summary");
+        summary.textContent = "查看详情";
+        details.appendChild(summary);
+        var tech = document.createElement("p");
+        tech.className = "capability-library-tech";
+        tech.textContent = "架构代号 · " + capability.architectureRecord + "  ·  " + capability.id;
+        details.appendChild(tech);
+        var authorityStatement = document.createElement("p");
+        authorityStatement.textContent = capability.decisionAuthority.statement;
+        details.appendChild(authorityStatement);
+        [
+          ["覆盖场景", capability.boundaries.map(function (boundary) { return boundary.description; })],
+          ["验收标准", capability.expectedOutcomes.map(function (outcome) { return outcome.assertion; })],
+          ["证据要求", capability.evidenceRequirements],
+          ["正式回归样本", formalSamples.length ? formalSamples.map(function (sample) {
+            var paperLabel = sample.id.split(".").pop();
+            return paperLabel + " · " + sample.source.fileName + " · " + sample.source.pageCount + " 页";
+          }) : ["尚无正式样本"]],
+        ].forEach(function (group) {
+          var heading = document.createElement("h5");
+          heading.textContent = group[0];
+          details.appendChild(heading);
+          var items = document.createElement("ul");
+          group[1].forEach(function (value) {
+            var item = document.createElement("li");
+            item.textContent = value;
+            items.appendChild(item);
+          });
+          details.appendChild(items);
+        });
+        cta.appendChild(details);
+        var contribute = document.createElement("span");
+        contribute.className = "capability-library-contribute";
+        contribute.textContent = "样本投递尚未开放";
+        contribute.title = "样本投递入口随后续候选池接线开放";
+        cta.appendChild(contribute);
+
+        card.appendChild(head);
+        card.appendChild(description);
+        card.appendChild(meta);
+        card.appendChild(cta);
+        list.appendChild(card);
+      });
+      if (!library.capabilities.length) {
+        var empty = document.createElement("p");
+        empty.className = "capability-library-empty";
+        empty.textContent = "尚无能力定义。";
+        list.appendChild(empty);
+      }
+    } catch (error) {
+      list.textContent = "";
+      if (errorBox) {
+        errorBox.textContent = "能力库加载失败：" + String(error && error.message ? error.message : error);
+        errorBox.classList.remove("hidden");
+      }
+      setText("capabilityLibrarySchemaBadge", "数据校验失败");
     }
   }
 
@@ -2999,18 +3146,12 @@ function resetPdfDocumentState(fileId) {
       translatedExcerpt.className = "pdf-segment-translated-excerpt";
 
       title.textContent = "段落 " + (index + 1) +
-        " · page " + (segment.pageNumber || "-") +
-        " · " + (segment.type && segment.type !== "body" ? segment.type : (segment.column || "single")) +
         (segment.suspicious ? " · 疑似异常" : "") +
         " · 展开";
-      var statusLabel = getSegmentStatusLabel(segment);
+      var statusLabel = getSegmentDisplayStatus(segment);
       var skipReason = getSegmentSkipReason(segment);
-      meta.textContent = "page " + (segment.pageNumber || "-") +
-        " · " + (segment.column || "single") +
-        " · " + statusLabel +
-        " · " + String(segment.sourceText || "").length + " 字";
-      meta.textContent = "page " + (segment.pageNumber || "-") +
-        " · " + (segment.column || "single") +
+      meta.textContent = "页码 " + (segment.pageNumber || "-") +
+        " · " + getSegmentDisplayColumn(segment) +
         " · " + statusLabel +
         " · " + countTextChars(segment.sourceText || "") + " 字" +
         (skipReason ? " · " + skipReason : "");
@@ -3037,6 +3178,18 @@ function resetPdfDocumentState(fileId) {
     updatePdfExportButton();
   }
 
+  // Presentation only: never rewrite the segment's canonical fields or workflow state.
+  function getSegmentDisplayStatus(segment) {
+    var label = getSegmentStatusLabel(segment);
+    var labels = { pending: "待翻译", translating: "翻译中", done: "已翻译", failed: "翻译失败", error: "翻译失败", canceled: "已取消", cancelled: "已取消", paused: "已暂停" };
+    return labels[label] || label;
+  }
+
+  function getSegmentDisplayColumn(segment) {
+    var labels = { single: "单栏", left: "左栏", right: "右栏", full: "通栏", full_width: "通栏" };
+    return labels[String(segment && segment.column || "single")] || "未标注";
+  }
+
   function openPdfSegmentModal(segment, index) {
     var modal = document.getElementById("pdfSegmentModal");
     var title = document.getElementById("pdfSegmentModalTitle");
@@ -3046,14 +3199,10 @@ function resetPdfDocumentState(fileId) {
     if (!modal || !title || !meta || !text || !translatedText) return;
     state.activeSegment = segment;
     title.textContent = "段落 " + (index + 1);
-    var statusLabel = getSegmentStatusLabel(segment);
+    var statusLabel = getSegmentDisplayStatus(segment);
     var skipReason = getSegmentSkipReason(segment);
     meta.textContent = "页码 " + (segment.pageNumber || "-") +
-      " · 栏位 " + (segment.column || "single") +
-      " · 状态 " + statusLabel +
-      " · " + String(segment.sourceText || "").length + " 字";
-    meta.textContent = "页码 " + (segment.pageNumber || "-") +
-      " · 栏位 " + (segment.column || "single") +
+      " · " + getSegmentDisplayColumn(segment) +
       " · 状态 " + statusLabel +
       " · " + countTextChars(segment.sourceText || "") + " 字" +
       (skipReason ? " · " + skipReason : "");
@@ -4362,6 +4511,7 @@ async function boot() {
     setupMaterialIconReadiness();
     setupWindowControls();
     setupAppNav();
+    setupCapabilityLibraryPage();
     await loadSharedConfig();
     setupDeveloperModeControls();
     await setupTranslatePage();

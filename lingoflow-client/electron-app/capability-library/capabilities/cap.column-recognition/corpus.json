@@ -1,0 +1,918 @@
+{
+  "schemaVersion": "capability-corpus/v1",
+  "catalogRole": "regression_only",
+  "runtimeDecisionUse": "forbidden",
+  "samples": [
+    {
+      "id": "sample.column-pilot.paper1",
+      "displayName": "Column pilot paper1",
+      "source": {
+        "fileName": "论文样本1.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "7ba73a901c7bacf14cdff7d9e16480cc451ca3a521977795a3de9c4e67bba0ac",
+        "bytes": 2284562,
+        "pageCount": 6
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Existing user-provided PDF sample; EVD-20260916-COLUMN-PILOT-CURRENT-CAPTURE"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.column.single",
+        "boundary.column.double",
+        "boundary.column.mixed-full-width",
+        "boundary.column.page-transition"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.column-recognition",
+          "assertionId": "assert.column.page-region-truth",
+          "oracleType": "exact",
+          "expected": {
+            "pageLayoutBasis": "body_text_flow_only",
+            "pages": [
+              {
+                "pageNumber": 1,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 2,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 3,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 4,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 5,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 6,
+                "layout": "double_column"
+              }
+            ],
+            "independentRegions": [
+              {
+                "pageNumber": 1,
+                "type": "title"
+              },
+              {
+                "pageNumber": 1,
+                "type": "abstract"
+              },
+              {
+                "pageNumber": 1,
+                "type": "other_independent"
+              },
+              {
+                "pageNumber": 3,
+                "type": "figure"
+              },
+              {
+                "pageNumber": 3,
+                "type": "figure_caption"
+              },
+              {
+                "pageNumber": 5,
+                "type": "references_section_header"
+              }
+            ]
+          },
+          "notes": "Independent-region vocabulary is closed for this pilot; no subtype inference is authorized."
+        }
+      ],
+      "evidenceRefs": [
+        "EVD-20260916-COLUMN-PILOT-CURRENT-CAPTURE",
+        "EVD-20260916-COLUMN-PILOT-TEXT-FLOW-REVIEW",
+        "EVD-20260916-COLUMN-PILOT-INDEPENDENT-REGION-REVIEW"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-COLUMN-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.column-pilot.paper2",
+      "displayName": "Column pilot paper2",
+      "source": {
+        "fileName": "论文样本2.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "a3caa00f90f1b68a2068bbed07b2b91b6b40b3f65d1c3b22302e21333510e36f",
+        "bytes": 283040,
+        "pageCount": 11
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Existing user-provided PDF sample; EVD-20260916-COLUMN-PILOT-CURRENT-CAPTURE"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.column.single",
+        "boundary.column.double",
+        "boundary.column.mixed-full-width",
+        "boundary.column.page-transition"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.column-recognition",
+          "assertionId": "assert.column.page-region-truth",
+          "oracleType": "exact",
+          "expected": {
+            "pageLayoutBasis": "body_text_flow_only",
+            "pages": [
+              {
+                "pageNumber": 1,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 2,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 3,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 4,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 5,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 6,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 7,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 8,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 9,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 10,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 11,
+                "layout": "double_column"
+              }
+            ],
+            "independentRegions": [
+              {
+                "pageNumber": 1,
+                "type": "title"
+              },
+              {
+                "pageNumber": 1,
+                "type": "abstract"
+              },
+              {
+                "pageNumber": 1,
+                "type": "other_independent"
+              }
+            ]
+          },
+          "notes": "Independent-region vocabulary is closed for this pilot; no subtype inference is authorized."
+        }
+      ],
+      "evidenceRefs": [
+        "EVD-20260916-COLUMN-PILOT-CURRENT-CAPTURE",
+        "EVD-20260916-COLUMN-PILOT-TEXT-FLOW-REVIEW",
+        "EVD-20260916-COLUMN-PILOT-INDEPENDENT-REGION-REVIEW"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-COLUMN-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.column-pilot.paper3",
+      "displayName": "Column pilot paper3",
+      "source": {
+        "fileName": "论文样本3.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "fa33485f517b3c94d2f6e4d4366f3ab14a1e413a738db512e1862f4a0944f5f9",
+        "bytes": 505955,
+        "pageCount": 14
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Existing user-provided PDF sample; EVD-20260916-COLUMN-PILOT-CURRENT-CAPTURE"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.column.single",
+        "boundary.column.double",
+        "boundary.column.mixed-full-width",
+        "boundary.column.page-transition"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.column-recognition",
+          "assertionId": "assert.column.page-region-truth",
+          "oracleType": "exact",
+          "expected": {
+            "pageLayoutBasis": "body_text_flow_only",
+            "pages": [
+              {
+                "pageNumber": 1,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 2,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 3,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 4,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 5,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 6,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 7,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 8,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 9,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 10,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 11,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 12,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 13,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 14,
+                "layout": "single_column"
+              }
+            ],
+            "independentRegions": [
+              {
+                "pageNumber": 1,
+                "type": "title"
+              },
+              {
+                "pageNumber": 1,
+                "type": "abstract"
+              },
+              {
+                "pageNumber": 1,
+                "type": "other_independent"
+              }
+            ]
+          },
+          "notes": "Independent-region vocabulary is closed for this pilot; no subtype inference is authorized."
+        }
+      ],
+      "evidenceRefs": [
+        "EVD-20260916-COLUMN-PILOT-CURRENT-CAPTURE",
+        "EVD-20260916-COLUMN-PILOT-TEXT-FLOW-REVIEW",
+        "EVD-20260916-COLUMN-PILOT-INDEPENDENT-REGION-REVIEW"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-COLUMN-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.column-pilot.paper4",
+      "displayName": "Column pilot paper4",
+      "source": {
+        "fileName": "论文样本4.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "8984769b011698352fba9532e6eed4d81a1683451e888ee85a2caa8042149e8b",
+        "bytes": 1356829,
+        "pageCount": 16
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Existing user-provided PDF sample; EVD-20260916-COLUMN-PILOT-CURRENT-CAPTURE"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.column.single",
+        "boundary.column.double",
+        "boundary.column.mixed-full-width",
+        "boundary.column.page-transition"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.column-recognition",
+          "assertionId": "assert.column.page-region-truth",
+          "oracleType": "exact",
+          "expected": {
+            "pageLayoutBasis": "body_text_flow_only",
+            "pages": [
+              {
+                "pageNumber": 1,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 2,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 3,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 4,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 5,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 6,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 7,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 8,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 9,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 10,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 11,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 12,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 13,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 14,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 15,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 16,
+                "layout": "single_column"
+              }
+            ],
+            "independentRegions": [
+              {
+                "pageNumber": 1,
+                "type": "title"
+              },
+              {
+                "pageNumber": 1,
+                "type": "other_independent"
+              },
+              {
+                "pageNumber": 2,
+                "type": "figure"
+              },
+              {
+                "pageNumber": 2,
+                "type": "figure_caption"
+              },
+              {
+                "pageNumber": 3,
+                "type": "figure"
+              },
+              {
+                "pageNumber": 3,
+                "type": "figure_caption"
+              },
+              {
+                "pageNumber": 7,
+                "type": "table"
+              },
+              {
+                "pageNumber": 9,
+                "type": "table"
+              },
+              {
+                "pageNumber": 13,
+                "type": "title"
+              }
+            ]
+          },
+          "notes": "Independent-region vocabulary is closed for this pilot; no subtype inference is authorized."
+        }
+      ],
+      "evidenceRefs": [
+        "EVD-20260916-COLUMN-PILOT-CURRENT-CAPTURE",
+        "EVD-20260916-COLUMN-PILOT-TEXT-FLOW-REVIEW",
+        "EVD-20260916-COLUMN-PILOT-INDEPENDENT-REGION-REVIEW"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-COLUMN-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.column-pilot.paper5",
+      "displayName": "Column pilot paper5",
+      "source": {
+        "fileName": "论文样本5.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "c3efd26afb65cafaa9e35525d0c2c182199b330cf101645e84f63901eca8bc48",
+        "bytes": 1427806,
+        "pageCount": 14
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Existing user-provided PDF sample; EVD-20260916-COLUMN-PILOT-CURRENT-CAPTURE"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.column.single",
+        "boundary.column.double",
+        "boundary.column.mixed-full-width",
+        "boundary.column.page-transition"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.column-recognition",
+          "assertionId": "assert.column.page-region-truth",
+          "oracleType": "exact",
+          "expected": {
+            "pageLayoutBasis": "body_text_flow_only",
+            "pages": [
+              {
+                "pageNumber": 1,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 2,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 3,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 4,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 5,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 6,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 7,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 8,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 9,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 10,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 11,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 12,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 13,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 14,
+                "layout": "single_column"
+              }
+            ],
+            "independentRegions": [
+              {
+                "pageNumber": 1,
+                "type": "title"
+              },
+              {
+                "pageNumber": 1,
+                "type": "abstract"
+              },
+              {
+                "pageNumber": 1,
+                "type": "other_independent"
+              }
+            ]
+          },
+          "notes": "Independent-region vocabulary is closed for this pilot; no subtype inference is authorized."
+        }
+      ],
+      "evidenceRefs": [
+        "EVD-20260916-COLUMN-PILOT-CURRENT-CAPTURE",
+        "EVD-20260916-COLUMN-PILOT-TEXT-FLOW-REVIEW",
+        "EVD-20260916-COLUMN-PILOT-INDEPENDENT-REGION-REVIEW"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-COLUMN-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.column-pilot.paper6",
+      "displayName": "Column pilot paper6",
+      "source": {
+        "fileName": "论文样本6.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "6f4cb19da2d60bb5eed20cd5d56f0360b2afb552e60a199792cc4be6b752189e",
+        "bytes": 1148938,
+        "pageCount": 18
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Existing user-provided PDF sample; EVD-20260916-COLUMN-PILOT-CURRENT-CAPTURE"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.column.single",
+        "boundary.column.double",
+        "boundary.column.mixed-full-width",
+        "boundary.column.page-transition"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.column-recognition",
+          "assertionId": "assert.column.page-region-truth",
+          "oracleType": "exact",
+          "expected": {
+            "pageLayoutBasis": "body_text_flow_only",
+            "pages": [
+              {
+                "pageNumber": 1,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 2,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 3,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 4,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 5,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 6,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 7,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 8,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 9,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 10,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 11,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 12,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 13,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 14,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 15,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 16,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 17,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 18,
+                "layout": "double_column"
+              }
+            ],
+            "independentRegions": [
+              {
+                "pageNumber": 1,
+                "type": "title"
+              },
+              {
+                "pageNumber": 1,
+                "type": "abstract"
+              },
+              {
+                "pageNumber": 1,
+                "type": "other_independent"
+              },
+              {
+                "pageNumber": 16,
+                "type": "figure"
+              },
+              {
+                "pageNumber": 16,
+                "type": "figure_caption"
+              }
+            ]
+          },
+          "notes": "Independent-region vocabulary is closed for this pilot; no subtype inference is authorized."
+        }
+      ],
+      "evidenceRefs": [
+        "EVD-20260916-COLUMN-PILOT-CURRENT-CAPTURE",
+        "EVD-20260916-COLUMN-PILOT-TEXT-FLOW-REVIEW",
+        "EVD-20260916-COLUMN-PILOT-INDEPENDENT-REGION-REVIEW"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-COLUMN-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.column-pilot.paper7",
+      "displayName": "Column pilot paper7",
+      "source": {
+        "fileName": "论文样本7.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "ab244887804a95c4904e5efe5425fa1446d55f54fb2a707424439eb53c0bc1da",
+        "bytes": 1741947,
+        "pageCount": 11
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Existing user-provided PDF sample; EVD-20260916-COLUMN-PILOT-CURRENT-CAPTURE"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.column.single",
+        "boundary.column.double",
+        "boundary.column.mixed-full-width",
+        "boundary.column.page-transition"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.column-recognition",
+          "assertionId": "assert.column.page-region-truth",
+          "oracleType": "exact",
+          "expected": {
+            "pageLayoutBasis": "body_text_flow_only",
+            "pages": [
+              {
+                "pageNumber": 1,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 2,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 3,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 4,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 5,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 6,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 7,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 8,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 9,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 10,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 11,
+                "layout": "double_column"
+              }
+            ],
+            "independentRegions": [
+              {
+                "pageNumber": 1,
+                "type": "title"
+              },
+              {
+                "pageNumber": 1,
+                "type": "abstract"
+              },
+              {
+                "pageNumber": 1,
+                "type": "other_independent"
+              },
+              {
+                "pageNumber": 5,
+                "type": "figure"
+              },
+              {
+                "pageNumber": 5,
+                "type": "figure_caption"
+              },
+              {
+                "pageNumber": 7,
+                "type": "figure"
+              },
+              {
+                "pageNumber": 7,
+                "type": "figure_caption"
+              },
+              {
+                "pageNumber": 9,
+                "type": "figure"
+              },
+              {
+                "pageNumber": 9,
+                "type": "figure_caption"
+              }
+            ]
+          },
+          "notes": "Independent-region vocabulary is closed for this pilot; no subtype inference is authorized."
+        }
+      ],
+      "evidenceRefs": [
+        "EVD-20260916-COLUMN-PILOT-CURRENT-CAPTURE",
+        "EVD-20260916-COLUMN-PILOT-TEXT-FLOW-REVIEW",
+        "EVD-20260916-COLUMN-PILOT-INDEPENDENT-REGION-REVIEW"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-COLUMN-001"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "column-pilot-root-cause-analysis/v1",
+  "evidenceId": "EVD-20260916-COLUMN-PILOT-ROOT-CAUSE",
+  "runtimeDecisionUse": "forbidden",
+  "truthPolicy": "Body text alone decides single/double/mixed. Non-body content is an independent region with the frozen seven-type vocabulary.",
+  "corpus": {
+    "state": "revision-promoted-paper7",
+    "samples": [
+      "paper1",
+      "paper2",
+      "paper3",
+      "paper4",
+      "paper5",
+      "paper6",
+      "paper7"
+    ],
+    "pages": 90,
+    "ordinaryAndScanPromoted": false
+  },
+  "regression": {
+    "findings": 34,
+    "falseNegativeDoubleAsSingle": 33,
+    "falsePositiveSingleAsDouble": 1,
+    "bySample": {
+      "paper1": 1,
+      "paper2": 10,
+      "paper3": 0,
+      "paper4": 12,
+      "paper5": 1,
+      "paper6": 0,
+      "paper7": 10
+    },
+    "controls": {
+      "paper3": "14/14 match",
+      "paper6": "18/18 match"
+    }
+  },
+  "clusters": [
+    {
+      "id": "RC-1",
+      "priority": "primary",
+      "findingCoverage": "33/34 direct",
+      "summary": "Parallel left/right text is merged into wide preliminary lines before page-column detection.",
+      "firstDecisionSite": "main.js:1020-1053 mergeTextItemsIntoLines, called by detectPageColumns at 1906",
+      "mechanism": "Rows are grouped by baseline Y only. Horizontal discontinuity/gutter is not a row boundary, so simultaneous left/right lines can become one page-spanning line. detectPageLayout then sees many wide lines, weak/no rightCluster evidence and defaults to single.",
+      "evidence": [
+        "All 33 false-negative pages nevertheless contain downstream left/right segment ownership; 30 contain both left and right.",
+        "All 33 false-negative pages contain a twoColumnBodyZone while pipelineDebug.page.layoutType remains single_column.",
+        "Paper2, paper4 and paper7 reproduce this across 10, 12 and 10 pages, so it is template-family/systemic rather than one-page special casing."
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "RC-2",
+      "priority": "amplifier",
+      "findingCoverage": "4 first-page false negatives, overlapping RC-1",
+      "summary": "First-page top-matter handling is a positional blanket rather than independent-region evidence.",
+      "firstDecisionSite": "main.js:1943-1945 detectPageColumns",
+      "mechanism": "Every item above 58% page height on page 1 is put into singleItems. This conflates title/abstract/authors with body-column evidence and can erase valid upper-page two-column support.",
+      "evidence": [
+        "Paper1, paper2, paper4 and paper7 page 1 are all reviewed double-body pages with independent title/abstract regions but reported single_column."
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "RC-3",
+      "priority": "secondary",
+      "findingCoverage": "1/34 direct",
+      "summary": "Item-centre fallback can manufacture two columns from fragmented runs on a single-column page.",
+      "firstDecisionSite": "main.js:1937-1963 detectPageColumns",
+      "mechanism": "hasTwoColumns uses left/right item counts and fixed centre thresholds, without requiring a stable gutter and sustained vertically overlapping body streams. Paper5 page10 therefore crosses the count threshold despite single-column truth.",
+      "evidence": [
+        "The only inverse error is paper5 page10: expected single_column, actual double_column; later segments split left=7/right=4/single=1."
+      ],
+      "confidence": "medium_high"
+    },
+    {
+      "id": "RC-4",
+      "priority": "architectural",
+      "findingCoverage": "explains all 34 observability/behavior divergence",
+      "summary": "Column facts are re-decided after page detection, so the page label is not the canonical fact consumed downstream.",
+      "decisionSites": [
+        "main.js:3995-4051 inferPaperColumnFromBbox / repairPaperSegmentColumnsByBbox",
+        "main.js:16777-16830 getColumnLocalWriteBox",
+        "main.js:18098-18136 normalizeReportPageLayouts"
+      ],
+      "mechanism": "Bbox repair mutates segment/line columns, writer infers again and may switch the column, and report normalization derives page layout from segment reports. This can make visible output look reasonable while the captured page model still fails regression.",
+      "evidence": [
+        "33 detector false negatives all acquire at least one left/right segment downstream.",
+        "The formal regression intentionally reads the page-level current output and therefore exposes the split rather than treating repair as detector success."
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "RC-5",
+      "priority": "contract_gap",
+      "findingCoverage": "latent; not counted among current 34 because current outputs contain no mixed finding",
+      "summary": "Current mixed classification uses top wide lines, contrary to the accepted truth contract.",
+      "firstDecisionSite": "main.js:1137-1141 detectPageLayout",
+      "mechanism": "Three wide lines near the top upgrade a detected two-column page to mixed. Under the frozen corpus contract, title/abstract/figure/table/reference header are independent regions and cannot decide mixed.",
+      "evidence": [
+        "The user-corrected corpus contains 0 mixed pages and records such objects separately."
+      ],
+      "confidence": "high"
+    }
+  ],
+  "nextRepairRecommendation": {
+    "taskShape": "Create one bounded Column Authority repair task; do not patch individual PDFs.",
+    "sequence": [
+      {
+        "step": 1,
+        "goal": "Establish one frozen PageColumnModel output containing body-flow layout plus independentRegions; make current detector the sole producer and expose mismatch evidence."
+      },
+      {
+        "step": 2,
+        "goal": "Build body-only spatial evidence before line merging: preserve gutter separation and form left/right line streams before page layout scoring."
+      },
+      {
+        "step": 3,
+        "goal": "Replace first-page 58% blanket and item-count-only fallback with reviewed independent-region exclusion, stable gutter evidence and vertical overlap requirements."
+      },
+      {
+        "step": 4,
+        "goal": "Remove mixed inference from top-wide objects; mixed requires a genuine body-text flow transition."
+      },
+      {
+        "step": 5,
+        "goal": "Migrate bbox repair, writer and report normalization from re-decision to read-only validation/consumption; mismatches become findings, not silent mutation."
+      },
+      {
+        "step": 6,
+        "goal": "Run the seven-sample formal corpus after each step; require 90/90 page truth plus separate region and ownership gates before closure."
+      }
+    ]
+  },
+  "nonActions": [
+    "No runtime source was modified.",
+    "No truth, accepted audit history or corpus sample was rewritten.",
+    "No Issue was closed.",
+    "No ordinary or scanned sample was promoted."
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minimalist-translation.local/schemas/capability-library-v1.json",
+  "title": "Capability Library Catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "catalogRole", "runtimeDecisionUse", "capabilities"],
+  "properties": {
+    "schemaVersion": { "const": "capability-library/v1" },
+    "catalogRole": { "const": "evidence_and_regression_only" },
+    "runtimeDecisionUse": { "const": "forbidden" },
+    "capabilities": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/capability" }
+    }
+  },
+  "$defs": {
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "name", "description", "architectureRecord",
+        "decisionAuthority", "status", "boundaries", "expectedOutcomes",
+        "evidenceRequirements", "regressionSampleIds"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^cap\\.[a-z0-9]+(?:[.-][a-z0-9]+)*$" },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "architectureRecord": { "type": "string", "pattern": "^AA-[A-Z]+-[0-9]{3}$" },
+        "relatedArchitectureRecords": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^AA-[A-Z]+-[0-9]{3}$" }
+        },
+        "decisionAuthority": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["owner", "statement"],
+          "properties": {
+            "owner": { "type": "string", "minLength": 1 },
+            "statement": { "type": "string", "minLength": 1 }
+          }
+        },
+        "status": { "enum": ["defined", "pilot_ready", "covered", "deprecated"] },
+        "boundaries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "description", "featureTags"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^boundary\\.[a-z0-9]+(?:[.-][a-z0-9]+)*$" },
+              "description": { "type": "string", "minLength": 1 },
+              "featureTags": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": { "type": "string", "minLength": 1 }
+              }
+            }
+          }
+        },
+        "expectedOutcomes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "assertion", "evidenceLevel"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^assert\\.[a-z0-9]+(?:[.-][a-z0-9]+)*$" },
+              "assertion": { "type": "string", "minLength": 1 },
+              "evidenceLevel": {
+                "enum": ["unit_contract", "artifact", "real_run", "pixel_visual", "user_acceptance"]
+              }
+            }
+          }
+        },
+        "evidenceRequirements": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": ["unit_contract", "artifact", "real_run", "pixel_visual", "user_acceptance"]
+          }
+        },
+        "regressionSampleIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^sample\\.[a-z0-9]+(?:[.-][a-z0-9]+)*$" }
+        }
+      }
+    }
+  }
+}

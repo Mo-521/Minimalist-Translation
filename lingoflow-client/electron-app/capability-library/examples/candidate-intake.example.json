@@ -1,0 +1,12 @@
+{
+  "candidateId": "candidate.replace-with-stable-id",
+  "capabilityIds": ["cap.semantic-structure"],
+  "id": "sample.replace-with-stable-id",
+  "displayName": "Replace with a reviewable sample name",
+  "provenance": {"kind": "user_provided", "reference": "Replace with source/evidence reference"},
+  "rights": {"status": "metadata_only", "canStoreMetadata": true, "canStoreBinary": false},
+  "boundaryFeatureIds": ["boundary.structure.section-transition"],
+  "expectedOutcomes": [], "evidenceRefs": [],
+  "finalDecisionsOwnedBy": ["AA-STRUCTURE-001"],
+  "audit": {"actor": "Replace with submitting user", "reason": "Describe the observed symptom, not an automatic root cause"}
+}

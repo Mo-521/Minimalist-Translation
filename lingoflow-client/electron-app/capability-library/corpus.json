@@ -1,0 +1,6 @@
+{
+  "schemaVersion": "capability-corpus/v1",
+  "catalogRole": "regression_only",
+  "runtimeDecisionUse": "forbidden",
+  "samples": []
+}

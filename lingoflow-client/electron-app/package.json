@@ -8,6 +8,8 @@
     "build:css": "tailwindcss -c tailwind.config.js -i tailwind.input.css -o tailwind.css --minify",
     "start": "npm run build:css && electron .",
     "test:pdf": "node --test ../tests/pdf/unit/*.test.js",
+    "capability:intake": "node ../tools/capability-library-intake.js",
+    "capability:candidates": "node ../tools/capability-candidate-pool.js",
     "pack:win": "npm run build:css && electron-builder --win nsis",
     "pack:win-dir": "npm run build:css && electron-builder --win dir"
   },
@@ -20,6 +22,7 @@
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
+    "ajv": "8.20.0",
     "docx": "9.7.1",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "4.10.38"
@@ -39,9 +42,11 @@
       "styles.css",
       "tailwind.css",
       "paper-layout-authority.js",
+      "column-authority.js",
       "pdf-pipeline-diagnostics.js",
       "semantic-structure-authority.js",
       "semantic-structure-consumer-authority.js",
+      "capability-library/**/*",
       "package.json",
       "node_modules/**/*"
     ],

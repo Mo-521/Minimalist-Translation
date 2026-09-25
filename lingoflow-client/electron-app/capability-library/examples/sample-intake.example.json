@@ -1,0 +1,21 @@
+{
+  "id": "sample.replace-with-stable-id",
+  "displayName": "Replace with a reviewable sample name",
+  "provenance": {
+    "kind": "user_provided",
+    "reference": "Evidence or intake ticket reference"
+  },
+  "rights": {
+    "status": "metadata_only",
+    "canStoreMetadata": true,
+    "canStoreBinary": false
+  },
+  "boundaryFeatureIds": [
+    "boundary.replace-with-declared-feature"
+  ],
+  "expectedOutcomes": [],
+  "evidenceRefs": [],
+  "finalDecisionsOwnedBy": [
+    "AA-EVIDENCE-001"
+  ]
+}

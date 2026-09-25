@@ -1,0 +1,11 @@
+{
+  "actor": "Replace with human reviewer",
+  "reason": "Record the reviewed evidence and rationale",
+  "evidenceRefs": ["Replace with a reviewable evidence reference"],
+  "expectedOutcomes": [{
+    "capabilityId": "cap.semantic-structure",
+    "assertionId": "assert.structure.single-producer",
+    "oracleType": "manual",
+    "expected": "Replace with the human-reviewed regression expectation"
+  }]
+}

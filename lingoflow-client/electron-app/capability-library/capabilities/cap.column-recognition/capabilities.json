@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "capability-library/v1",
+  "catalogRole": "evidence_and_regression_only",
+  "runtimeDecisionUse": "forbidden",
+  "capabilities": [
+    {
+      "id": "cap.column-recognition",
+      "name": "Column Recognition",
+      "description": "验证逐页正文文本流的单栏、双栏或混合栏型，以及 independent region 与对象归栏证据。",
+      "architectureRecord": "AA-COLUMN-001",
+      "relatedArchitectureRecords": ["AA-GEOMETRY-001", "AA-ORDER-001"],
+      "decisionAuthority": {
+        "owner": "Column Authority",
+        "statement": "Column Authority 是栏型、栏几何和 line/segment 归栏的唯一决策者；本库只读取正式 truth 与回归 Evidence，不参与推栏。"
+      },
+      "status": "covered",
+      "boundaries": [
+        {"id": "boundary.column.single", "description": "正文文本流为稳定单栏。", "featureTags": ["single-column", "body-text-flow"]},
+        {"id": "boundary.column.double", "description": "正文文本流为稳定双栏并具有明确 gutter。", "featureTags": ["double-column", "gutter", "body-text-flow"]},
+        {"id": "boundary.column.mixed-full-width", "description": "正文栏型与通栏 independent region 分离记录；非正文不把页面升级为 mixed。", "featureTags": ["independent-region", "full-width", "body-text-flow"]},
+        {"id": "boundary.column.page-transition", "description": "文档内逐页正文流可在单栏与双栏之间切换。", "featureTags": ["cross-page", "layout-transition", "body-text-flow"]}
+      ],
+      "expectedOutcomes": [
+        {"id": "assert.column.page-region-truth", "assertion": "页面正文流栏型及有限 independent region 与审核 truth set 一致。", "evidenceLevel": "pixel_visual"},
+        {"id": "assert.column.owner-consistency", "assertion": "line/segment 栏归属与冻结 PageColumnModel 一致，下游无平行推栏。", "evidenceLevel": "artifact"}
+      ],
+      "evidenceRequirements": ["unit_contract", "artifact", "real_run", "pixel_visual"],
+      "regressionSampleIds": [
+        "sample.column-pilot.paper1",
+        "sample.column-pilot.paper2",
+        "sample.column-pilot.paper3",
+        "sample.column-pilot.paper4",
+        "sample.column-pilot.paper5",
+        "sample.column-pilot.paper6",
+        "sample.column-pilot.paper7"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "capability-evidence-bundle/v1",
+  "capabilityId": "cap.column-recognition",
+  "catalogRole": "evidence_and_regression_only",
+  "runtimeDecisionUse": "forbidden",
+  "canonicalSource": true,
+  "formalCorpus": "corpus.json",
+  "capabilityDefinition": "capabilities.json",
+  "regressionBaseline": "baseline/summary.json",
+  "historicalEvidence": {
+    "preRepairRegressionDirectory": "evidence/pre-repair-regression",
+    "rootCauseAnalysis": "evidence/root-cause-analysis.json"
+  },
+  "provenance": {
+    "promotionEvidence": "EVD-20260916-COLUMN-PILOT-ROOT-CAUSE",
+    "baselineEvidence": "EVD-20260917-COLUMN-AUTHORITY-PAGE-MODEL-REPAIR",
+    "historicalAuditTask": ".governance/archive/tasks/column-capability-pilot/",
+    "historicalRepairTask": ".governance/archive/tasks/column-authority-page-model-repair/"
+  }
+}

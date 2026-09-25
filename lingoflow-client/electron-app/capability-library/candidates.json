@@ -1,0 +1,6 @@
+{
+  "schemaVersion": "capability-candidate-pool/v1",
+  "catalogRole": "candidate_evidence_only",
+  "runtimeDecisionUse": "forbidden",
+  "candidates": []
+}

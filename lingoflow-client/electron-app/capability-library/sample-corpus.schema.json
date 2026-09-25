@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minimalist-translation.local/schemas/capability-corpus-v1.json",
+  "title": "Capability Regression Corpus",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "catalogRole", "runtimeDecisionUse", "samples"],
+  "properties": {
+    "schemaVersion": { "const": "capability-corpus/v1" },
+    "catalogRole": { "const": "regression_only" },
+    "runtimeDecisionUse": { "const": "forbidden" },
+    "samples": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/sample" }
+    }
+  },
+  "$defs": {
+    "sample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "displayName", "source", "provenance", "rights",
+        "boundaryFeatureIds", "expectedOutcomes", "evidenceRefs",
+        "storage", "authorityBoundary"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^sample\\.[a-z0-9]+(?:[.-][a-z0-9]+)*$" },
+        "displayName": { "type": "string", "minLength": 1 },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["fileName", "mediaType", "sha256", "bytes", "pageCount"],
+          "properties": {
+            "fileName": { "type": "string", "minLength": 1 },
+            "mediaType": { "const": "application/pdf" },
+            "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+            "bytes": { "type": "integer", "minimum": 1 },
+            "pageCount": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "reference"],
+          "properties": {
+            "kind": { "enum": ["user_provided", "public_fixture", "synthetic", "licensed_corpus"] },
+            "reference": { "type": "string", "minLength": 1 }
+          }
+        },
+        "rights": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "canStoreMetadata", "canStoreBinary"],
+          "properties": {
+            "status": { "enum": ["owned", "licensed", "public", "permission_granted", "metadata_only"] },
+            "canStoreMetadata": { "const": true },
+            "canStoreBinary": { "type": "boolean" }
+          }
+        },
+        "boundaryFeatureIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^boundary\\.[a-z0-9]+(?:[.-][a-z0-9]+)*$" }
+        },
+        "expectedOutcomes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["capabilityId", "assertionId", "oracleType", "expected"],
+            "properties": {
+              "capabilityId": { "type": "string", "pattern": "^cap\\.[a-z0-9]+(?:[.-][a-z0-9]+)*$" },
+              "assertionId": { "type": "string", "pattern": "^assert\\.[a-z0-9]+(?:[.-][a-z0-9]+)*$" },
+              "oracleType": { "enum": ["exact", "range", "manual"] },
+              "expected": {},
+              "notes": { "type": "string" }
+            }
+          }
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "storage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["binaryCommitted", "externalSourceRequiredForRun"],
+          "properties": {
+            "binaryCommitted": { "type": "boolean" },
+            "externalSourceRequiredForRun": { "type": "boolean" }
+          }
+        },
+        "authorityBoundary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["catalogRole", "runtimeDecisionUse", "finalDecisionsOwnedBy"],
+          "properties": {
+            "catalogRole": { "const": "regression_oracle" },
+            "runtimeDecisionUse": { "const": "forbidden" },
+            "finalDecisionsOwnedBy": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "type": "string", "pattern": "^AA-[A-Z]+-[0-9]{3}$" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
