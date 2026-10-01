@@ -1,6 +1,7 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
@@ -25,8 +26,8 @@ test("library loads one recursively frozen evidence snapshot without runtime dec
   const snapshot = libraryModule.loadCapabilityLibrary();
   assert.equal(snapshot.role, "evidence_and_regression_only");
   assert.equal(snapshot.runtimeDecisionUse, "forbidden");
-  assert.equal(snapshot.capabilities.length, 9);
-  assert.equal(snapshot.samples.length, 7);
+  assert.equal(snapshot.capabilities.length, 10);
+  assert.equal(snapshot.samples.length, 20);
   assert.equal(Object.isFrozen(snapshot), true);
   assert.equal(Object.isFrozen(snapshot.capabilities), true);
   assert.equal(Object.isFrozen(snapshot.capabilities[0].boundaries[0]), true);
@@ -34,15 +35,27 @@ test("library loads one recursively frozen evidence snapshot without runtime dec
   assert.equal(column.architectureRecord, "AA-COLUMN-001");
   assert.match(column.decisionAuthority.statement, /Column Authority/);
   assert.equal(column.status, "covered");
-  assert.deepEqual(column.regressionSampleIds, snapshot.samples.map((sample) => sample.id));
-  assert.equal(snapshot.samples.reduce((total, sample) => total + sample.source.pageCount, 0), 90);
-  assert.deepEqual(snapshot.samples.map((sample) => sample.source.fileName), [
+  const geometry = snapshot.capabilities.find((item) => item.id === "cap.layout-geometry");
+  assert.equal(geometry.architectureRecord, "AA-GEOMETRY-001");
+  assert.equal(geometry.status, "pilot_ready");
+  const columnSamples = snapshot.samples.filter((sample) => sample.expectedOutcomes.some((outcome) => outcome.capabilityId === "cap.column-recognition"));
+  const geometrySamples = snapshot.samples.filter((sample) => sample.expectedOutcomes.some((outcome) => outcome.capabilityId === "cap.layout-geometry"));
+  assert.equal(columnSamples.length, 10);
+  assert.equal(geometrySamples.length, 10);
+  assert.deepEqual(column.regressionSampleIds, columnSamples.map((sample) => sample.id));
+  assert.deepEqual(geometry.regressionSampleIds, geometrySamples.map((sample) => sample.id));
+  assert.equal(columnSamples.reduce((total, sample) => total + sample.source.pageCount, 0), 126);
+  assert.equal(geometrySamples.reduce((total, sample) => total + sample.source.pageCount, 0), 126);
+  const names = [
     "论文样本1.pdf", "论文样本2.pdf", "论文样本3.pdf", "论文样本4.pdf",
-    "论文样本5.pdf", "论文样本6.pdf", "论文样本7.pdf",
-  ]);
+    "论文样本5.pdf", "论文样本6.pdf", "论文样本7.pdf", "论文样本8.pdf",
+    "论文样本9.pdf", "论文样本10.pdf",
+  ];
+  assert.deepEqual(columnSamples.map((sample) => sample.source.fileName), names);
+  assert.deepEqual(geometrySamples.map((sample) => sample.source.fileName), names);
 });
 
-test("Column capability has one canonical subdirectory and a frozen 90-page baseline", () => {
+test("Column capability has one canonical subdirectory and a 126-page promoted baseline", () => {
   const rootCatalog = JSON.parse(fs.readFileSync(path.join(LIBRARY_ROOT, "capabilities.json"), "utf8"));
   assert.equal(rootCatalog.capabilities.some((item) => item.id === "cap.column-recognition"), false);
   const columnRoot = path.join(LIBRARY_ROOT, "capabilities", "cap.column-recognition");
@@ -50,16 +63,66 @@ test("Column capability has one canonical subdirectory and a frozen 90-page base
   const corpus = JSON.parse(fs.readFileSync(path.join(columnRoot, "corpus.json"), "utf8"));
   const baseline = JSON.parse(fs.readFileSync(path.join(columnRoot, "baseline", "summary.json"), "utf8"));
   assert.deepEqual(columnCatalog.capabilities.map((item) => item.id), ["cap.column-recognition"]);
-  assert.equal(corpus.samples.length, 7);
-  assert.equal(baseline.sampleCount, 7);
-  assert.equal(baseline.pageCount, 90);
-  assert.equal(baseline.passCount, 90);
+  assert.equal(corpus.samples.length, 10);
+  assert.equal(baseline.sampleCount, 10);
+  assert.equal(baseline.pageCount, 126);
+  assert.equal(baseline.passCount, 126);
   assert.equal(baseline.findingCount, 0);
-  assert.deepEqual(baseline.layoutCoverage, { singleColumnPages: 44, doubleColumnPages: 46, mixedBodyFlowPages: 0 });
-  assert.equal(fs.readdirSync(path.join(columnRoot, "baseline")).filter((name) => /^paper\d-regression\.json$/.test(name)).length, 7);
+  assert.deepEqual(baseline.layoutCoverage, { singleColumnPages: 71, doubleColumnPages: 55, mixedBodyFlowPages: 0 });
+  assert.equal(fs.readdirSync(path.join(columnRoot, "baseline")).filter((name) => /^paper\d+-regression\.json$/.test(name)).length, 10);
   assert.equal(fs.readdirSync(path.join(columnRoot, "evidence", "pre-repair-regression")).filter((name) => /^paper\d-regression\.json$/.test(name)).length, 7);
   const source = fs.readFileSync(path.join(LIBRARY_ROOT, "index.js"), "utf8");
   assert.doesNotMatch(source, /\.governance|column-capability-pilot/);
+});
+
+test("reviewed Geometry v8 freeze remains hash-bound and confirmed across later revisions", () => {
+  const geometryRoot = path.join(LIBRARY_ROOT, "capabilities", "cap.layout-geometry");
+  const freezeRoot = path.join(geometryRoot, "reviewed-v8");
+  const manifest = JSON.parse(fs.readFileSync(path.join(freezeRoot, "FREEZE_MANIFEST.json"), "utf8"));
+  assert.equal(manifest.runtimeDecisionUse, "forbidden");
+  assert.equal(manifest.status, "human_review_confirmed_formal_promotion_pending");
+  assert.equal(manifest.papers.length, 10);
+  assert.equal(manifest.papers.reduce((sum, paper) => sum + paper.pages, 0), 126);
+  for (const paper of manifest.papers) {
+    for (const kind of ["body", "non-body"]) {
+      const entry = paper.exports[kind];
+      const bytes = fs.readFileSync(path.join(freezeRoot, entry.file));
+      assert.equal(crypto.createHash("sha256").update(bytes).digest("hex"), entry.sha256);
+      const exportData = JSON.parse(bytes.toString("utf8"));
+      assert.equal(exportData.sourcePdfSha256, paper.sourcePdfSha256);
+      assert.equal(exportData.pages.length, paper.pages);
+      assert.equal(exportData.pages.every((page) => page.confirmed === true), true);
+    }
+  }
+});
+
+test("Geometry candidates bind reviewed Oracle revisions and only explicitly promoted corpus samples", () => {
+  const pool = require(path.join(LIBRARY_ROOT, "candidate-pool"));
+  const oracle = require(path.join(LIBRARY_ROOT, "geometry-oracle"));
+  const state = pool.loadState();
+  const geometryRoot = path.join(LIBRARY_ROOT, "capabilities", "cap.layout-geometry");
+  const accepted = state.pool.candidates.filter((candidate) => candidate.capabilityIds.includes("cap.layout-geometry"));
+  assert.equal(accepted.length, 10);
+  const geometryCorpus = state.corpus.samples.filter((sample) => sample.expectedOutcomes.some((outcome) => outcome.capabilityId === "cap.layout-geometry"));
+  assert.equal(geometryCorpus.length, accepted.filter((candidate) => candidate.promotedSampleId).length);
+  for (const candidate of accepted) {
+    assert.equal(candidate.status, "accepted");
+    const outcomes = new Map(candidate.sample.expectedOutcomes.map((outcome) => [outcome.assertionId, outcome]));
+    for (const event of candidate.history) for (const outcome of event.expectedOutcomes) outcomes.set(outcome.assertionId, outcome);
+    const assertion = outcomes.get("assert.geometry.reviewed-boxes");
+    const bytes = fs.readFileSync(path.join(geometryRoot, assertion.expected.oracleFile));
+    assert.equal(crypto.createHash("sha256").update(bytes).digest("hex"), assertion.expected.oracleSha256);
+    const item = JSON.parse(bytes.toString("utf8"));
+    oracle.validateOracle(item);
+    assert.equal(item.sample.sha256, candidate.sample.source.sha256);
+    assert.equal(item.reviewHistory.at(-1).action, "accepted");
+    const promoted = geometryCorpus.find((sample) => sample.id === candidate.sample.id);
+    assert.equal(Boolean(promoted), Boolean(candidate.promotedSampleId));
+    if (promoted) {
+      assert.equal(candidate.history.at(-1).action, "promote");
+      assert.deepEqual(promoted.expectedOutcomes, [...outcomes.values()]);
+    }
+  }
 });
 
 test("evidence catalogs fail fast when a runtime decision field appears", () => {
@@ -133,6 +196,8 @@ test("the fourth page is read-only and capability files are included in packagin
   assert.match(html, /能力库不是第二套权威/);
   assert.doesNotMatch(html, /id="page-capabilities"[\s\S]*?<\/section>[\s\S]*?<(?:button|input)[^>]+data-runtime-decision/);
   assert.match(renderer, /loadCapabilityLibrary\(\)/);
-  assert.ok(packageJson.build.files.includes("capability-library/**/*"));
+  assert.ok(packageJson.build.files.includes("capability-library/index.js"));
+  assert.ok(packageJson.build.files.includes("capability-library/capabilities/*/capabilities.json"));
+  assert.ok(packageJson.build.files.includes("capability-library/capabilities/*/corpus.json"));
   assert.equal(packageJson.scripts["capability:intake"], "node ../tools/capability-library-intake.js");
 });

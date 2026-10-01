@@ -27,7 +27,7 @@
       "required": ["sequence", "action", "actor", "at", "reason", "from", "to", "evidenceRefs", "expectedOutcomes", "sampleHash", "previousHash", "hash"],
       "properties": {
         "sequence": {"type": "integer", "minimum": 1},
-        "action": {"enum": ["submit", "review", "promote"]},
+        "action": {"enum": ["submit", "review", "revise", "promote"]},
         "actor": {"type": "string", "minLength": 1},
         "at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T"},
         "reason": {"type": "string", "minLength": 1},

@@ -1,5 +1,21 @@
 # Code Signing Policy
 
+## Planned v1.1.0 decision
+
+v1.1.0 will continue the **unsigned Windows distribution** model at the user's explicit direction on 2026-10-01. The installer will not carry an Authenticode publisher signature or trusted timestamp. Windows may identify its publisher as **Unknown publisher** and Microsoft Defender SmartScreen may warn or block a first run. Such prompts do not by themselves prove that the file is malicious, and an unsigned file must not be represented as verified merely because it downloaded from a familiar site.
+
+Use only the installer linked from the project's official GitHub Release. Before running it, compare its SHA-256 with the hash published for that exact v1.1.0 asset and inspect its Authenticode status in PowerShell:
+
+```powershell
+$releaseInstaller = '.\PATH_TO_DOWNLOADED_INSTALLER.exe' # Replace with the downloaded release asset path.
+Get-FileHash -Algorithm SHA256 $releaseInstaller
+Get-AuthenticodeSignature $releaseInstaller
+```
+
+The expected Authenticode result is `NotSigned`. The final filename, file size and SHA-256 are **not yet available**; they must be added only after the final installer is built and checked. If the downloaded file's hash differs from the official release hash, do not run it. A matching hash verifies equality to the published asset, not the identity of a code-signing publisher. Do not bypass an unexpected security warning without checking the official source and hash.
+
+This is a release-policy decision, not a claim that v1.1.0 has already been built or published.
+
 ## v1.0.0 decision
 
 Minimalist Translation v1.0.0 is distributed as an **unsigned Windows release**. The installer has no Authenticode signer or timestamp, the release environment has no available code-signing certificate, and the build configuration does not contain signing credentials.

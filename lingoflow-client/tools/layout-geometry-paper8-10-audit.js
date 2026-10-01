@@ -16,8 +16,8 @@ const nonBody = require("./layout-geometry-non-body-editable");
 
 const ROOT = path.resolve(__dirname, "../..");
 const APP = path.join(ROOT, "lingoflow-client", "electron-app");
-const OUTPUT = path.join(ROOT, ".governance", "tasks", "layout-geometry-capability-audit", "evidence", "phase-3-paper8-10-final-audit");
-const FREEZE = path.join(ROOT, ".governance", "tasks", "layout-geometry-capability-audit", "evidence", "phase-2-paper-geometry", "geometry-baseline-v1", "FREEZE_MANIFEST.json");
+const OUTPUT = path.join(ROOT, ".governance", "archive", "evidence", "layout-geometry-capability-audit", "evidence", "phase-3-paper8-10-final-audit");
+const FREEZE = path.join(ROOT, ".governance", "archive", "evidence", "layout-geometry-capability-audit", "evidence", "phase-2-paper-geometry", "geometry-baseline-v1", "FREEZE_MANIFEST.json");
 const SAMPLES = [8, 9, 10].map((number) => ({
   key: `paper${number}`,
   pdf: `D:\\PDF测试\\论文样本${number}.pdf`,

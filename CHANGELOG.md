@@ -4,7 +4,19 @@
 
 ## [Unreleased]
 
-暂无。
+以下为 v1.1.0 候选变更，尚未发布；最终内容须与冻结的源码提交及安装包核对。
+
+### 改进
+
+- 改进论文 PDF 的结构类型归属与下游处理边界，并增强正文、参考文献、跨栏、段落、翻译完成状态和导出完整性的回归保护。
+- 更新主窗口与导航，完善自定义 OpenAI-compatible Provider 的设置帮助和配置体验。
+- 建立 Capability Library、候选池和 Column／Geometry 离线样本与回归机制；这些离线验证结果不表示 Geometry 已接管正式 PDF 运行时。
+- 收紧 Windows 安装包的 Capability Library 文件清单，避免将人工审核框、Oracle 和候选池数据打入安装包。
+- 更新依赖锁定与发布前安全检查；v1.1.0 的最终依赖和许可证清单仍待正式安装包复核。
+
+### 发布提示
+
+- v1.1.0 计划继续使用未签名 Windows 安装包，可能出现“未知发布者”或 SmartScreen 提示；正式发布时须提供安装包 SHA-256。详见 [Code Signing Policy](CODE_SIGNING_POLICY.md)。
 
 ## [1.0.0] - 2026-08-28
 

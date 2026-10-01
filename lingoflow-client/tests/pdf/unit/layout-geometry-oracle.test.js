@@ -7,7 +7,7 @@ const test = require("node:test");
 
 const APP_ROOT = path.join(__dirname, "..", "..", "..", "electron-app");
 const LIBRARY_ROOT = path.join(APP_ROOT, "capability-library");
-const TASK_SCHEMA = path.join(__dirname, "..", "..", "..", "..", ".governance", "tasks", "layout-geometry-capability-audit", "geometry-oracle.schema.json");
+const TASK_SCHEMA = path.join(__dirname, "..", "..", "..", "..", ".governance", "archive", "evidence", "layout-geometry-capability-audit", "geometry-oracle.schema.json");
 const oracle = require(path.join(LIBRARY_ROOT, "geometry-oracle"));
 
 function copy(value) {
@@ -15,7 +15,7 @@ function copy(value) {
 }
 
 function validOracle() {
-  return {
+  const item = {
     schemaVersion: "layout-geometry-oracle/v1",
     capabilityId: "cap.layout-geometry",
     catalogRole: "regression_oracle",
@@ -128,6 +128,9 @@ function validOracle() {
       ],
     },
   };
+  const { hash: _placeholder, ...unsigned } = item.reviewHistory[0];
+  item.reviewHistory[0].hash = oracle.hashCanonical(unsigned);
+  return item;
 }
 
 function observedFrom(oracle, mutate) {
@@ -260,6 +263,27 @@ test("same identity and topology within tolerance passes", () => {
     value.pages[0].regions[0].geometry.x += 1;
   }));
   assert.deepEqual(findings, []);
+});
+
+test("unexpected observed objects are identity failures rather than invisible extras", () => {
+  const fixture = validOracle();
+  const findings = oracle.compareObserved(fixture, observedFrom(fixture, (value) => {
+    value.pages[0].regions.push({ regionId: "ghost", owner: "geometry:figure", geometry: { x: 1, y: 1, width: 2, height: 2 } });
+  }));
+  assert.ok(findings.some((item) => item.failureClass === "identity_failure" && item.code === "I-09"));
+});
+
+test("spanning main reading flow retains page Column identity without inventing a lane", () => {
+  const fixture = validOracle();
+  fixture.pages[0].regions.push({
+    regionId: "body.spanning", regionClass: "main_reading_flow_spanning", owner: "main_reading_flow:spanning",
+    expectedGeometry: { x: 40, y: 20, width: 520, height: 30 }, toleranceProfileId: "body-edge", relations: [],
+    sourceProvenance: [{ sourceArtifactId: "review:spanning", producer: "human-corrected-review-export", coordinateSpace: "pdf-page-top-left-points", transformChain: ["user-confirmed"] }],
+    evidenceRefs: ["reviewed-v8"],
+  });
+  assert.doesNotThrow(() => oracle.validateOracle(fixture));
+  fixture.pages[0].regions.at(-1).canonicalColumnRef = { pageColumnModelRef: "page-column-model/v1:page-1", authority: "AA-COLUMN-001", columnId: "left" };
+  assert.throws(() => oracle.validateOracle(fixture), (error) => error.code === "GEOMETRY_ORACLE_SCHEMA_INVALID");
 });
 
 test("same identity and topology outside tolerance is tolerance_deviation", () => {

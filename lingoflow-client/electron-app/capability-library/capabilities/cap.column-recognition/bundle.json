@@ -13,6 +13,7 @@
   },
   "provenance": {
     "promotionEvidence": "EVD-20260916-COLUMN-PILOT-ROOT-CAUSE",
+    "latestPromotionEvidence": "evidence/paper8-10-promotion.json",
     "baselineEvidence": "EVD-20260917-COLUMN-AUTHORITY-PAGE-MODEL-REPAIR",
     "historicalAuditTask": ".governance/archive/tasks/column-capability-pilot/",
     "historicalRepairTask": ".governance/archive/tasks/column-authority-page-model-repair/"

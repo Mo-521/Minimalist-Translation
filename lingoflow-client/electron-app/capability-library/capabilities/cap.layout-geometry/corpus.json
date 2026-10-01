@@ -1,0 +1,735 @@
+{
+  "schemaVersion": "capability-corpus/v1",
+  "catalogRole": "regression_only",
+  "runtimeDecisionUse": "forbidden",
+  "samples": [
+    {
+      "id": "sample.layout-geometry.paper1",
+      "displayName": "Reviewed Layout Geometry paper1",
+      "source": {
+        "fileName": "论文样本1.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "7ba73a901c7bacf14cdff7d9e16480cc451ca3a521977795a3de9c4e67bba0ac",
+        "bytes": 2284562,
+        "pageCount": 6
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper1"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.geometry.main-reading-flow",
+        "boundary.geometry.independent-object",
+        "boundary.geometry.protected-object",
+        "boundary.geometry.column-dependency"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.reviewed-boxes",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/revisions/2026-09-30/paper1-geometry-oracle.json",
+            "oracleSha256": "dc2f3cb08c630f6dee6ae3c06b44dce70d027997f83283ca848bb815cbd57734",
+            "bodyExportSha256": "99bfcf9dbd8771e0b773bd4e5887e1bf18fe3392cb9d3e89152e0f662ccd483c",
+            "nonBodyExportSha256": "7b4b6c31e9f462c1e8ad8e502fcea2823d2eecf5e66eb545ec788b035dc0f8b6",
+            "revisionManifest": "oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+          }
+        },
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.identity-structure-tolerance",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/revisions/2026-09-30/paper1-geometry-oracle.json",
+            "oracleSha256": "dc2f3cb08c630f6dee6ae3c06b44dce70d027997f83283ca848bb815cbd57734",
+            "failureClasses": [
+              "identity_failure",
+              "structural_failure",
+              "tolerance_deviation"
+            ],
+            "revisionManifest": "oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+          }
+        }
+      ],
+      "evidenceRefs": [
+        "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+        "cap.layout-geometry/oracles/paper1-geometry-oracle.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/figure-boundary-review-2026-09-30.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/paper5-p4-object-boundary-review-2026-09-30.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/paper2-p11-reference-boundary-review-2026-09-30.json",
+        "cap.layout-geometry/oracles/revisions/2026-09-30/paper1-geometry-oracle.json",
+        "cap.layout-geometry/oracles/revisions/2026-09-30/REVISION_MANIFEST.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+        ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-GEOMETRY-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.layout-geometry.paper2",
+      "displayName": "Reviewed Layout Geometry paper2",
+      "source": {
+        "fileName": "论文样本2.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "a3caa00f90f1b68a2068bbed07b2b91b6b40b3f65d1c3b22302e21333510e36f",
+        "bytes": 283040,
+        "pageCount": 11
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper2"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.geometry.main-reading-flow",
+        "boundary.geometry.independent-object",
+        "boundary.geometry.protected-object",
+        "boundary.geometry.column-dependency"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.reviewed-boxes",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/revisions/2026-09-30/paper2-geometry-oracle.json",
+            "oracleSha256": "82bac639290bec700f18abd3d0472ba880b76103b6b33112b82b43db44b13556",
+            "bodyExportSha256": "2143916edcf95b11b2db2f7c087d663f2a3652625e55c41dc280f80f341092f1",
+            "nonBodyExportSha256": "d19b419584dae409ccf97ea8971386fd1bcf319dc0901bb8eb7b30b415f7aca9",
+            "revisionManifest": "oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+          }
+        },
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.identity-structure-tolerance",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/revisions/2026-09-30/paper2-geometry-oracle.json",
+            "oracleSha256": "82bac639290bec700f18abd3d0472ba880b76103b6b33112b82b43db44b13556",
+            "failureClasses": [
+              "identity_failure",
+              "structural_failure",
+              "tolerance_deviation"
+            ],
+            "revisionManifest": "oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+          }
+        }
+      ],
+      "evidenceRefs": [
+        "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+        "cap.layout-geometry/oracles/paper2-geometry-oracle.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/figure-boundary-review-2026-09-30.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/paper5-p4-object-boundary-review-2026-09-30.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/paper2-p11-reference-boundary-review-2026-09-30.json",
+        "cap.layout-geometry/oracles/revisions/2026-09-30/paper2-geometry-oracle.json",
+        "cap.layout-geometry/oracles/revisions/2026-09-30/REVISION_MANIFEST.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+        ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-GEOMETRY-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.layout-geometry.paper3",
+      "displayName": "Reviewed Layout Geometry paper3",
+      "source": {
+        "fileName": "论文样本3.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "fa33485f517b3c94d2f6e4d4366f3ab14a1e413a738db512e1862f4a0944f5f9",
+        "bytes": 505955,
+        "pageCount": 14
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper3"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.geometry.main-reading-flow",
+        "boundary.geometry.independent-object",
+        "boundary.geometry.protected-object",
+        "boundary.geometry.column-dependency"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.reviewed-boxes",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/paper3-geometry-oracle.json",
+            "oracleSha256": "54cfd4960c00b47bc42ef5db3cbd9dadc55829ee5aa5cc700fb7d077182a6c75",
+            "bodyExportSha256": "ef78f4dde4062f632a87f9d6c28dc2b35c97cc70584052ad790b909c4abd835a",
+            "nonBodyExportSha256": "1ec8e08af31675330a56588ca11b89b42fe4b570da6aa07a031b08a3c18eec56"
+          }
+        },
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.identity-structure-tolerance",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/paper3-geometry-oracle.json",
+            "oracleSha256": "54cfd4960c00b47bc42ef5db3cbd9dadc55829ee5aa5cc700fb7d077182a6c75",
+            "failureClasses": [
+              "identity_failure",
+              "structural_failure",
+              "tolerance_deviation"
+            ]
+          }
+        }
+      ],
+      "evidenceRefs": [
+        "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+        "cap.layout-geometry/oracles/paper3-geometry-oracle.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+        ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-GEOMETRY-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.layout-geometry.paper4",
+      "displayName": "Reviewed Layout Geometry paper4",
+      "source": {
+        "fileName": "论文样本4.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "8984769b011698352fba9532e6eed4d81a1683451e888ee85a2caa8042149e8b",
+        "bytes": 1356829,
+        "pageCount": 16
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper4"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.geometry.main-reading-flow",
+        "boundary.geometry.independent-object",
+        "boundary.geometry.protected-object",
+        "boundary.geometry.column-dependency"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.reviewed-boxes",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/paper4-geometry-oracle.json",
+            "oracleSha256": "f653969f50771cbd41f477373f87e6c75dc21740a14357e8af75ddfe84ca8b1c",
+            "bodyExportSha256": "430ea40260cd2ecd048955e146dc4bd64cf489fa70b839103b93e246c6fa8d35",
+            "nonBodyExportSha256": "0542d70f6b2dbff099ce6a86a4fc4b9c62db66d5b814e751813182091ddf8a6d"
+          }
+        },
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.identity-structure-tolerance",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/paper4-geometry-oracle.json",
+            "oracleSha256": "f653969f50771cbd41f477373f87e6c75dc21740a14357e8af75ddfe84ca8b1c",
+            "failureClasses": [
+              "identity_failure",
+              "structural_failure",
+              "tolerance_deviation"
+            ]
+          }
+        }
+      ],
+      "evidenceRefs": [
+        "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+        "cap.layout-geometry/oracles/paper4-geometry-oracle.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+        ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-GEOMETRY-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.layout-geometry.paper5",
+      "displayName": "Reviewed Layout Geometry paper5",
+      "source": {
+        "fileName": "论文样本5.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "c3efd26afb65cafaa9e35525d0c2c182199b330cf101645e84f63901eca8bc48",
+        "bytes": 1427806,
+        "pageCount": 14
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper5"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.geometry.main-reading-flow",
+        "boundary.geometry.independent-object",
+        "boundary.geometry.protected-object",
+        "boundary.geometry.column-dependency"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.reviewed-boxes",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/revisions/2026-09-30/paper5-geometry-oracle.json",
+            "oracleSha256": "b02f18627f554e4c828cc4b5e893378687c87db9e852677ba0e3e65182eb27fa",
+            "bodyExportSha256": "5c3f3a71d06c504979a3d1ee54bae249c06c4e0b25db5883390280e6ad3ab9ca",
+            "nonBodyExportSha256": "dfbf602a8a893a2834873e5356d929333d750c0172852a51ce4b0f694ab27814",
+            "revisionManifest": "oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+          }
+        },
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.identity-structure-tolerance",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/revisions/2026-09-30/paper5-geometry-oracle.json",
+            "oracleSha256": "b02f18627f554e4c828cc4b5e893378687c87db9e852677ba0e3e65182eb27fa",
+            "failureClasses": [
+              "identity_failure",
+              "structural_failure",
+              "tolerance_deviation"
+            ],
+            "revisionManifest": "oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+          }
+        }
+      ],
+      "evidenceRefs": [
+        "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+        "cap.layout-geometry/oracles/paper5-geometry-oracle.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/figure-boundary-review-2026-09-30.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/paper5-p4-object-boundary-review-2026-09-30.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/paper2-p11-reference-boundary-review-2026-09-30.json",
+        "cap.layout-geometry/oracles/revisions/2026-09-30/paper5-geometry-oracle.json",
+        "cap.layout-geometry/oracles/revisions/2026-09-30/REVISION_MANIFEST.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+        ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-GEOMETRY-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.layout-geometry.paper6",
+      "displayName": "Reviewed Layout Geometry paper6",
+      "source": {
+        "fileName": "论文样本6.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "6f4cb19da2d60bb5eed20cd5d56f0360b2afb552e60a199792cc4be6b752189e",
+        "bytes": 1148938,
+        "pageCount": 18
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper6"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.geometry.main-reading-flow",
+        "boundary.geometry.independent-object",
+        "boundary.geometry.protected-object",
+        "boundary.geometry.column-dependency"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.reviewed-boxes",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/paper6-geometry-oracle.json",
+            "oracleSha256": "9bbe4b944941263cf710f5754c7b679382ec0477141c1f695479fd8b7fb8d68c",
+            "bodyExportSha256": "4703362ce771eae427b5974132894f6beb34d35d2548ebbd0271b1f02541bfa0",
+            "nonBodyExportSha256": "3f0ccf2add23ddd9b07e94086f2fb2bf51d8bc1acddb0ebc9d3566bb3e49fea7"
+          }
+        },
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.identity-structure-tolerance",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/paper6-geometry-oracle.json",
+            "oracleSha256": "9bbe4b944941263cf710f5754c7b679382ec0477141c1f695479fd8b7fb8d68c",
+            "failureClasses": [
+              "identity_failure",
+              "structural_failure",
+              "tolerance_deviation"
+            ]
+          }
+        }
+      ],
+      "evidenceRefs": [
+        "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+        "cap.layout-geometry/oracles/paper6-geometry-oracle.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+        ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-GEOMETRY-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.layout-geometry.paper7",
+      "displayName": "Reviewed Layout Geometry paper7",
+      "source": {
+        "fileName": "论文样本7.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "ab244887804a95c4904e5efe5425fa1446d55f54fb2a707424439eb53c0bc1da",
+        "bytes": 1741947,
+        "pageCount": 11
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper7"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.geometry.main-reading-flow",
+        "boundary.geometry.independent-object",
+        "boundary.geometry.protected-object",
+        "boundary.geometry.column-dependency"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.reviewed-boxes",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/paper7-geometry-oracle.json",
+            "oracleSha256": "800529c892a3874d5a2bb52fecf024a6494575c94fe05407132e2dc792b611dd",
+            "bodyExportSha256": "6382e08fd83cb8b4be4384205a784b23c2e6efe27708d45ed897e530f37ac2c5",
+            "nonBodyExportSha256": "f462393b0b35e43b6f1ca0a0f873afd34c72640ed4f0258b8174693543aa0db9"
+          }
+        },
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.identity-structure-tolerance",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/paper7-geometry-oracle.json",
+            "oracleSha256": "800529c892a3874d5a2bb52fecf024a6494575c94fe05407132e2dc792b611dd",
+            "failureClasses": [
+              "identity_failure",
+              "structural_failure",
+              "tolerance_deviation"
+            ]
+          }
+        }
+      ],
+      "evidenceRefs": [
+        "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+        "cap.layout-geometry/oracles/paper7-geometry-oracle.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+        ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-GEOMETRY-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.layout-geometry.paper8",
+      "displayName": "Reviewed Layout Geometry paper8",
+      "source": {
+        "fileName": "论文样本8.pdf",
+        "sha256": "12e71bd65faecb793f64043c6812d7a3fd372e7f54ceed390e132839fd2504e4",
+        "bytes": 476899,
+        "pageCount": 11,
+        "mediaType": "application/pdf"
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper8"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.geometry.main-reading-flow",
+        "boundary.geometry.independent-object",
+        "boundary.geometry.protected-object",
+        "boundary.geometry.column-dependency"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.reviewed-boxes",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/revisions/2026-09-30/paper8-geometry-oracle.json",
+            "oracleSha256": "9c226d6ba1dd80a5a3b8bb7656eee7b63d0af663fe2b20b46cd0b5bdefc774bc",
+            "bodyExportSha256": "0a3d730426447a6a71b9df2639def79237bb2458cd8099ef674988aa2dc4bdfc",
+            "nonBodyExportSha256": "9fd5b7147b149c2325abe4cca8660a4ec3e6745c9307268754708be8913ad9d6",
+            "revisionManifest": "oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+          }
+        },
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.identity-structure-tolerance",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/revisions/2026-09-30/paper8-geometry-oracle.json",
+            "oracleSha256": "9c226d6ba1dd80a5a3b8bb7656eee7b63d0af663fe2b20b46cd0b5bdefc774bc",
+            "failureClasses": [
+              "identity_failure",
+              "structural_failure",
+              "tolerance_deviation"
+            ],
+            "revisionManifest": "oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+          }
+        }
+      ],
+      "evidenceRefs": [
+        "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+        "cap.layout-geometry/oracles/paper8-geometry-oracle.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/figure-boundary-review-2026-09-30.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/paper5-p4-object-boundary-review-2026-09-30.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/paper2-p11-reference-boundary-review-2026-09-30.json",
+        "cap.layout-geometry/oracles/revisions/2026-09-30/paper8-geometry-oracle.json",
+        "cap.layout-geometry/oracles/revisions/2026-09-30/REVISION_MANIFEST.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+        ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-GEOMETRY-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.layout-geometry.paper9",
+      "displayName": "Reviewed Layout Geometry paper9",
+      "source": {
+        "fileName": "论文样本9.pdf",
+        "sha256": "23cdb5dd51ba39d61b6d3093220cdedeb8c4e6f20c3a64640067a6e6659fb420",
+        "bytes": 474547,
+        "pageCount": 15,
+        "mediaType": "application/pdf"
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper9"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.geometry.main-reading-flow",
+        "boundary.geometry.independent-object",
+        "boundary.geometry.protected-object",
+        "boundary.geometry.column-dependency"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.reviewed-boxes",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/paper9-geometry-oracle.json",
+            "oracleSha256": "1ed10a746719a480898bc7573e8922b6cc2aee0aae44b38f4c121c4beb47cb83",
+            "bodyExportSha256": "1a87a63e25ab893aee5fc395fa1e87c24dba59e00c0e63a85183b188094f478b",
+            "nonBodyExportSha256": "40df9c50960d833ab83e0679259fdac36f9dede1839b938c724bb77593c3c10a"
+          }
+        },
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.identity-structure-tolerance",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/paper9-geometry-oracle.json",
+            "oracleSha256": "1ed10a746719a480898bc7573e8922b6cc2aee0aae44b38f4c121c4beb47cb83",
+            "failureClasses": [
+              "identity_failure",
+              "structural_failure",
+              "tolerance_deviation"
+            ]
+          }
+        }
+      ],
+      "evidenceRefs": [
+        "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+        "cap.layout-geometry/oracles/paper9-geometry-oracle.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+        ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-GEOMETRY-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.layout-geometry.paper10",
+      "displayName": "Reviewed Layout Geometry paper10",
+      "source": {
+        "fileName": "论文样本10.pdf",
+        "sha256": "bfa5b8767c9cce7eca3d4cda064bec56a03a9e344eb13a87271f8a8784527b63",
+        "bytes": 864810,
+        "pageCount": 10,
+        "mediaType": "application/pdf"
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper10"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.geometry.main-reading-flow",
+        "boundary.geometry.independent-object",
+        "boundary.geometry.protected-object",
+        "boundary.geometry.column-dependency"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.reviewed-boxes",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/paper10-geometry-oracle.json",
+            "oracleSha256": "16b0344b94b9ed8ab897ec7f1df0f8edf72da80b4d61bc413035fb8285874157",
+            "bodyExportSha256": "b83c0b1eb0a29e2f02c6c7303b439cb4641e4b1621adca221e85fe0594fe1225",
+            "nonBodyExportSha256": "c67dfa627934dc29df68d79c3528a40e81a9bc83645feee5bb6fbdc8ca8a2cee"
+          }
+        },
+        {
+          "capabilityId": "cap.layout-geometry",
+          "assertionId": "assert.geometry.identity-structure-tolerance",
+          "oracleType": "manual",
+          "expected": {
+            "oracleFile": "oracles/paper10-geometry-oracle.json",
+            "oracleSha256": "16b0344b94b9ed8ab897ec7f1df0f8edf72da80b4d61bc413035fb8285874157",
+            "failureClasses": [
+              "identity_failure",
+              "structural_failure",
+              "tolerance_deviation"
+            ]
+          }
+        }
+      ],
+      "evidenceRefs": [
+        "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+        "cap.layout-geometry/oracles/paper10-geometry-oracle.json",
+        ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+        ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-GEOMETRY-001"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "capability-library/v1",
+  "catalogRole": "evidence_and_regression_only",
+  "runtimeDecisionUse": "forbidden",
+  "capabilities": [
+    {
+      "id": "cap.layout-geometry",
+      "name": "Layout Geometry",
+      "description": "验证主内容阅读流正文框与独立、保护对象的页面坐标边界；正文连续流包含公式，不由对象标签切碎。",
+      "architectureRecord": "AA-GEOMETRY-001",
+      "relatedArchitectureRecords": [
+        "AA-COLUMN-001",
+        "AA-EVIDENCE-001",
+        "AA-STRUCTURE-001"
+      ],
+      "decisionAuthority": {
+        "owner": "Geometry Authority",
+        "statement": "本能力库只保存人工审核证据和离线回归事实；栏型与 canonical lane 由 AA-COLUMN-001 只读提供，不参与运行时 Geometry、写入或导出决策。"
+      },
+      "status": "pilot_ready",
+      "boundaries": [
+        {
+          "id": "boundary.geometry.main-reading-flow",
+          "description": "正文框覆盖主阅读流，包含公式与连续阅读内容。",
+          "featureTags": [
+            "body-text-flow",
+            "formula-continuity"
+          ]
+        },
+        {
+          "id": "boundary.geometry.independent-object",
+          "description": "标题、图、表、图注等独立对象使用紧贴内容的对象框。",
+          "featureTags": [
+            "independent-region",
+            "tight-object-box"
+          ]
+        },
+        {
+          "id": "boundary.geometry.protected-object",
+          "description": "References 等保护区域与正文空间分离记录。",
+          "featureTags": [
+            "protected-region",
+            "references"
+          ]
+        },
+        {
+          "id": "boundary.geometry.column-dependency",
+          "description": "只引用已冻结的 canonical Column lane，不重判栏型。",
+          "featureTags": [
+            "column-read-only",
+            "page-coordinates"
+          ]
+        }
+      ],
+      "expectedOutcomes": [
+        {
+          "id": "assert.geometry.reviewed-boxes",
+          "assertion": "逐页正文与非正文框同人工确认的 PDF 点坐标真值比较。",
+          "evidenceLevel": "pixel_visual"
+        },
+        {
+          "id": "assert.geometry.identity-structure-tolerance",
+          "assertion": "先核对身份及拓扑，再评估有限坐标容差；不以容差掩盖对象归属错误。",
+          "evidenceLevel": "artifact"
+        }
+      ],
+      "evidenceRequirements": [
+        "artifact",
+        "pixel_visual",
+        "user_acceptance"
+      ],
+      "regressionSampleIds": [
+        "sample.layout-geometry.paper1",
+        "sample.layout-geometry.paper2",
+        "sample.layout-geometry.paper3",
+        "sample.layout-geometry.paper4",
+        "sample.layout-geometry.paper5",
+        "sample.layout-geometry.paper6",
+        "sample.layout-geometry.paper7",
+        "sample.layout-geometry.paper8",
+        "sample.layout-geometry.paper9",
+        "sample.layout-geometry.paper10"
+      ]
+    }
+  ]
+}

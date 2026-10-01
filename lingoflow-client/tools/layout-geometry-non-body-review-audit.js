@@ -10,7 +10,7 @@ const source = require("./layout-geometry-candidate-intake");
 
 const ROOT = path.resolve(__dirname, "../..");
 const APP = path.join(ROOT, "lingoflow-client", "electron-app");
-const EVIDENCE = path.join(ROOT, ".governance", "tasks", "layout-geometry-capability-audit", "evidence", "phase-2-paper-geometry");
+const EVIDENCE = path.join(ROOT, ".governance", "archive", "evidence", "layout-geometry-capability-audit", "evidence", "phase-2-paper-geometry");
 const REVIEW = path.join(EVIDENCE, "human-review-non-body-editable-v1");
 const COLUMN_CORPUS = path.join(APP, "capability-library", "capabilities", "cap.column-recognition", "corpus.json");
 const requestedPaper = process.argv.find((value) => /^paper[1-7]$/.test(value));

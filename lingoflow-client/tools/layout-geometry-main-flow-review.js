@@ -12,7 +12,7 @@ const source = require("./layout-geometry-candidate-intake");
 
 const ROOT = path.resolve(__dirname, "../..");
 const APP = path.join(ROOT, "lingoflow-client", "electron-app");
-const EVIDENCE = path.join(ROOT, ".governance", "tasks", "layout-geometry-capability-audit", "evidence", "phase-2-paper-geometry");
+const EVIDENCE = path.join(ROOT, ".governance", "archive", "evidence", "layout-geometry-capability-audit", "evidence", "phase-2-paper-geometry");
 const INPUT = path.join(EVIDENCE, "human-review-body-editable-v1");
 const OUTPUT = path.join(EVIDENCE, "human-review-main-flow-v1");
 const COLUMN_CORPUS = path.join(APP, "capability-library", "capabilities", "cap.column-recognition", "corpus.json");
@@ -181,9 +181,20 @@ function denseTableTextHints(page, lines, drawnVisuals) {
         && row.lines.some((line) => line.width > 80)));
     if (dense.length < 2) return null;
     let edge = bottom(caption);
+    const priorRowFonts = [];
     for (const row of dense.sort((a, b) => a.y - b.y)) {
       if (row.y - edge > (edge === bottom(caption) ? 55 : 35)) break;
+      const fonts = row.lines.map((line) => line.maxFont).sort((a, b) => a - b);
+      const rowFont = fonts[Math.floor(fonts.length / 2)];
+      // A PDF may split two ordinary prose columns into many fragments on
+      // the same baseline. Once smaller tabular rows are established, a
+      // materially larger prose row is the table's lower boundary.
+      const stableFonts = priorRowFonts.slice(-3).sort((a, b) => a - b);
+      const stableFont = stableFonts[Math.floor(stableFonts.length / 2)];
+      if (stableFonts.length >= 3 && rowFont > stableFont + 1.5
+        && row.lines.some(proseLine)) break;
       edge = Math.max(edge, ...row.lines.map(bottom));
+      priorRowFonts.push(rowFont);
     }
     if (edge - caption.y < 35) return null;
     const tableNotes = [];
@@ -279,12 +290,18 @@ function firstPageLaneStart(page, lines, abstract) {
   return large.length ? Math.max(...large.map(bottom)) + 6 : page.pageSize.height * 0.14;
 }
 
-function laneBody(page, lines, lane, wall, top, end, wideSegments, visualObjects, panels, singleLane) {
-  const candidates = lines.filter((line) => {
+function laneBody(page, lines, lane, wall, top, end, wideSegments, visualObjects, panels, singleLane, structuralObjects = []) {
+  let candidates = lines.filter((line) => {
     const centerX = line.x + line.width / 2;
     if (centerX < wall.x || centerX > right(wall) || line.width > lane.width * 1.14) return false;
     if (line.y < top || line.y >= end || metadata(line) || source.isReferencesHeadingLine(line)) return false;
     if (wideSegments.some((region) => hasCenterIn(line, region.geometry))) return false;
+    // Bibliography entries are outside the main flow until an explicit
+    // continuation anchor resumes it. Figure/table regions only block a
+    // leading run below: a trailing object's coarse box may overlap genuine
+    // prose or formula and must not silently truncate an established frame.
+    if (structuralObjects.some((object) => object.objectType === "reference_entries"
+      && hasCenterIn(line, object.geometry))) return false;
     // Broad graphic/table clusters are not reliable extent anchors. Their
     // presence never splits prose already established on both sides.
     const coveringVisuals = visualObjects.filter((rect) => hasCenterIn(line, rect));
@@ -299,6 +316,25 @@ function laneBody(page, lines, lane, wall, top, end, wideSegments, visualObjects
     }
     return true;
   });
+  const laneOverlap = (object) => Math.max(0, Math.min(right(object.geometry), right(lane))
+    - Math.max(object.geometry.x, lane.x));
+  const localObjects = structuralObjects.filter((object) => laneOverlap(object) >= lane.width * 0.28)
+    .sort((a, b) => a.geometry.y - b.geometry.y);
+  const firstCandidateY = candidates.length ? Math.min(...candidates.map((line) => line.y)) : Infinity;
+  const leadingObject = localObjects.find((object) => ["figure", "table"].includes(object.objectType)
+    && object.geometry.height >= 25 && object.geometry.y <= firstCandidateY + 5);
+  let leadingCaption = null;
+  if (leadingObject) {
+    let blockedUntil = bottom(leadingObject.geometry);
+    for (const object of localObjects) {
+      if (object.geometry.y < leadingObject.geometry.y - 5 || object.geometry.y > blockedUntil + 45) continue;
+      if (["figure", "table", "figure_caption"].includes(object.objectType)) {
+        blockedUntil = Math.max(blockedUntil, bottom(object.geometry));
+        if (object.objectType === "figure_caption") leadingCaption = object.geometry;
+      }
+    }
+    candidates = candidates.filter((line) => line.y >= blockedUntil + 4);
+  }
   // Main reading-flow evidence includes prose, formula, code, and section
   // headings. Semantic ownership is intentionally deferred to later layers.
   const anchors = candidates.filter((line) => line.width >= 28 && line.height >= 3
@@ -326,7 +362,14 @@ function laneBody(page, lines, lane, wall, top, end, wideSegments, visualObjects
     && candidates.filter((line) => hasCenterIn(line, panel)).length >= 3);
   const evidence = [...anchors, ...attached, ...equationTail, ...textPanels];
   const tight = union(evidence);
-  const y = Math.max(0, tight.y - EDGE);
+  // A clear whitespace gap after a leading caption can include a modest
+  // paragraph-top safety band. Scale it to the first real line, and never let
+  // it reach the caption itself. Ordinary close-set captions get no expansion.
+  const captionGap = leadingCaption === null ? 0 : tight.y - bottom(leadingCaption);
+  const firstLineHeight = anchors.find((line) => line.y === firstY)?.height || 0;
+  const captionSafety = leadingCaption?.height >= 80 && captionGap >= firstLineHeight * 2
+    ? Math.min(firstLineHeight * 0.6, captionGap / 3) : 0;
+  const y = Math.max(0, tight.y - EDGE - captionSafety);
   const maxY = Math.min(page.pageSize.height, bottom(tight) + EDGE);
   if (maxY - y < 5) return null;
   if (singleLane && anchors.length >= 3 && tight.width < lane.width * 0.68) {
@@ -381,7 +424,7 @@ function coalesceFlowFrames(frames, pageSize) {
   return [...detached, ...lanes];
 }
 
-function predictPage(page, column, model, referenceStart, visualObjects = [], panels = []) {
+function predictPage(page, column, model, referenceStart, visualObjects = [], panels = [], structuralObjects = []) {
   const partition = source.columnPartition(page, column.layout, model);
   const lines = readingLines(page);
   const result = [];
@@ -390,12 +433,30 @@ function predictPage(page, column, model, referenceStart, visualObjects = [], pa
   const end = referenceStart && page.pageNumber === referenceStart.pageNumber ? referenceStart.y : page.pageSize.height;
   const abstract = abstractFlow(page, lines, partition);
   const captions = captionFlowSegments(page, lines).filter((segment) => segment.geometry.y < end);
-  const wideSegments = wideFlowSegments(page, lines, partition, abstract, captions).filter((segment) => segment.geometry.y < end);
+  const wideSegments = wideFlowSegments(page, lines, partition, abstract, captions)
+    .filter((segment) => segment.geometry.y < end)
+    .filter((segment) => {
+      // PDF line grouping sometimes joins two ordinary columns into several
+      // apparent gutter-crossing lines. If both canonical lanes independently
+      // contain a sustained local prose flow at this height, retain the lane
+      // frames instead of inventing a page-wide Body box.
+      const localCount = (side) => laneReadingLines(page, partition.walls[side])
+        .filter((line) => line.y >= segment.geometry.y - 5
+          && line.y <= bottom(segment.geometry) + 5 && proseLine(line)).length;
+      return localCount("left") < 2 || localCount("right") < 2;
+    });
+  const blockers = structuralObjects.filter((object) => object && object.geometry
+    && ["figure", "table", "figure_caption", "reference_entries"].includes(object.objectType));
   if (abstract && abstract.geometry.y < end) result.push({ id: `p${page.pageNumber}.main-flow.wide.1`, canonicalColumnId: null, geometry: abstract.geometry, evidence: { kind: "abstract-reading-flow", lineCount: abstract.lineCount } });
   wideSegments.forEach((segment, index) => result.push({ id: `p${page.pageNumber}.main-flow.wide.${index + (abstract ? 2 : 1)}`, canonicalColumnId: null, geometry: segment.geometry, evidence: { kind: "wide-reading-flow", lineCount: segment.lineCount } }));
   // Captions delimit Body evidence here; they are not Body candidates. Their
   // independent-region geometry belongs to the later non-Body review layer.
+  const firstPageAbstractTop = page.pageNumber === 1 && partition.layout === "double_column"
+    ? Math.min(...structuralObjects.filter((object) => object.objectType === "abstract")
+      .map((object) => object.geometry.y - 8), Infinity)
+    : 0;
   const top = Math.max(firstPageLaneStart(page, lines, abstract),
+    Number.isFinite(firstPageAbstractTop) ? firstPageAbstractTop : 0,
     referenceStart && page.pageNumber === referenceStart.resumePageNumber ? referenceStart.resumeY : 0);
   const lanes = column.layout === "double_column" ? ["left", "right"] : ["single"];
   lanes.forEach((columnId) => {
@@ -407,8 +468,32 @@ function predictPage(page, column, model, referenceStart, visualObjects = [], pa
         : referenceStart.x < partition.gutterMid ? "left" : "right";
       if (referenceLane === "right" && columnId === "left") laneEnd = page.pageSize.height;
     }
-    const localLines = laneReadingLines(page, partition.walls[columnId]);
-    const geometry = laneBody(page, localLines, partition.lanes[columnId], partition.walls[columnId], top, laneEnd, [...wideSegments, ...captions, ...(abstract ? [abstract] : [])], visualObjects, panels, columnId === "single");
+    let wall = partition.walls[columnId];
+    let lane = partition.lanes[columnId];
+    // A page may contain one surviving Body lane plus a bibliography in the
+    // other physical lane. Column Truth is correctly single *for Body flow*,
+    // but that must not turn its remaining frame into a page-wide rectangle.
+    if (columnId === "single" && referenceStart && page.pageNumber === referenceStart.pageNumber
+      && model?.columnGeometry?.left && model?.columnGeometry?.right) {
+      const physical = model.columnGeometry;
+      const mid = (physical.left.x + physical.left.width + physical.right.x) / 2;
+      const referenceSide = referenceStart.x < mid ? "left" : "right";
+      const opposite = referenceSide === "left" ? "right" : "left";
+      const priorReferences = blockers.some((object) => object.objectType === "reference_entries"
+        && object.geometry.y < referenceStart.y
+        && object.geometry.x + object.geometry.width / 2 > (referenceSide === "left" ? mid : 0)
+        && (referenceSide === "left" || object.geometry.x + object.geometry.width / 2 < mid));
+      if (priorReferences) {
+        lane = box(physical[referenceSide].x, 0, physical[referenceSide].width, page.pageSize.height);
+        wall = referenceSide === "left"
+          ? box(0, 0, mid, page.pageSize.height)
+          : box(mid, 0, page.pageSize.width - mid, page.pageSize.height);
+      }
+    }
+    const localLines = laneReadingLines(page, wall);
+    const geometry = laneBody(page, localLines, lane, wall, top, laneEnd,
+      [...wideSegments, ...captions, ...(abstract ? [abstract] : [])], visualObjects, panels,
+      columnId === "single", blockers);
     if (geometry) result.push({ id: `p${page.pageNumber}.main-flow.${columnId}.1`, canonicalColumnId: columnId, geometry, evidence: { kind: "lane-reading-flow" } });
   });
   return coalesceFlowFrames(result, page.pageSize);
@@ -527,4 +612,4 @@ function visualHintsForPage(page) {
   };
 }
 
-module.exports = { predictPage, referenceBoundary, abstractFlow, wideFlowSegments, setIou, visualHintsForPage };
+module.exports = { predictPage, referenceBoundary, abstractFlow, wideFlowSegments, setIou, correctedCoverage, visualHintsForPage };

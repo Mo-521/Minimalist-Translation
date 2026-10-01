@@ -14,7 +14,7 @@ const nonBody = require("./layout-geometry-non-body-editable");
 
 const ROOT = path.resolve(__dirname, "../..");
 const APP = path.join(ROOT, "lingoflow-client", "electron-app");
-const EVIDENCE = path.join(ROOT, ".governance", "tasks", "layout-geometry-capability-audit", "evidence", "phase-2-paper-geometry");
+const EVIDENCE = path.join(ROOT, ".governance", "archive", "evidence", "layout-geometry-capability-audit", "evidence", "phase-2-paper-geometry");
 const FREEZE = path.join(EVIDENCE, "geometry-baseline-v1");
 const BODY_FREEZE = path.join(EVIDENCE, "body-baseline-v1", "FREEZE_MANIFEST.json");
 const COLUMN_CORPUS = path.join(APP, "capability-library", "capabilities", "cap.column-recognition", "corpus.json");

@@ -175,7 +175,7 @@
       }
     },
     "regionClass": {
-      "enum": ["body_column", "independent_region", "protected_region", "writable_space_expectation"]
+      "enum": ["body_column", "main_reading_flow_spanning", "independent_region", "protected_region", "writable_space_expectation"]
     },
     "semanticRegionType": {
       "enum": ["title", "author_affiliation", "abstract", "keywords", "section_heading", "figure", "figure_caption", "table", "references_section_header", "other_independent"]
@@ -228,6 +228,10 @@
         {
           "if": { "properties": { "regionClass": { "const": "body_column" } }, "required": ["regionClass"] },
           "then": { "required": ["canonicalColumnRef"], "properties": { "canonicalColumnRef": { "$ref": "#/$defs/canonicalColumnRef" }, "semanticRegionType": false, "protectedKind": false } }
+        },
+        {
+          "if": { "properties": { "regionClass": { "const": "main_reading_flow_spanning" } }, "required": ["regionClass"] },
+          "then": { "properties": { "canonicalColumnRef": false, "semanticRegionType": false, "protectedKind": false } }
         },
         {
           "if": { "properties": { "regionClass": { "const": "independent_region" } }, "required": ["regionClass"] },

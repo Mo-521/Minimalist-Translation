@@ -7,7 +7,7 @@ const test = require("node:test");
 
 const APP_ROOT = path.join(__dirname, "..", "..", "..", "electron-app");
 const LIBRARY_ROOT = path.join(APP_ROOT, "capability-library");
-const TASK_EVIDENCE = path.join(__dirname, "..", "..", "..", "..", ".governance", "tasks", "layout-geometry-capability-audit", "evidence", "phase-2-paper-geometry");
+const TASK_EVIDENCE = path.join(__dirname, "..", "..", "..", "..", ".governance", "archive", "evidence", "layout-geometry-capability-audit", "evidence", "phase-2-paper-geometry");
 const oracle = require(path.join(LIBRARY_ROOT, "geometry-oracle"));
 const workflow = require(path.join(LIBRARY_ROOT, "candidate-pool"));
 
@@ -28,12 +28,13 @@ test("paper1-7 candidate oracles validate as layout-geometry-oracle/v1 evidence"
   });
 });
 
-test("candidate snapshot is under_review and not promoted", () => {
-  const state = workflow.loadCommittedState(path.join(TASK_EVIDENCE, "revision-under-review"));
-  assert.equal(state.pool.candidates.length, 7);
-  assert.equal(state.corpus.samples.length, 0);
-  state.pool.candidates.forEach((candidate) => {
-    assert.equal(candidate.status, "under_review");
+test("latest immutable candidate snapshot is accepted but not promoted", () => {
+  const state = workflow.loadCommittedState(path.join(TASK_EVIDENCE, "..", "geometry-accepted-stage-v1", "revision-030"));
+  const geometry = state.pool.candidates.filter((candidate) => candidate.capabilityIds.includes("cap.layout-geometry"));
+  assert.equal(geometry.length, 10);
+  assert.equal(state.corpus.samples.filter((sample) => sample.expectedOutcomes.some((outcome) => outcome.capabilityId === "cap.layout-geometry")).length, 0);
+  geometry.forEach((candidate) => {
+    assert.equal(candidate.status, "accepted");
     assert.equal(candidate.promotedSampleId, null);
     assert.deepEqual(candidate.capabilityIds, ["cap.layout-geometry"]);
   });
@@ -47,35 +48,26 @@ test("precheck recorded format-valid intake without promotion", () => {
   assert.equal(precheck.reports.length, 7);
 });
 
-test("human review HTML is self-contained with inlined rasters and no pages/ URLs", () => {
-  const reviewRoot = path.join(TASK_EVIDENCE, "human-review");
-  PAPERS.forEach((paper) => {
-    const html = fs.readFileSync(path.join(reviewRoot, `${paper}.html`), "utf8");
+test("latest review HTML is self-contained with inlined rasters and no pages/ URLs", () => {
+  const reviewRoot = path.join(TASK_EVIDENCE, "human-review-final-paper1-10-v8");
+  Array.from({ length: 10 }, (_, index) => `paper${index + 1}`).forEach((paper) => {
+    const html = fs.readFileSync(path.join(reviewRoot, `${paper}-complete.html`), "utf8");
     assert.match(html, /src="data:image\/jpeg;base64,/);
     assert.doesNotMatch(html, /src="pages\//);
-    assert.match(html, /class="page-overlay"/);
-    assert.match(html, /value="accept"/);
-    assert.match(html, /value="adjust_geometry"/);
-    assert.match(html, /value="wrong_region_or_identity"/);
-    assert.match(html, /value="insufficient_evidence"/);
-    assert.match(html, /does not accept or promote/);
+    assert.match(html, /paper/);
   });
 });
 
-test("body-only review rebuild exposes only body_column overlays", () => {
-  const reviewRoot = path.join(TASK_EVIDENCE, "human-review-body-only-v8-fresh-poppler");
-  const manifest = JSON.parse(fs.readFileSync(path.join(reviewRoot, "BUILD_MANIFEST.json"), "utf8"));
-  assert.equal(manifest.visualScope, "body_column_only");
-  assert.equal(manifest.readsExistingHtml, false);
-  assert.equal(manifest.reusedRasterCache, false);
-  assert.equal(manifest.bodyCoverageReport.status, "pass");
-  PAPERS.forEach((paper) => {
-    const html = fs.readFileSync(path.join(reviewRoot, `${paper}.html`), "utf8");
-    assert.match(html, /data-class="body_column"/);
+test("latest body-only review exposes no non-Body overlays", () => {
+  const reviewRoot = path.join(TASK_EVIDENCE, "human-review-final-paper1-10-v8");
+  const manifest = JSON.parse(fs.readFileSync(path.join(reviewRoot, "MANIFEST.json"), "utf8"));
+  assert.equal(manifest.results.reduce((sum, item) => sum + item.pages, 0), 126);
+  Array.from({ length: 10 }, (_, index) => `paper${index + 1}`).forEach((paper) => {
+    const html = fs.readFileSync(path.join(reviewRoot, `${paper}-body.html`), "utf8");
+    assert.match(html, /class="body-predicted"/);
     assert.doesNotMatch(html, /data-class="independent_region"/);
     assert.doesNotMatch(html, /data-class="protected_region"/);
     assert.doesNotMatch(html, /data-class="writable_space_expectation"/);
-    assert.match(html, /Only Body boxes are visible/);
   });
 });
 

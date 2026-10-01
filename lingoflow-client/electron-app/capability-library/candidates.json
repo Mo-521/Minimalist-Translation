@@ -2,5 +2,2363 @@
   "schemaVersion": "capability-candidate-pool/v1",
   "catalogRole": "candidate_evidence_only",
   "runtimeDecisionUse": "forbidden",
-  "candidates": []
+  "candidates": [
+    {
+      "id": "candidate.column-pilot.paper8",
+      "capabilityIds": [
+        "cap.column-recognition"
+      ],
+      "sample": {
+        "id": "sample.column-pilot.paper8",
+        "displayName": "Column review paper8",
+        "source": {
+          "fileName": "论文样本8.pdf",
+          "sha256": "12e71bd65faecb793f64043c6812d7a3fd372e7f54ceed390e132839fd2504e4",
+          "bytes": 476899,
+          "pageCount": 11,
+          "mediaType": "application/pdf"
+        },
+        "provenance": {
+          "kind": "user_provided",
+          "reference": "Offline paper8 Column review before promotion"
+        },
+        "rights": {
+          "status": "metadata_only",
+          "canStoreMetadata": true,
+          "canStoreBinary": false
+        },
+        "boundaryFeatureIds": [
+          "boundary.column.single",
+          "boundary.column.double",
+          "boundary.column.mixed-full-width",
+          "boundary.column.page-transition"
+        ],
+        "expectedOutcomes": [],
+        "evidenceRefs": [
+          "human-review-column-paper8-10-v1/paper8.html"
+        ],
+        "storage": {
+          "binaryCommitted": false,
+          "externalSourceRequiredForRun": true
+        },
+        "authorityBoundary": {
+          "catalogRole": "regression_oracle",
+          "runtimeDecisionUse": "forbidden",
+          "finalDecisionsOwnedBy": [
+            "AA-COLUMN-001"
+          ]
+        }
+      },
+      "status": "accepted",
+      "promotedSampleId": "sample.column-pilot.paper8",
+      "history": [
+        {
+          "sequence": 1,
+          "action": "submit",
+          "actor": "Codex offline staging",
+          "at": "2026-09-27T03:37:48.941Z",
+          "reason": "User requested paper8–10 as candidates; page layouts still require human review",
+          "from": null,
+          "to": "pending",
+          "evidenceRefs": [],
+          "expectedOutcomes": [],
+          "sampleHash": "3bd1dac039fec763626693e21d2ae816cb439c1db1ebdd59fb2b480c63cc5a8a",
+          "previousHash": null,
+          "hash": "7e6a906f486f3dc622b6f0984dd76f810834d8aae51b9399880c6ba2e718c252"
+        },
+        {
+          "sequence": 2,
+          "action": "review",
+          "actor": "Codex offline staging",
+          "at": "2026-09-27T03:37:48.945Z",
+          "reason": "Awaiting explicit human review and corrected page-level oracle",
+          "from": "pending",
+          "to": "under_review",
+          "evidenceRefs": [],
+          "expectedOutcomes": [],
+          "sampleHash": "3bd1dac039fec763626693e21d2ae816cb439c1db1ebdd59fb2b480c63cc5a8a",
+          "previousHash": "7e6a906f486f3dc622b6f0984dd76f810834d8aae51b9399880c6ba2e718c252",
+          "hash": "c3c88d9747d8410393c1206010c9aa0ff61e781170b6eb0ab662b2dd04727f9d"
+        },
+        {
+          "sequence": 3,
+          "action": "review",
+          "actor": "User review, recorded by Codex",
+          "at": "2026-09-27T04:01:25.748Z",
+          "reason": "User explicitly approved the unchanged machine Column layouts without a separate JSON export",
+          "from": "under_review",
+          "to": "accepted",
+          "evidenceRefs": [
+            "human-review-column-paper8-10-v1/paper8.html",
+            "human-review-cross-sample-paper8-10-v2-current/paper8-non-body-ground-truth-draft (3).json",
+            "2026-09-27 user authorization to promote after verification"
+          ],
+          "expectedOutcomes": [
+            {
+              "capabilityId": "cap.column-recognition",
+              "assertionId": "assert.column.page-region-truth",
+              "oracleType": "exact",
+              "expected": {
+                "pageLayoutBasis": "body_text_flow_only",
+                "pages": [
+                  {
+                    "pageNumber": 1,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 2,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 3,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 4,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 5,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 6,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 7,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 8,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 9,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 10,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 11,
+                    "layout": "single_column"
+                  }
+                ],
+                "independentRegions": [
+                  {
+                    "pageNumber": 1,
+                    "type": "abstract"
+                  },
+                  {
+                    "pageNumber": 1,
+                    "type": "title"
+                  },
+                  {
+                    "pageNumber": 2,
+                    "type": "figure"
+                  },
+                  {
+                    "pageNumber": 2,
+                    "type": "figure_caption"
+                  },
+                  {
+                    "pageNumber": 6,
+                    "type": "table"
+                  },
+                  {
+                    "pageNumber": 7,
+                    "type": "figure"
+                  },
+                  {
+                    "pageNumber": 7,
+                    "type": "figure_caption"
+                  },
+                  {
+                    "pageNumber": 7,
+                    "type": "table"
+                  },
+                  {
+                    "pageNumber": 8,
+                    "type": "references_section_header"
+                  }
+                ]
+              },
+              "notes": "User explicitly approved unchanged machine Column layout without JSON export; independent types from separately confirmed non-body review"
+            }
+          ],
+          "sampleHash": "3bd1dac039fec763626693e21d2ae816cb439c1db1ebdd59fb2b480c63cc5a8a",
+          "previousHash": "c3c88d9747d8410393c1206010c9aa0ff61e781170b6eb0ab662b2dd04727f9d",
+          "hash": "6d2df2500487407c814265c89da03b4963ef911e4213f655eaba48aae9278cf5"
+        },
+        {
+          "sequence": 4,
+          "action": "promote",
+          "actor": "User-authorized Column promotion, executed by Codex",
+          "at": "2026-09-27T04:01:25.760Z",
+          "reason": "Complete reviewed oracle and zero-finding 10-sample offline regression required before publication",
+          "from": "accepted",
+          "to": "accepted",
+          "evidenceRefs": [
+            "human-review-column-paper8-10-v1/PROMOTION_PREPARED/VALIDATION.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "3bd1dac039fec763626693e21d2ae816cb439c1db1ebdd59fb2b480c63cc5a8a",
+          "previousHash": "6d2df2500487407c814265c89da03b4963ef911e4213f655eaba48aae9278cf5",
+          "hash": "63e72133be7d863a9a9dad12f12588b4f61cb77318ed8d78109d385ebd9d534e"
+        }
+      ]
+    },
+    {
+      "id": "candidate.column-pilot.paper9",
+      "capabilityIds": [
+        "cap.column-recognition"
+      ],
+      "sample": {
+        "id": "sample.column-pilot.paper9",
+        "displayName": "Column review paper9",
+        "source": {
+          "fileName": "论文样本9.pdf",
+          "sha256": "23cdb5dd51ba39d61b6d3093220cdedeb8c4e6f20c3a64640067a6e6659fb420",
+          "bytes": 474547,
+          "pageCount": 15,
+          "mediaType": "application/pdf"
+        },
+        "provenance": {
+          "kind": "user_provided",
+          "reference": "Offline paper9 Column review before promotion"
+        },
+        "rights": {
+          "status": "metadata_only",
+          "canStoreMetadata": true,
+          "canStoreBinary": false
+        },
+        "boundaryFeatureIds": [
+          "boundary.column.single",
+          "boundary.column.double",
+          "boundary.column.mixed-full-width",
+          "boundary.column.page-transition"
+        ],
+        "expectedOutcomes": [],
+        "evidenceRefs": [
+          "human-review-column-paper8-10-v1/paper9.html"
+        ],
+        "storage": {
+          "binaryCommitted": false,
+          "externalSourceRequiredForRun": true
+        },
+        "authorityBoundary": {
+          "catalogRole": "regression_oracle",
+          "runtimeDecisionUse": "forbidden",
+          "finalDecisionsOwnedBy": [
+            "AA-COLUMN-001"
+          ]
+        }
+      },
+      "status": "accepted",
+      "promotedSampleId": "sample.column-pilot.paper9",
+      "history": [
+        {
+          "sequence": 1,
+          "action": "submit",
+          "actor": "Codex offline staging",
+          "at": "2026-09-27T03:37:50.358Z",
+          "reason": "User requested paper8–10 as candidates; page layouts still require human review",
+          "from": null,
+          "to": "pending",
+          "evidenceRefs": [],
+          "expectedOutcomes": [],
+          "sampleHash": "10f1c61d86041eeef69841467e560970dbab91f9cf41b11fdbdc9b047a7d5b75",
+          "previousHash": null,
+          "hash": "63791dd0d05609e61dbd72e1118c869bd18b4917e0362696776f44c3d5d15ba9"
+        },
+        {
+          "sequence": 2,
+          "action": "review",
+          "actor": "Codex offline staging",
+          "at": "2026-09-27T03:37:50.360Z",
+          "reason": "Awaiting explicit human review and corrected page-level oracle",
+          "from": "pending",
+          "to": "under_review",
+          "evidenceRefs": [],
+          "expectedOutcomes": [],
+          "sampleHash": "10f1c61d86041eeef69841467e560970dbab91f9cf41b11fdbdc9b047a7d5b75",
+          "previousHash": "63791dd0d05609e61dbd72e1118c869bd18b4917e0362696776f44c3d5d15ba9",
+          "hash": "859eb9fd3fc2ca3d5d437a63a819ce0373a6ea33e200b5f4972be74ab19239e7"
+        },
+        {
+          "sequence": 3,
+          "action": "review",
+          "actor": "User review, recorded by Codex",
+          "at": "2026-09-27T04:01:25.753Z",
+          "reason": "User explicitly approved the unchanged machine Column layouts without a separate JSON export",
+          "from": "under_review",
+          "to": "accepted",
+          "evidenceRefs": [
+            "human-review-column-paper8-10-v1/paper9.html",
+            "human-review-cross-sample-paper8-10-v2-current/paper9-non-body-ground-truth-draft (2).json",
+            "2026-09-27 user authorization to promote after verification"
+          ],
+          "expectedOutcomes": [
+            {
+              "capabilityId": "cap.column-recognition",
+              "assertionId": "assert.column.page-region-truth",
+              "oracleType": "exact",
+              "expected": {
+                "pageLayoutBasis": "body_text_flow_only",
+                "pages": [
+                  {
+                    "pageNumber": 1,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 2,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 3,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 4,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 5,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 6,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 7,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 8,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 9,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 10,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 11,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 12,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 13,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 14,
+                    "layout": "single_column"
+                  },
+                  {
+                    "pageNumber": 15,
+                    "layout": "single_column"
+                  }
+                ],
+                "independentRegions": [
+                  {
+                    "pageNumber": 1,
+                    "type": "abstract"
+                  },
+                  {
+                    "pageNumber": 1,
+                    "type": "other_independent"
+                  },
+                  {
+                    "pageNumber": 1,
+                    "type": "title"
+                  },
+                  {
+                    "pageNumber": 12,
+                    "type": "references_section_header"
+                  }
+                ]
+              },
+              "notes": "User explicitly approved unchanged machine Column layout without JSON export; independent types from separately confirmed non-body review"
+            }
+          ],
+          "sampleHash": "10f1c61d86041eeef69841467e560970dbab91f9cf41b11fdbdc9b047a7d5b75",
+          "previousHash": "859eb9fd3fc2ca3d5d437a63a819ce0373a6ea33e200b5f4972be74ab19239e7",
+          "hash": "d99e3ffebe57404c757d462ade1a3d63eef9c59689f04d38ddbae640ce3fb0db"
+        },
+        {
+          "sequence": 4,
+          "action": "promote",
+          "actor": "User-authorized Column promotion, executed by Codex",
+          "at": "2026-09-27T04:01:25.763Z",
+          "reason": "Complete reviewed oracle and zero-finding 10-sample offline regression required before publication",
+          "from": "accepted",
+          "to": "accepted",
+          "evidenceRefs": [
+            "human-review-column-paper8-10-v1/PROMOTION_PREPARED/VALIDATION.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "10f1c61d86041eeef69841467e560970dbab91f9cf41b11fdbdc9b047a7d5b75",
+          "previousHash": "d99e3ffebe57404c757d462ade1a3d63eef9c59689f04d38ddbae640ce3fb0db",
+          "hash": "75d8f3bf9b7a8156bfc0f355e847abf4f1cf36ebeb291aaa4f95a5cafe4c6ac0"
+        }
+      ]
+    },
+    {
+      "id": "candidate.column-pilot.paper10",
+      "capabilityIds": [
+        "cap.column-recognition"
+      ],
+      "sample": {
+        "id": "sample.column-pilot.paper10",
+        "displayName": "Column review paper10",
+        "source": {
+          "fileName": "论文样本10.pdf",
+          "sha256": "bfa5b8767c9cce7eca3d4cda064bec56a03a9e344eb13a87271f8a8784527b63",
+          "bytes": 864810,
+          "pageCount": 10,
+          "mediaType": "application/pdf"
+        },
+        "provenance": {
+          "kind": "user_provided",
+          "reference": "Offline paper10 Column review before promotion"
+        },
+        "rights": {
+          "status": "metadata_only",
+          "canStoreMetadata": true,
+          "canStoreBinary": false
+        },
+        "boundaryFeatureIds": [
+          "boundary.column.single",
+          "boundary.column.double",
+          "boundary.column.mixed-full-width",
+          "boundary.column.page-transition"
+        ],
+        "expectedOutcomes": [],
+        "evidenceRefs": [
+          "human-review-column-paper8-10-v1/paper10.html"
+        ],
+        "storage": {
+          "binaryCommitted": false,
+          "externalSourceRequiredForRun": true
+        },
+        "authorityBoundary": {
+          "catalogRole": "regression_oracle",
+          "runtimeDecisionUse": "forbidden",
+          "finalDecisionsOwnedBy": [
+            "AA-COLUMN-001"
+          ]
+        }
+      },
+      "status": "accepted",
+      "promotedSampleId": "sample.column-pilot.paper10",
+      "history": [
+        {
+          "sequence": 1,
+          "action": "submit",
+          "actor": "Codex offline staging",
+          "at": "2026-09-27T03:37:52.523Z",
+          "reason": "User requested paper8–10 as candidates; page layouts still require human review",
+          "from": null,
+          "to": "pending",
+          "evidenceRefs": [],
+          "expectedOutcomes": [],
+          "sampleHash": "ee057901b8222f911bface0f876321d62c82341396b419bdc6ebb8e3b36d1e75",
+          "previousHash": null,
+          "hash": "68b0d2fd2fd0426a331f4b2dc6f704f963acd8b710241b9ceed3f013bd26ff20"
+        },
+        {
+          "sequence": 2,
+          "action": "review",
+          "actor": "Codex offline staging",
+          "at": "2026-09-27T03:37:52.524Z",
+          "reason": "Awaiting explicit human review and corrected page-level oracle",
+          "from": "pending",
+          "to": "under_review",
+          "evidenceRefs": [],
+          "expectedOutcomes": [],
+          "sampleHash": "ee057901b8222f911bface0f876321d62c82341396b419bdc6ebb8e3b36d1e75",
+          "previousHash": "68b0d2fd2fd0426a331f4b2dc6f704f963acd8b710241b9ceed3f013bd26ff20",
+          "hash": "6bdf2c295bf639ab638e1e067477171dbd1181a4410e6259c5d2752077533021"
+        },
+        {
+          "sequence": 3,
+          "action": "review",
+          "actor": "User review, recorded by Codex",
+          "at": "2026-09-27T04:01:25.757Z",
+          "reason": "User reviewed and exported all ten pages; approved promotion if validation passes",
+          "from": "under_review",
+          "to": "accepted",
+          "evidenceRefs": [
+            "human-review-column-paper8-10-v1/paper10-column-ground-truth-draft.json",
+            "human-review-cross-sample-paper8-10-v2-current/paper10-non-body-ground-truth-draft (3).json",
+            "2026-09-27 user authorization to promote after verification"
+          ],
+          "expectedOutcomes": [
+            {
+              "capabilityId": "cap.column-recognition",
+              "assertionId": "assert.column.page-region-truth",
+              "oracleType": "exact",
+              "expected": {
+                "pageLayoutBasis": "body_text_flow_only",
+                "pages": [
+                  {
+                    "pageNumber": 1,
+                    "layout": "double_column"
+                  },
+                  {
+                    "pageNumber": 2,
+                    "layout": "double_column"
+                  },
+                  {
+                    "pageNumber": 3,
+                    "layout": "double_column"
+                  },
+                  {
+                    "pageNumber": 4,
+                    "layout": "double_column"
+                  },
+                  {
+                    "pageNumber": 5,
+                    "layout": "double_column"
+                  },
+                  {
+                    "pageNumber": 6,
+                    "layout": "double_column"
+                  },
+                  {
+                    "pageNumber": 7,
+                    "layout": "double_column"
+                  },
+                  {
+                    "pageNumber": 8,
+                    "layout": "double_column"
+                  },
+                  {
+                    "pageNumber": 9,
+                    "layout": "double_column"
+                  },
+                  {
+                    "pageNumber": 10,
+                    "layout": "single_column"
+                  }
+                ],
+                "independentRegions": [
+                  {
+                    "pageNumber": 1,
+                    "type": "abstract"
+                  },
+                  {
+                    "pageNumber": 1,
+                    "type": "title"
+                  },
+                  {
+                    "pageNumber": 4,
+                    "type": "figure"
+                  },
+                  {
+                    "pageNumber": 4,
+                    "type": "figure_caption"
+                  },
+                  {
+                    "pageNumber": 7,
+                    "type": "figure"
+                  },
+                  {
+                    "pageNumber": 7,
+                    "type": "figure_caption"
+                  },
+                  {
+                    "pageNumber": 7,
+                    "type": "table"
+                  },
+                  {
+                    "pageNumber": 8,
+                    "type": "figure"
+                  },
+                  {
+                    "pageNumber": 8,
+                    "type": "figure_caption"
+                  },
+                  {
+                    "pageNumber": 9,
+                    "type": "figure"
+                  },
+                  {
+                    "pageNumber": 9,
+                    "type": "figure_caption"
+                  },
+                  {
+                    "pageNumber": 10,
+                    "type": "references_section_header"
+                  }
+                ]
+              },
+              "notes": "10/10 pages confirmed in exported Column review; independent types from separately confirmed non-body review"
+            }
+          ],
+          "sampleHash": "ee057901b8222f911bface0f876321d62c82341396b419bdc6ebb8e3b36d1e75",
+          "previousHash": "6bdf2c295bf639ab638e1e067477171dbd1181a4410e6259c5d2752077533021",
+          "hash": "b1d6960119f66350c7aede10b554f7d434dd01cb0133aaa7bff91aa9007d0368"
+        },
+        {
+          "sequence": 4,
+          "action": "promote",
+          "actor": "User-authorized Column promotion, executed by Codex",
+          "at": "2026-09-27T04:01:25.767Z",
+          "reason": "Complete reviewed oracle and zero-finding 10-sample offline regression required before publication",
+          "from": "accepted",
+          "to": "accepted",
+          "evidenceRefs": [
+            "human-review-column-paper8-10-v1/PROMOTION_PREPARED/VALIDATION.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "ee057901b8222f911bface0f876321d62c82341396b419bdc6ebb8e3b36d1e75",
+          "previousHash": "b1d6960119f66350c7aede10b554f7d434dd01cb0133aaa7bff91aa9007d0368",
+          "hash": "a43aaf865bba160f38a43fdffc458171e487ea6d64a59c89292f4dded379288f"
+        }
+      ]
+    },
+    {
+      "id": "candidate.layout-geometry.paper1",
+      "capabilityIds": [
+        "cap.layout-geometry"
+      ],
+      "sample": {
+        "id": "sample.layout-geometry.paper1",
+        "displayName": "Reviewed Layout Geometry paper1",
+        "source": {
+          "fileName": "论文样本1.pdf",
+          "mediaType": "application/pdf",
+          "sha256": "7ba73a901c7bacf14cdff7d9e16480cc451ca3a521977795a3de9c4e67bba0ac",
+          "bytes": 2284562,
+          "pageCount": 6
+        },
+        "provenance": {
+          "kind": "user_provided",
+          "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper1"
+        },
+        "rights": {
+          "status": "metadata_only",
+          "canStoreMetadata": true,
+          "canStoreBinary": false
+        },
+        "boundaryFeatureIds": [
+          "boundary.geometry.main-reading-flow",
+          "boundary.geometry.independent-object",
+          "boundary.geometry.protected-object",
+          "boundary.geometry.column-dependency"
+        ],
+        "expectedOutcomes": [
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.reviewed-boxes",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper1-geometry-oracle.json",
+              "oracleSha256": "598b2b1545e747a62736d65c4884d6d4b888e7a5a5332197c19231a00be82ad5",
+              "bodyExportSha256": "99bfcf9dbd8771e0b773bd4e5887e1bf18fe3392cb9d3e89152e0f662ccd483c",
+              "nonBodyExportSha256": "7b4b6c31e9f462c1e8ad8e502fcea2823d2eecf5e66eb545ec788b035dc0f8b6"
+            }
+          },
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.identity-structure-tolerance",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper1-geometry-oracle.json",
+              "oracleSha256": "598b2b1545e747a62736d65c4884d6d4b888e7a5a5332197c19231a00be82ad5",
+              "failureClasses": [
+                "identity_failure",
+                "structural_failure",
+                "tolerance_deviation"
+              ]
+            }
+          }
+        ],
+        "evidenceRefs": [
+          "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+          "cap.layout-geometry/oracles/paper1-geometry-oracle.json"
+        ],
+        "storage": {
+          "binaryCommitted": false,
+          "externalSourceRequiredForRun": true
+        },
+        "authorityBoundary": {
+          "catalogRole": "regression_oracle",
+          "runtimeDecisionUse": "forbidden",
+          "finalDecisionsOwnedBy": [
+            "AA-GEOMETRY-001"
+          ]
+        }
+      },
+      "status": "accepted",
+      "promotedSampleId": "sample.layout-geometry.paper1",
+      "history": [
+        {
+          "sequence": 1,
+          "action": "submit",
+          "actor": "offline.geometry.candidate.builder",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper1: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": null,
+          "to": "pending",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper1-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "4648fa4649311a81b58b3449a3c5523b892864c93f5ad83f199637b9df677505",
+          "previousHash": null,
+          "hash": "a4c470f834648aef9d7958cd1a617363a1e4ad99f5530b829275afcab17dee7d"
+        },
+        {
+          "sequence": 2,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper1: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "pending",
+          "to": "under_review",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper1-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "4648fa4649311a81b58b3449a3c5523b892864c93f5ad83f199637b9df677505",
+          "previousHash": "a4c470f834648aef9d7958cd1a617363a1e4ad99f5530b829275afcab17dee7d",
+          "hash": "1e23b69c221b3eb48ce59d57ab1aaddd0e3b7539276e523f3559da09ee97b362"
+        },
+        {
+          "sequence": 3,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper1: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "under_review",
+          "to": "accepted",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper1-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "4648fa4649311a81b58b3449a3c5523b892864c93f5ad83f199637b9df677505",
+          "previousHash": "1e23b69c221b3eb48ce59d57ab1aaddd0e3b7539276e523f3559da09ee97b362",
+          "hash": "5ee50801d5dcea0d9de86632092568ac68a837d0b0869473c4f2bcdad7ebea1a"
+        },
+        {
+          "sequence": 4,
+          "action": "revise",
+          "actor": "rioin (user-confirmed boundary review)",
+          "at": "2026-09-30T13:20:43.788Z",
+          "reason": "paper1: append-only reviewed Oracle revision; prior accepted hash retained",
+          "from": "accepted",
+          "to": "under_review",
+          "evidenceRefs": [
+            ".governance/tasks/layout-geometry-capability-audit/evidence/figure-boundary-review-2026-09-30.json",
+            ".governance/tasks/layout-geometry-capability-audit/evidence/paper5-p4-object-boundary-review-2026-09-30.json",
+            ".governance/tasks/layout-geometry-capability-audit/evidence/paper2-p11-reference-boundary-review-2026-09-30.json",
+            "cap.layout-geometry/oracles/revisions/2026-09-30/paper1-geometry-oracle.json",
+            "cap.layout-geometry/oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+          ],
+          "expectedOutcomes": [
+            {
+              "capabilityId": "cap.layout-geometry",
+              "assertionId": "assert.geometry.reviewed-boxes",
+              "oracleType": "manual",
+              "expected": {
+                "oracleFile": "oracles/revisions/2026-09-30/paper1-geometry-oracle.json",
+                "oracleSha256": "dc2f3cb08c630f6dee6ae3c06b44dce70d027997f83283ca848bb815cbd57734",
+                "bodyExportSha256": "99bfcf9dbd8771e0b773bd4e5887e1bf18fe3392cb9d3e89152e0f662ccd483c",
+                "nonBodyExportSha256": "7b4b6c31e9f462c1e8ad8e502fcea2823d2eecf5e66eb545ec788b035dc0f8b6",
+                "revisionManifest": "oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+              }
+            },
+            {
+              "capabilityId": "cap.layout-geometry",
+              "assertionId": "assert.geometry.identity-structure-tolerance",
+              "oracleType": "manual",
+              "expected": {
+                "oracleFile": "oracles/revisions/2026-09-30/paper1-geometry-oracle.json",
+                "oracleSha256": "dc2f3cb08c630f6dee6ae3c06b44dce70d027997f83283ca848bb815cbd57734",
+                "failureClasses": [
+                  "identity_failure",
+                  "structural_failure",
+                  "tolerance_deviation"
+                ],
+                "revisionManifest": "oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+              }
+            }
+          ],
+          "sampleHash": "4648fa4649311a81b58b3449a3c5523b892864c93f5ad83f199637b9df677505",
+          "previousHash": "5ee50801d5dcea0d9de86632092568ac68a837d0b0869473c4f2bcdad7ebea1a",
+          "hash": "6ccd9f5fa259ce1ba7bebb13c57d98f769fb70bdb3a8acdb45d76ea1daf25d49"
+        },
+        {
+          "sequence": 5,
+          "action": "review",
+          "actor": "rioin (user-authorized versioned truth review)",
+          "at": "2026-09-30T13:20:43.788Z",
+          "reason": "paper1: reviewed revised Oracle accepted for offline regression, not promoted",
+          "from": "under_review",
+          "to": "accepted",
+          "evidenceRefs": [
+            ".governance/tasks/layout-geometry-capability-audit/evidence/figure-boundary-review-2026-09-30.json",
+            ".governance/tasks/layout-geometry-capability-audit/evidence/paper5-p4-object-boundary-review-2026-09-30.json",
+            ".governance/tasks/layout-geometry-capability-audit/evidence/paper2-p11-reference-boundary-review-2026-09-30.json",
+            "cap.layout-geometry/oracles/revisions/2026-09-30/paper1-geometry-oracle.json",
+            "cap.layout-geometry/oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "4648fa4649311a81b58b3449a3c5523b892864c93f5ad83f199637b9df677505",
+          "previousHash": "6ccd9f5fa259ce1ba7bebb13c57d98f769fb70bdb3a8acdb45d76ea1daf25d49",
+          "hash": "218717d080d5ed0c7bb80f4419a31c2e15671e9c5b1ee019f0902a7e0be6f731"
+        },
+        {
+          "sequence": 6,
+          "action": "promote",
+          "actor": "rioin (explicit Geometry promotion authorization)",
+          "at": "2026-09-30T13:30:08.206Z",
+          "reason": "paper1: reviewed versioned Oracle and formal comparator Gate verified; evidence-only promotion",
+          "from": "accepted",
+          "to": "accepted",
+          "evidenceRefs": [
+            ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+            ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "4648fa4649311a81b58b3449a3c5523b892864c93f5ad83f199637b9df677505",
+          "previousHash": "218717d080d5ed0c7bb80f4419a31c2e15671e9c5b1ee019f0902a7e0be6f731",
+          "hash": "be16666c5dda3c5ddf3a814d47bf6b30103c5401efcdfb8dc55c0dc02761119c"
+        }
+      ]
+    },
+    {
+      "id": "candidate.layout-geometry.paper2",
+      "capabilityIds": [
+        "cap.layout-geometry"
+      ],
+      "sample": {
+        "id": "sample.layout-geometry.paper2",
+        "displayName": "Reviewed Layout Geometry paper2",
+        "source": {
+          "fileName": "论文样本2.pdf",
+          "mediaType": "application/pdf",
+          "sha256": "a3caa00f90f1b68a2068bbed07b2b91b6b40b3f65d1c3b22302e21333510e36f",
+          "bytes": 283040,
+          "pageCount": 11
+        },
+        "provenance": {
+          "kind": "user_provided",
+          "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper2"
+        },
+        "rights": {
+          "status": "metadata_only",
+          "canStoreMetadata": true,
+          "canStoreBinary": false
+        },
+        "boundaryFeatureIds": [
+          "boundary.geometry.main-reading-flow",
+          "boundary.geometry.independent-object",
+          "boundary.geometry.protected-object",
+          "boundary.geometry.column-dependency"
+        ],
+        "expectedOutcomes": [
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.reviewed-boxes",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper2-geometry-oracle.json",
+              "oracleSha256": "623001a5b1070e4fbb069343189871be2a07047faa3480788c2923be4d4f7974",
+              "bodyExportSha256": "2143916edcf95b11b2db2f7c087d663f2a3652625e55c41dc280f80f341092f1",
+              "nonBodyExportSha256": "d19b419584dae409ccf97ea8971386fd1bcf319dc0901bb8eb7b30b415f7aca9"
+            }
+          },
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.identity-structure-tolerance",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper2-geometry-oracle.json",
+              "oracleSha256": "623001a5b1070e4fbb069343189871be2a07047faa3480788c2923be4d4f7974",
+              "failureClasses": [
+                "identity_failure",
+                "structural_failure",
+                "tolerance_deviation"
+              ]
+            }
+          }
+        ],
+        "evidenceRefs": [
+          "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+          "cap.layout-geometry/oracles/paper2-geometry-oracle.json"
+        ],
+        "storage": {
+          "binaryCommitted": false,
+          "externalSourceRequiredForRun": true
+        },
+        "authorityBoundary": {
+          "catalogRole": "regression_oracle",
+          "runtimeDecisionUse": "forbidden",
+          "finalDecisionsOwnedBy": [
+            "AA-GEOMETRY-001"
+          ]
+        }
+      },
+      "status": "accepted",
+      "promotedSampleId": "sample.layout-geometry.paper2",
+      "history": [
+        {
+          "sequence": 1,
+          "action": "submit",
+          "actor": "offline.geometry.candidate.builder",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper2: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": null,
+          "to": "pending",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper2-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "b43a6259cbbda0a52854eedfaa0c15bce5643777e2b0f6b8a681e4a07226afe0",
+          "previousHash": null,
+          "hash": "85097cab9f2de1a7fe92498b79418f8df4b219a1421decf4be356436a26e8834"
+        },
+        {
+          "sequence": 2,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper2: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "pending",
+          "to": "under_review",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper2-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "b43a6259cbbda0a52854eedfaa0c15bce5643777e2b0f6b8a681e4a07226afe0",
+          "previousHash": "85097cab9f2de1a7fe92498b79418f8df4b219a1421decf4be356436a26e8834",
+          "hash": "bb31a38170ae40566822f334f2207f4bdf60fc200f4563c644647c97b0641582"
+        },
+        {
+          "sequence": 3,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper2: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "under_review",
+          "to": "accepted",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper2-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "b43a6259cbbda0a52854eedfaa0c15bce5643777e2b0f6b8a681e4a07226afe0",
+          "previousHash": "bb31a38170ae40566822f334f2207f4bdf60fc200f4563c644647c97b0641582",
+          "hash": "484a45d1a5d3cb9387ef1e39f3dc57981e3f3f9d410e746603d77009db112b78"
+        },
+        {
+          "sequence": 4,
+          "action": "revise",
+          "actor": "rioin (user-confirmed boundary review)",
+          "at": "2026-09-30T13:20:43.788Z",
+          "reason": "paper2: append-only reviewed Oracle revision; prior accepted hash retained",
+          "from": "accepted",
+          "to": "under_review",
+          "evidenceRefs": [
+            ".governance/tasks/layout-geometry-capability-audit/evidence/figure-boundary-review-2026-09-30.json",
+            ".governance/tasks/layout-geometry-capability-audit/evidence/paper5-p4-object-boundary-review-2026-09-30.json",
+            ".governance/tasks/layout-geometry-capability-audit/evidence/paper2-p11-reference-boundary-review-2026-09-30.json",
+            "cap.layout-geometry/oracles/revisions/2026-09-30/paper2-geometry-oracle.json",
+            "cap.layout-geometry/oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+          ],
+          "expectedOutcomes": [
+            {
+              "capabilityId": "cap.layout-geometry",
+              "assertionId": "assert.geometry.reviewed-boxes",
+              "oracleType": "manual",
+              "expected": {
+                "oracleFile": "oracles/revisions/2026-09-30/paper2-geometry-oracle.json",
+                "oracleSha256": "82bac639290bec700f18abd3d0472ba880b76103b6b33112b82b43db44b13556",
+                "bodyExportSha256": "2143916edcf95b11b2db2f7c087d663f2a3652625e55c41dc280f80f341092f1",
+                "nonBodyExportSha256": "d19b419584dae409ccf97ea8971386fd1bcf319dc0901bb8eb7b30b415f7aca9",
+                "revisionManifest": "oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+              }
+            },
+            {
+              "capabilityId": "cap.layout-geometry",
+              "assertionId": "assert.geometry.identity-structure-tolerance",
+              "oracleType": "manual",
+              "expected": {
+                "oracleFile": "oracles/revisions/2026-09-30/paper2-geometry-oracle.json",
+                "oracleSha256": "82bac639290bec700f18abd3d0472ba880b76103b6b33112b82b43db44b13556",
+                "failureClasses": [
+                  "identity_failure",
+                  "structural_failure",
+                  "tolerance_deviation"
+                ],
+                "revisionManifest": "oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+              }
+            }
+          ],
+          "sampleHash": "b43a6259cbbda0a52854eedfaa0c15bce5643777e2b0f6b8a681e4a07226afe0",
+          "previousHash": "484a45d1a5d3cb9387ef1e39f3dc57981e3f3f9d410e746603d77009db112b78",
+          "hash": "ed29a2c6275019008ba6986ea401b503c4946cbb796e5f313b3de3729680f272"
+        },
+        {
+          "sequence": 5,
+          "action": "review",
+          "actor": "rioin (user-authorized versioned truth review)",
+          "at": "2026-09-30T13:20:43.788Z",
+          "reason": "paper2: reviewed revised Oracle accepted for offline regression, not promoted",
+          "from": "under_review",
+          "to": "accepted",
+          "evidenceRefs": [
+            ".governance/tasks/layout-geometry-capability-audit/evidence/figure-boundary-review-2026-09-30.json",
+            ".governance/tasks/layout-geometry-capability-audit/evidence/paper5-p4-object-boundary-review-2026-09-30.json",
+            ".governance/tasks/layout-geometry-capability-audit/evidence/paper2-p11-reference-boundary-review-2026-09-30.json",
+            "cap.layout-geometry/oracles/revisions/2026-09-30/paper2-geometry-oracle.json",
+            "cap.layout-geometry/oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "b43a6259cbbda0a52854eedfaa0c15bce5643777e2b0f6b8a681e4a07226afe0",
+          "previousHash": "ed29a2c6275019008ba6986ea401b503c4946cbb796e5f313b3de3729680f272",
+          "hash": "077b5bf921e08fbea688d3b04f63c85e07e23dbf0309cdcec6c21c88133dc8b8"
+        },
+        {
+          "sequence": 6,
+          "action": "promote",
+          "actor": "rioin (explicit Geometry promotion authorization)",
+          "at": "2026-09-30T13:30:08.206Z",
+          "reason": "paper2: reviewed versioned Oracle and formal comparator Gate verified; evidence-only promotion",
+          "from": "accepted",
+          "to": "accepted",
+          "evidenceRefs": [
+            ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+            ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "b43a6259cbbda0a52854eedfaa0c15bce5643777e2b0f6b8a681e4a07226afe0",
+          "previousHash": "077b5bf921e08fbea688d3b04f63c85e07e23dbf0309cdcec6c21c88133dc8b8",
+          "hash": "503a8613905a0d6241e5aac74b79dbbf06959fc13336c88b42b0b979aed70ad0"
+        }
+      ]
+    },
+    {
+      "id": "candidate.layout-geometry.paper3",
+      "capabilityIds": [
+        "cap.layout-geometry"
+      ],
+      "sample": {
+        "id": "sample.layout-geometry.paper3",
+        "displayName": "Reviewed Layout Geometry paper3",
+        "source": {
+          "fileName": "论文样本3.pdf",
+          "mediaType": "application/pdf",
+          "sha256": "fa33485f517b3c94d2f6e4d4366f3ab14a1e413a738db512e1862f4a0944f5f9",
+          "bytes": 505955,
+          "pageCount": 14
+        },
+        "provenance": {
+          "kind": "user_provided",
+          "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper3"
+        },
+        "rights": {
+          "status": "metadata_only",
+          "canStoreMetadata": true,
+          "canStoreBinary": false
+        },
+        "boundaryFeatureIds": [
+          "boundary.geometry.main-reading-flow",
+          "boundary.geometry.independent-object",
+          "boundary.geometry.protected-object",
+          "boundary.geometry.column-dependency"
+        ],
+        "expectedOutcomes": [
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.reviewed-boxes",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper3-geometry-oracle.json",
+              "oracleSha256": "54cfd4960c00b47bc42ef5db3cbd9dadc55829ee5aa5cc700fb7d077182a6c75",
+              "bodyExportSha256": "ef78f4dde4062f632a87f9d6c28dc2b35c97cc70584052ad790b909c4abd835a",
+              "nonBodyExportSha256": "1ec8e08af31675330a56588ca11b89b42fe4b570da6aa07a031b08a3c18eec56"
+            }
+          },
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.identity-structure-tolerance",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper3-geometry-oracle.json",
+              "oracleSha256": "54cfd4960c00b47bc42ef5db3cbd9dadc55829ee5aa5cc700fb7d077182a6c75",
+              "failureClasses": [
+                "identity_failure",
+                "structural_failure",
+                "tolerance_deviation"
+              ]
+            }
+          }
+        ],
+        "evidenceRefs": [
+          "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+          "cap.layout-geometry/oracles/paper3-geometry-oracle.json"
+        ],
+        "storage": {
+          "binaryCommitted": false,
+          "externalSourceRequiredForRun": true
+        },
+        "authorityBoundary": {
+          "catalogRole": "regression_oracle",
+          "runtimeDecisionUse": "forbidden",
+          "finalDecisionsOwnedBy": [
+            "AA-GEOMETRY-001"
+          ]
+        }
+      },
+      "status": "accepted",
+      "promotedSampleId": "sample.layout-geometry.paper3",
+      "history": [
+        {
+          "sequence": 1,
+          "action": "submit",
+          "actor": "offline.geometry.candidate.builder",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper3: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": null,
+          "to": "pending",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper3-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "d4d341a5c5ad997d5e4c1770f7d88a5d45476854311a5908a075a77a4419be3f",
+          "previousHash": null,
+          "hash": "8571bad8a8061e76ddfdf9ede2d21bb2e393a768e54ce4327d3488a72d60979c"
+        },
+        {
+          "sequence": 2,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper3: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "pending",
+          "to": "under_review",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper3-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "d4d341a5c5ad997d5e4c1770f7d88a5d45476854311a5908a075a77a4419be3f",
+          "previousHash": "8571bad8a8061e76ddfdf9ede2d21bb2e393a768e54ce4327d3488a72d60979c",
+          "hash": "b6f18e9797874b4b1c409b11a7335f9303e397d09f1428b529cfc9cdaadddeab"
+        },
+        {
+          "sequence": 3,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper3: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "under_review",
+          "to": "accepted",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper3-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "d4d341a5c5ad997d5e4c1770f7d88a5d45476854311a5908a075a77a4419be3f",
+          "previousHash": "b6f18e9797874b4b1c409b11a7335f9303e397d09f1428b529cfc9cdaadddeab",
+          "hash": "e47043dab796983079c5cbf29e3347785671bc7de7455aad839b8d43d6394d50"
+        },
+        {
+          "sequence": 4,
+          "action": "promote",
+          "actor": "rioin (explicit Geometry promotion authorization)",
+          "at": "2026-09-30T13:30:08.206Z",
+          "reason": "paper3: reviewed versioned Oracle and formal comparator Gate verified; evidence-only promotion",
+          "from": "accepted",
+          "to": "accepted",
+          "evidenceRefs": [
+            ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+            ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "d4d341a5c5ad997d5e4c1770f7d88a5d45476854311a5908a075a77a4419be3f",
+          "previousHash": "e47043dab796983079c5cbf29e3347785671bc7de7455aad839b8d43d6394d50",
+          "hash": "cfed8dd345040aa1d2de9b01f923faea0415fb62ec95966ba2d8b3c82b680e42"
+        }
+      ]
+    },
+    {
+      "id": "candidate.layout-geometry.paper4",
+      "capabilityIds": [
+        "cap.layout-geometry"
+      ],
+      "sample": {
+        "id": "sample.layout-geometry.paper4",
+        "displayName": "Reviewed Layout Geometry paper4",
+        "source": {
+          "fileName": "论文样本4.pdf",
+          "mediaType": "application/pdf",
+          "sha256": "8984769b011698352fba9532e6eed4d81a1683451e888ee85a2caa8042149e8b",
+          "bytes": 1356829,
+          "pageCount": 16
+        },
+        "provenance": {
+          "kind": "user_provided",
+          "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper4"
+        },
+        "rights": {
+          "status": "metadata_only",
+          "canStoreMetadata": true,
+          "canStoreBinary": false
+        },
+        "boundaryFeatureIds": [
+          "boundary.geometry.main-reading-flow",
+          "boundary.geometry.independent-object",
+          "boundary.geometry.protected-object",
+          "boundary.geometry.column-dependency"
+        ],
+        "expectedOutcomes": [
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.reviewed-boxes",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper4-geometry-oracle.json",
+              "oracleSha256": "f653969f50771cbd41f477373f87e6c75dc21740a14357e8af75ddfe84ca8b1c",
+              "bodyExportSha256": "430ea40260cd2ecd048955e146dc4bd64cf489fa70b839103b93e246c6fa8d35",
+              "nonBodyExportSha256": "0542d70f6b2dbff099ce6a86a4fc4b9c62db66d5b814e751813182091ddf8a6d"
+            }
+          },
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.identity-structure-tolerance",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper4-geometry-oracle.json",
+              "oracleSha256": "f653969f50771cbd41f477373f87e6c75dc21740a14357e8af75ddfe84ca8b1c",
+              "failureClasses": [
+                "identity_failure",
+                "structural_failure",
+                "tolerance_deviation"
+              ]
+            }
+          }
+        ],
+        "evidenceRefs": [
+          "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+          "cap.layout-geometry/oracles/paper4-geometry-oracle.json"
+        ],
+        "storage": {
+          "binaryCommitted": false,
+          "externalSourceRequiredForRun": true
+        },
+        "authorityBoundary": {
+          "catalogRole": "regression_oracle",
+          "runtimeDecisionUse": "forbidden",
+          "finalDecisionsOwnedBy": [
+            "AA-GEOMETRY-001"
+          ]
+        }
+      },
+      "status": "accepted",
+      "promotedSampleId": "sample.layout-geometry.paper4",
+      "history": [
+        {
+          "sequence": 1,
+          "action": "submit",
+          "actor": "offline.geometry.candidate.builder",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper4: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": null,
+          "to": "pending",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper4-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "ea9c30bcf7383026f7750206e0fee82ce8a33326f5b9ba32201492d98373d1d0",
+          "previousHash": null,
+          "hash": "e565aba7cfa39925af906732083fb324da33343e21f7551adf7c8caff68dec05"
+        },
+        {
+          "sequence": 2,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper4: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "pending",
+          "to": "under_review",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper4-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "ea9c30bcf7383026f7750206e0fee82ce8a33326f5b9ba32201492d98373d1d0",
+          "previousHash": "e565aba7cfa39925af906732083fb324da33343e21f7551adf7c8caff68dec05",
+          "hash": "cc62034dbca050f5ad9cb3cab2d121e3dd892053168be9668388af4f29cedefb"
+        },
+        {
+          "sequence": 3,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper4: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "under_review",
+          "to": "accepted",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper4-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "ea9c30bcf7383026f7750206e0fee82ce8a33326f5b9ba32201492d98373d1d0",
+          "previousHash": "cc62034dbca050f5ad9cb3cab2d121e3dd892053168be9668388af4f29cedefb",
+          "hash": "035d038c0630b8c91d79b5ab4e294b87412d2cf8b4511be4fa1d3ebaca53090e"
+        },
+        {
+          "sequence": 4,
+          "action": "promote",
+          "actor": "rioin (explicit Geometry promotion authorization)",
+          "at": "2026-09-30T13:30:08.206Z",
+          "reason": "paper4: reviewed versioned Oracle and formal comparator Gate verified; evidence-only promotion",
+          "from": "accepted",
+          "to": "accepted",
+          "evidenceRefs": [
+            ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+            ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "ea9c30bcf7383026f7750206e0fee82ce8a33326f5b9ba32201492d98373d1d0",
+          "previousHash": "035d038c0630b8c91d79b5ab4e294b87412d2cf8b4511be4fa1d3ebaca53090e",
+          "hash": "f3d335db74f70c21ae9bd6e8469b3f532bbe2e9dcd0b5c96f24ea609061678dc"
+        }
+      ]
+    },
+    {
+      "id": "candidate.layout-geometry.paper5",
+      "capabilityIds": [
+        "cap.layout-geometry"
+      ],
+      "sample": {
+        "id": "sample.layout-geometry.paper5",
+        "displayName": "Reviewed Layout Geometry paper5",
+        "source": {
+          "fileName": "论文样本5.pdf",
+          "mediaType": "application/pdf",
+          "sha256": "c3efd26afb65cafaa9e35525d0c2c182199b330cf101645e84f63901eca8bc48",
+          "bytes": 1427806,
+          "pageCount": 14
+        },
+        "provenance": {
+          "kind": "user_provided",
+          "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper5"
+        },
+        "rights": {
+          "status": "metadata_only",
+          "canStoreMetadata": true,
+          "canStoreBinary": false
+        },
+        "boundaryFeatureIds": [
+          "boundary.geometry.main-reading-flow",
+          "boundary.geometry.independent-object",
+          "boundary.geometry.protected-object",
+          "boundary.geometry.column-dependency"
+        ],
+        "expectedOutcomes": [
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.reviewed-boxes",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper5-geometry-oracle.json",
+              "oracleSha256": "ab12387a2d48b78562af54708b1add5168473f944f5e1dfdc61a2b2fd32043c3",
+              "bodyExportSha256": "5c3f3a71d06c504979a3d1ee54bae249c06c4e0b25db5883390280e6ad3ab9ca",
+              "nonBodyExportSha256": "dfbf602a8a893a2834873e5356d929333d750c0172852a51ce4b0f694ab27814"
+            }
+          },
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.identity-structure-tolerance",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper5-geometry-oracle.json",
+              "oracleSha256": "ab12387a2d48b78562af54708b1add5168473f944f5e1dfdc61a2b2fd32043c3",
+              "failureClasses": [
+                "identity_failure",
+                "structural_failure",
+                "tolerance_deviation"
+              ]
+            }
+          }
+        ],
+        "evidenceRefs": [
+          "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+          "cap.layout-geometry/oracles/paper5-geometry-oracle.json"
+        ],
+        "storage": {
+          "binaryCommitted": false,
+          "externalSourceRequiredForRun": true
+        },
+        "authorityBoundary": {
+          "catalogRole": "regression_oracle",
+          "runtimeDecisionUse": "forbidden",
+          "finalDecisionsOwnedBy": [
+            "AA-GEOMETRY-001"
+          ]
+        }
+      },
+      "status": "accepted",
+      "promotedSampleId": "sample.layout-geometry.paper5",
+      "history": [
+        {
+          "sequence": 1,
+          "action": "submit",
+          "actor": "offline.geometry.candidate.builder",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper5: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": null,
+          "to": "pending",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper5-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "95e1384dc4c8e32f7b9dd0c2e95346106917be193ace3f2e3cfe0d7979f7722f",
+          "previousHash": null,
+          "hash": "7320309a142e2b4be7e692d5da14189787b905092ba8acb4668a9899e962c23e"
+        },
+        {
+          "sequence": 2,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper5: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "pending",
+          "to": "under_review",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper5-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "95e1384dc4c8e32f7b9dd0c2e95346106917be193ace3f2e3cfe0d7979f7722f",
+          "previousHash": "7320309a142e2b4be7e692d5da14189787b905092ba8acb4668a9899e962c23e",
+          "hash": "cd3ad6dbff658a89e66f76023517f2f539479f6110c45c522ab45ecae3bfd306"
+        },
+        {
+          "sequence": 3,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper5: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "under_review",
+          "to": "accepted",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper5-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "95e1384dc4c8e32f7b9dd0c2e95346106917be193ace3f2e3cfe0d7979f7722f",
+          "previousHash": "cd3ad6dbff658a89e66f76023517f2f539479f6110c45c522ab45ecae3bfd306",
+          "hash": "d7398e8e15f451397007f8f2499d470fe47f803ec722533050ba5c8d16f915cb"
+        },
+        {
+          "sequence": 4,
+          "action": "revise",
+          "actor": "rioin (user-confirmed boundary review)",
+          "at": "2026-09-30T13:20:43.788Z",
+          "reason": "paper5: append-only reviewed Oracle revision; prior accepted hash retained",
+          "from": "accepted",
+          "to": "under_review",
+          "evidenceRefs": [
+            ".governance/tasks/layout-geometry-capability-audit/evidence/figure-boundary-review-2026-09-30.json",
+            ".governance/tasks/layout-geometry-capability-audit/evidence/paper5-p4-object-boundary-review-2026-09-30.json",
+            ".governance/tasks/layout-geometry-capability-audit/evidence/paper2-p11-reference-boundary-review-2026-09-30.json",
+            "cap.layout-geometry/oracles/revisions/2026-09-30/paper5-geometry-oracle.json",
+            "cap.layout-geometry/oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+          ],
+          "expectedOutcomes": [
+            {
+              "capabilityId": "cap.layout-geometry",
+              "assertionId": "assert.geometry.reviewed-boxes",
+              "oracleType": "manual",
+              "expected": {
+                "oracleFile": "oracles/revisions/2026-09-30/paper5-geometry-oracle.json",
+                "oracleSha256": "b02f18627f554e4c828cc4b5e893378687c87db9e852677ba0e3e65182eb27fa",
+                "bodyExportSha256": "5c3f3a71d06c504979a3d1ee54bae249c06c4e0b25db5883390280e6ad3ab9ca",
+                "nonBodyExportSha256": "dfbf602a8a893a2834873e5356d929333d750c0172852a51ce4b0f694ab27814",
+                "revisionManifest": "oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+              }
+            },
+            {
+              "capabilityId": "cap.layout-geometry",
+              "assertionId": "assert.geometry.identity-structure-tolerance",
+              "oracleType": "manual",
+              "expected": {
+                "oracleFile": "oracles/revisions/2026-09-30/paper5-geometry-oracle.json",
+                "oracleSha256": "b02f18627f554e4c828cc4b5e893378687c87db9e852677ba0e3e65182eb27fa",
+                "failureClasses": [
+                  "identity_failure",
+                  "structural_failure",
+                  "tolerance_deviation"
+                ],
+                "revisionManifest": "oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+              }
+            }
+          ],
+          "sampleHash": "95e1384dc4c8e32f7b9dd0c2e95346106917be193ace3f2e3cfe0d7979f7722f",
+          "previousHash": "d7398e8e15f451397007f8f2499d470fe47f803ec722533050ba5c8d16f915cb",
+          "hash": "f875b9e1661ef88e037b7ed169a97c9dee17e203587cf9c322732c6e48fb5c72"
+        },
+        {
+          "sequence": 5,
+          "action": "review",
+          "actor": "rioin (user-authorized versioned truth review)",
+          "at": "2026-09-30T13:20:43.788Z",
+          "reason": "paper5: reviewed revised Oracle accepted for offline regression, not promoted",
+          "from": "under_review",
+          "to": "accepted",
+          "evidenceRefs": [
+            ".governance/tasks/layout-geometry-capability-audit/evidence/figure-boundary-review-2026-09-30.json",
+            ".governance/tasks/layout-geometry-capability-audit/evidence/paper5-p4-object-boundary-review-2026-09-30.json",
+            ".governance/tasks/layout-geometry-capability-audit/evidence/paper2-p11-reference-boundary-review-2026-09-30.json",
+            "cap.layout-geometry/oracles/revisions/2026-09-30/paper5-geometry-oracle.json",
+            "cap.layout-geometry/oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "95e1384dc4c8e32f7b9dd0c2e95346106917be193ace3f2e3cfe0d7979f7722f",
+          "previousHash": "f875b9e1661ef88e037b7ed169a97c9dee17e203587cf9c322732c6e48fb5c72",
+          "hash": "516c66dfc91da8c6ad11f7722545538666c026c52c31a9b2855c54af1cca9200"
+        },
+        {
+          "sequence": 6,
+          "action": "promote",
+          "actor": "rioin (explicit Geometry promotion authorization)",
+          "at": "2026-09-30T13:30:08.206Z",
+          "reason": "paper5: reviewed versioned Oracle and formal comparator Gate verified; evidence-only promotion",
+          "from": "accepted",
+          "to": "accepted",
+          "evidenceRefs": [
+            ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+            ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "95e1384dc4c8e32f7b9dd0c2e95346106917be193ace3f2e3cfe0d7979f7722f",
+          "previousHash": "516c66dfc91da8c6ad11f7722545538666c026c52c31a9b2855c54af1cca9200",
+          "hash": "1187a694e20f1d94f5b7cbbf91c23edff299e99909655636a35853694c89ded6"
+        }
+      ]
+    },
+    {
+      "id": "candidate.layout-geometry.paper6",
+      "capabilityIds": [
+        "cap.layout-geometry"
+      ],
+      "sample": {
+        "id": "sample.layout-geometry.paper6",
+        "displayName": "Reviewed Layout Geometry paper6",
+        "source": {
+          "fileName": "论文样本6.pdf",
+          "mediaType": "application/pdf",
+          "sha256": "6f4cb19da2d60bb5eed20cd5d56f0360b2afb552e60a199792cc4be6b752189e",
+          "bytes": 1148938,
+          "pageCount": 18
+        },
+        "provenance": {
+          "kind": "user_provided",
+          "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper6"
+        },
+        "rights": {
+          "status": "metadata_only",
+          "canStoreMetadata": true,
+          "canStoreBinary": false
+        },
+        "boundaryFeatureIds": [
+          "boundary.geometry.main-reading-flow",
+          "boundary.geometry.independent-object",
+          "boundary.geometry.protected-object",
+          "boundary.geometry.column-dependency"
+        ],
+        "expectedOutcomes": [
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.reviewed-boxes",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper6-geometry-oracle.json",
+              "oracleSha256": "9bbe4b944941263cf710f5754c7b679382ec0477141c1f695479fd8b7fb8d68c",
+              "bodyExportSha256": "4703362ce771eae427b5974132894f6beb34d35d2548ebbd0271b1f02541bfa0",
+              "nonBodyExportSha256": "3f0ccf2add23ddd9b07e94086f2fb2bf51d8bc1acddb0ebc9d3566bb3e49fea7"
+            }
+          },
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.identity-structure-tolerance",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper6-geometry-oracle.json",
+              "oracleSha256": "9bbe4b944941263cf710f5754c7b679382ec0477141c1f695479fd8b7fb8d68c",
+              "failureClasses": [
+                "identity_failure",
+                "structural_failure",
+                "tolerance_deviation"
+              ]
+            }
+          }
+        ],
+        "evidenceRefs": [
+          "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+          "cap.layout-geometry/oracles/paper6-geometry-oracle.json"
+        ],
+        "storage": {
+          "binaryCommitted": false,
+          "externalSourceRequiredForRun": true
+        },
+        "authorityBoundary": {
+          "catalogRole": "regression_oracle",
+          "runtimeDecisionUse": "forbidden",
+          "finalDecisionsOwnedBy": [
+            "AA-GEOMETRY-001"
+          ]
+        }
+      },
+      "status": "accepted",
+      "promotedSampleId": "sample.layout-geometry.paper6",
+      "history": [
+        {
+          "sequence": 1,
+          "action": "submit",
+          "actor": "offline.geometry.candidate.builder",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper6: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": null,
+          "to": "pending",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper6-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "008c921e6b5e87b9e969cce467ee018049dc54e0648c6cdea3fc89d458ed82a6",
+          "previousHash": null,
+          "hash": "9bf388bdbe738e64a9e71222179362382797ae1de1ca2cf7f8a53cd741d441b6"
+        },
+        {
+          "sequence": 2,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper6: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "pending",
+          "to": "under_review",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper6-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "008c921e6b5e87b9e969cce467ee018049dc54e0648c6cdea3fc89d458ed82a6",
+          "previousHash": "9bf388bdbe738e64a9e71222179362382797ae1de1ca2cf7f8a53cd741d441b6",
+          "hash": "442a650b9df53041b7af0b3e685dcd7d8145da3618a70bd7b6be3002ad9d52f8"
+        },
+        {
+          "sequence": 3,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper6: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "under_review",
+          "to": "accepted",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper6-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "008c921e6b5e87b9e969cce467ee018049dc54e0648c6cdea3fc89d458ed82a6",
+          "previousHash": "442a650b9df53041b7af0b3e685dcd7d8145da3618a70bd7b6be3002ad9d52f8",
+          "hash": "1ab13adf029b462b3280c048278f7e9c98a61e699dd8030060833f390a45934c"
+        },
+        {
+          "sequence": 4,
+          "action": "promote",
+          "actor": "rioin (explicit Geometry promotion authorization)",
+          "at": "2026-09-30T13:30:08.206Z",
+          "reason": "paper6: reviewed versioned Oracle and formal comparator Gate verified; evidence-only promotion",
+          "from": "accepted",
+          "to": "accepted",
+          "evidenceRefs": [
+            ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+            ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "008c921e6b5e87b9e969cce467ee018049dc54e0648c6cdea3fc89d458ed82a6",
+          "previousHash": "1ab13adf029b462b3280c048278f7e9c98a61e699dd8030060833f390a45934c",
+          "hash": "44ff0d1fd481598a937b276ace6c9dc72fc5957aec77a34db84fdc943bdcf682"
+        }
+      ]
+    },
+    {
+      "id": "candidate.layout-geometry.paper7",
+      "capabilityIds": [
+        "cap.layout-geometry"
+      ],
+      "sample": {
+        "id": "sample.layout-geometry.paper7",
+        "displayName": "Reviewed Layout Geometry paper7",
+        "source": {
+          "fileName": "论文样本7.pdf",
+          "mediaType": "application/pdf",
+          "sha256": "ab244887804a95c4904e5efe5425fa1446d55f54fb2a707424439eb53c0bc1da",
+          "bytes": 1741947,
+          "pageCount": 11
+        },
+        "provenance": {
+          "kind": "user_provided",
+          "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper7"
+        },
+        "rights": {
+          "status": "metadata_only",
+          "canStoreMetadata": true,
+          "canStoreBinary": false
+        },
+        "boundaryFeatureIds": [
+          "boundary.geometry.main-reading-flow",
+          "boundary.geometry.independent-object",
+          "boundary.geometry.protected-object",
+          "boundary.geometry.column-dependency"
+        ],
+        "expectedOutcomes": [
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.reviewed-boxes",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper7-geometry-oracle.json",
+              "oracleSha256": "800529c892a3874d5a2bb52fecf024a6494575c94fe05407132e2dc792b611dd",
+              "bodyExportSha256": "6382e08fd83cb8b4be4384205a784b23c2e6efe27708d45ed897e530f37ac2c5",
+              "nonBodyExportSha256": "f462393b0b35e43b6f1ca0a0f873afd34c72640ed4f0258b8174693543aa0db9"
+            }
+          },
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.identity-structure-tolerance",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper7-geometry-oracle.json",
+              "oracleSha256": "800529c892a3874d5a2bb52fecf024a6494575c94fe05407132e2dc792b611dd",
+              "failureClasses": [
+                "identity_failure",
+                "structural_failure",
+                "tolerance_deviation"
+              ]
+            }
+          }
+        ],
+        "evidenceRefs": [
+          "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+          "cap.layout-geometry/oracles/paper7-geometry-oracle.json"
+        ],
+        "storage": {
+          "binaryCommitted": false,
+          "externalSourceRequiredForRun": true
+        },
+        "authorityBoundary": {
+          "catalogRole": "regression_oracle",
+          "runtimeDecisionUse": "forbidden",
+          "finalDecisionsOwnedBy": [
+            "AA-GEOMETRY-001"
+          ]
+        }
+      },
+      "status": "accepted",
+      "promotedSampleId": "sample.layout-geometry.paper7",
+      "history": [
+        {
+          "sequence": 1,
+          "action": "submit",
+          "actor": "offline.geometry.candidate.builder",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper7: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": null,
+          "to": "pending",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper7-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "67f7a5869f3a5f8cebc8e68dd7da3b19ce05d84b67dd2aef81de805bf0889036",
+          "previousHash": null,
+          "hash": "3d64dd1c67277fa918c451b7c19d174cb894db3921954966bafba1fac16027fa"
+        },
+        {
+          "sequence": 2,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper7: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "pending",
+          "to": "under_review",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper7-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "67f7a5869f3a5f8cebc8e68dd7da3b19ce05d84b67dd2aef81de805bf0889036",
+          "previousHash": "3d64dd1c67277fa918c451b7c19d174cb894db3921954966bafba1fac16027fa",
+          "hash": "e3107b39c39a592c4bcdbd47c8814ee171c9d2d96c87a0647326fd0b176aed53"
+        },
+        {
+          "sequence": 3,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper7: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "under_review",
+          "to": "accepted",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper7-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "67f7a5869f3a5f8cebc8e68dd7da3b19ce05d84b67dd2aef81de805bf0889036",
+          "previousHash": "e3107b39c39a592c4bcdbd47c8814ee171c9d2d96c87a0647326fd0b176aed53",
+          "hash": "4fdcd7b9b462f9cefa7fa9a656fc88ebe3e81d01df983a494fe7bd9effcae77b"
+        },
+        {
+          "sequence": 4,
+          "action": "promote",
+          "actor": "rioin (explicit Geometry promotion authorization)",
+          "at": "2026-09-30T13:30:08.206Z",
+          "reason": "paper7: reviewed versioned Oracle and formal comparator Gate verified; evidence-only promotion",
+          "from": "accepted",
+          "to": "accepted",
+          "evidenceRefs": [
+            ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+            ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "67f7a5869f3a5f8cebc8e68dd7da3b19ce05d84b67dd2aef81de805bf0889036",
+          "previousHash": "4fdcd7b9b462f9cefa7fa9a656fc88ebe3e81d01df983a494fe7bd9effcae77b",
+          "hash": "15c5c6dbb6246366aef83f1c159e844277a556f69f5443b13985a955a064a923"
+        }
+      ]
+    },
+    {
+      "id": "candidate.layout-geometry.paper8",
+      "capabilityIds": [
+        "cap.layout-geometry"
+      ],
+      "sample": {
+        "id": "sample.layout-geometry.paper8",
+        "displayName": "Reviewed Layout Geometry paper8",
+        "source": {
+          "fileName": "论文样本8.pdf",
+          "sha256": "12e71bd65faecb793f64043c6812d7a3fd372e7f54ceed390e132839fd2504e4",
+          "bytes": 476899,
+          "pageCount": 11,
+          "mediaType": "application/pdf"
+        },
+        "provenance": {
+          "kind": "user_provided",
+          "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper8"
+        },
+        "rights": {
+          "status": "metadata_only",
+          "canStoreMetadata": true,
+          "canStoreBinary": false
+        },
+        "boundaryFeatureIds": [
+          "boundary.geometry.main-reading-flow",
+          "boundary.geometry.independent-object",
+          "boundary.geometry.protected-object",
+          "boundary.geometry.column-dependency"
+        ],
+        "expectedOutcomes": [
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.reviewed-boxes",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper8-geometry-oracle.json",
+              "oracleSha256": "83bc30c8ef6be2b7332875fe6db1def606d0a1d9fcc4e5f7c63a7040ac88db6c",
+              "bodyExportSha256": "0a3d730426447a6a71b9df2639def79237bb2458cd8099ef674988aa2dc4bdfc",
+              "nonBodyExportSha256": "9fd5b7147b149c2325abe4cca8660a4ec3e6745c9307268754708be8913ad9d6"
+            }
+          },
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.identity-structure-tolerance",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper8-geometry-oracle.json",
+              "oracleSha256": "83bc30c8ef6be2b7332875fe6db1def606d0a1d9fcc4e5f7c63a7040ac88db6c",
+              "failureClasses": [
+                "identity_failure",
+                "structural_failure",
+                "tolerance_deviation"
+              ]
+            }
+          }
+        ],
+        "evidenceRefs": [
+          "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+          "cap.layout-geometry/oracles/paper8-geometry-oracle.json"
+        ],
+        "storage": {
+          "binaryCommitted": false,
+          "externalSourceRequiredForRun": true
+        },
+        "authorityBoundary": {
+          "catalogRole": "regression_oracle",
+          "runtimeDecisionUse": "forbidden",
+          "finalDecisionsOwnedBy": [
+            "AA-GEOMETRY-001"
+          ]
+        }
+      },
+      "status": "accepted",
+      "promotedSampleId": "sample.layout-geometry.paper8",
+      "history": [
+        {
+          "sequence": 1,
+          "action": "submit",
+          "actor": "offline.geometry.candidate.builder",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper8: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": null,
+          "to": "pending",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper8-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "d4c35cb47ad06a7858a679aa10fa992db3417799524213a0473ed46bca623dab",
+          "previousHash": null,
+          "hash": "69541f7044ccad1f3138a5c6cb5acad643727eed89bb4f47632e7bee93f19b63"
+        },
+        {
+          "sequence": 2,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper8: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "pending",
+          "to": "under_review",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper8-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "d4c35cb47ad06a7858a679aa10fa992db3417799524213a0473ed46bca623dab",
+          "previousHash": "69541f7044ccad1f3138a5c6cb5acad643727eed89bb4f47632e7bee93f19b63",
+          "hash": "370d4f5138d9e1d244c9f01d6c4ef48d29fa43043b1f42ef5248ad24aada7328"
+        },
+        {
+          "sequence": 3,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper8: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "under_review",
+          "to": "accepted",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper8-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "d4c35cb47ad06a7858a679aa10fa992db3417799524213a0473ed46bca623dab",
+          "previousHash": "370d4f5138d9e1d244c9f01d6c4ef48d29fa43043b1f42ef5248ad24aada7328",
+          "hash": "ca6288d75a311c75fefded68a8c298a3edda13bd26bde0b4bee8d5d0eb7a915f"
+        },
+        {
+          "sequence": 4,
+          "action": "revise",
+          "actor": "rioin (user-confirmed boundary review)",
+          "at": "2026-09-30T13:20:43.788Z",
+          "reason": "paper8: append-only reviewed Oracle revision; prior accepted hash retained",
+          "from": "accepted",
+          "to": "under_review",
+          "evidenceRefs": [
+            ".governance/tasks/layout-geometry-capability-audit/evidence/figure-boundary-review-2026-09-30.json",
+            ".governance/tasks/layout-geometry-capability-audit/evidence/paper5-p4-object-boundary-review-2026-09-30.json",
+            ".governance/tasks/layout-geometry-capability-audit/evidence/paper2-p11-reference-boundary-review-2026-09-30.json",
+            "cap.layout-geometry/oracles/revisions/2026-09-30/paper8-geometry-oracle.json",
+            "cap.layout-geometry/oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+          ],
+          "expectedOutcomes": [
+            {
+              "capabilityId": "cap.layout-geometry",
+              "assertionId": "assert.geometry.reviewed-boxes",
+              "oracleType": "manual",
+              "expected": {
+                "oracleFile": "oracles/revisions/2026-09-30/paper8-geometry-oracle.json",
+                "oracleSha256": "9c226d6ba1dd80a5a3b8bb7656eee7b63d0af663fe2b20b46cd0b5bdefc774bc",
+                "bodyExportSha256": "0a3d730426447a6a71b9df2639def79237bb2458cd8099ef674988aa2dc4bdfc",
+                "nonBodyExportSha256": "9fd5b7147b149c2325abe4cca8660a4ec3e6745c9307268754708be8913ad9d6",
+                "revisionManifest": "oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+              }
+            },
+            {
+              "capabilityId": "cap.layout-geometry",
+              "assertionId": "assert.geometry.identity-structure-tolerance",
+              "oracleType": "manual",
+              "expected": {
+                "oracleFile": "oracles/revisions/2026-09-30/paper8-geometry-oracle.json",
+                "oracleSha256": "9c226d6ba1dd80a5a3b8bb7656eee7b63d0af663fe2b20b46cd0b5bdefc774bc",
+                "failureClasses": [
+                  "identity_failure",
+                  "structural_failure",
+                  "tolerance_deviation"
+                ],
+                "revisionManifest": "oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+              }
+            }
+          ],
+          "sampleHash": "d4c35cb47ad06a7858a679aa10fa992db3417799524213a0473ed46bca623dab",
+          "previousHash": "ca6288d75a311c75fefded68a8c298a3edda13bd26bde0b4bee8d5d0eb7a915f",
+          "hash": "e074d13b4f0551eb81acf79ca384507dd78d9dd3a6f172b972b930dab4ce3bfa"
+        },
+        {
+          "sequence": 5,
+          "action": "review",
+          "actor": "rioin (user-authorized versioned truth review)",
+          "at": "2026-09-30T13:20:43.788Z",
+          "reason": "paper8: reviewed revised Oracle accepted for offline regression, not promoted",
+          "from": "under_review",
+          "to": "accepted",
+          "evidenceRefs": [
+            ".governance/tasks/layout-geometry-capability-audit/evidence/figure-boundary-review-2026-09-30.json",
+            ".governance/tasks/layout-geometry-capability-audit/evidence/paper5-p4-object-boundary-review-2026-09-30.json",
+            ".governance/tasks/layout-geometry-capability-audit/evidence/paper2-p11-reference-boundary-review-2026-09-30.json",
+            "cap.layout-geometry/oracles/revisions/2026-09-30/paper8-geometry-oracle.json",
+            "cap.layout-geometry/oracles/revisions/2026-09-30/REVISION_MANIFEST.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "d4c35cb47ad06a7858a679aa10fa992db3417799524213a0473ed46bca623dab",
+          "previousHash": "e074d13b4f0551eb81acf79ca384507dd78d9dd3a6f172b972b930dab4ce3bfa",
+          "hash": "22b768a591979b2a67ba983211115800b16012072df8939070e2c417eba2cdf5"
+        },
+        {
+          "sequence": 6,
+          "action": "promote",
+          "actor": "rioin (explicit Geometry promotion authorization)",
+          "at": "2026-09-30T13:30:08.206Z",
+          "reason": "paper8: reviewed versioned Oracle and formal comparator Gate verified; evidence-only promotion",
+          "from": "accepted",
+          "to": "accepted",
+          "evidenceRefs": [
+            ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+            ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "d4c35cb47ad06a7858a679aa10fa992db3417799524213a0473ed46bca623dab",
+          "previousHash": "22b768a591979b2a67ba983211115800b16012072df8939070e2c417eba2cdf5",
+          "hash": "ca61cd580e4d8d7be3af8a995cef8415463cbba505eda0c0c811b8f9e2594107"
+        }
+      ]
+    },
+    {
+      "id": "candidate.layout-geometry.paper9",
+      "capabilityIds": [
+        "cap.layout-geometry"
+      ],
+      "sample": {
+        "id": "sample.layout-geometry.paper9",
+        "displayName": "Reviewed Layout Geometry paper9",
+        "source": {
+          "fileName": "论文样本9.pdf",
+          "sha256": "23cdb5dd51ba39d61b6d3093220cdedeb8c4e6f20c3a64640067a6e6659fb420",
+          "bytes": 474547,
+          "pageCount": 15,
+          "mediaType": "application/pdf"
+        },
+        "provenance": {
+          "kind": "user_provided",
+          "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper9"
+        },
+        "rights": {
+          "status": "metadata_only",
+          "canStoreMetadata": true,
+          "canStoreBinary": false
+        },
+        "boundaryFeatureIds": [
+          "boundary.geometry.main-reading-flow",
+          "boundary.geometry.independent-object",
+          "boundary.geometry.protected-object",
+          "boundary.geometry.column-dependency"
+        ],
+        "expectedOutcomes": [
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.reviewed-boxes",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper9-geometry-oracle.json",
+              "oracleSha256": "1ed10a746719a480898bc7573e8922b6cc2aee0aae44b38f4c121c4beb47cb83",
+              "bodyExportSha256": "1a87a63e25ab893aee5fc395fa1e87c24dba59e00c0e63a85183b188094f478b",
+              "nonBodyExportSha256": "40df9c50960d833ab83e0679259fdac36f9dede1839b938c724bb77593c3c10a"
+            }
+          },
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.identity-structure-tolerance",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper9-geometry-oracle.json",
+              "oracleSha256": "1ed10a746719a480898bc7573e8922b6cc2aee0aae44b38f4c121c4beb47cb83",
+              "failureClasses": [
+                "identity_failure",
+                "structural_failure",
+                "tolerance_deviation"
+              ]
+            }
+          }
+        ],
+        "evidenceRefs": [
+          "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+          "cap.layout-geometry/oracles/paper9-geometry-oracle.json"
+        ],
+        "storage": {
+          "binaryCommitted": false,
+          "externalSourceRequiredForRun": true
+        },
+        "authorityBoundary": {
+          "catalogRole": "regression_oracle",
+          "runtimeDecisionUse": "forbidden",
+          "finalDecisionsOwnedBy": [
+            "AA-GEOMETRY-001"
+          ]
+        }
+      },
+      "status": "accepted",
+      "promotedSampleId": "sample.layout-geometry.paper9",
+      "history": [
+        {
+          "sequence": 1,
+          "action": "submit",
+          "actor": "offline.geometry.candidate.builder",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper9: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": null,
+          "to": "pending",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper9-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "bdca831b1d69c410073c1d558fc865b4384bc2a1edf847037cffa8ce8ae86d04",
+          "previousHash": null,
+          "hash": "b53a8cfe7f2fc179616cf5ab7ff436a119214104cbd514fad1e7174d19791182"
+        },
+        {
+          "sequence": 2,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper9: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "pending",
+          "to": "under_review",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper9-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "bdca831b1d69c410073c1d558fc865b4384bc2a1edf847037cffa8ce8ae86d04",
+          "previousHash": "b53a8cfe7f2fc179616cf5ab7ff436a119214104cbd514fad1e7174d19791182",
+          "hash": "191472e9842b014d1fb17499cde79e6056d980709a590414d01668c944102754"
+        },
+        {
+          "sequence": 3,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper9: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "under_review",
+          "to": "accepted",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper9-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "bdca831b1d69c410073c1d558fc865b4384bc2a1edf847037cffa8ce8ae86d04",
+          "previousHash": "191472e9842b014d1fb17499cde79e6056d980709a590414d01668c944102754",
+          "hash": "ba404a8229f9af0eff2d5323efd4446fd715f937b8564b917ed30450857ac7ea"
+        },
+        {
+          "sequence": 4,
+          "action": "promote",
+          "actor": "rioin (explicit Geometry promotion authorization)",
+          "at": "2026-09-30T13:30:08.206Z",
+          "reason": "paper9: reviewed versioned Oracle and formal comparator Gate verified; evidence-only promotion",
+          "from": "accepted",
+          "to": "accepted",
+          "evidenceRefs": [
+            ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+            ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "bdca831b1d69c410073c1d558fc865b4384bc2a1edf847037cffa8ce8ae86d04",
+          "previousHash": "ba404a8229f9af0eff2d5323efd4446fd715f937b8564b917ed30450857ac7ea",
+          "hash": "4824fc5bd1b4214e193f67c32c480fd174a078d3a603950419620fe8e0a6cd78"
+        }
+      ]
+    },
+    {
+      "id": "candidate.layout-geometry.paper10",
+      "capabilityIds": [
+        "cap.layout-geometry"
+      ],
+      "sample": {
+        "id": "sample.layout-geometry.paper10",
+        "displayName": "Reviewed Layout Geometry paper10",
+        "source": {
+          "fileName": "论文样本10.pdf",
+          "sha256": "bfa5b8767c9cce7eca3d4cda064bec56a03a9e344eb13a87271f8a8784527b63",
+          "bytes": 864810,
+          "pageCount": 10,
+          "mediaType": "application/pdf"
+        },
+        "provenance": {
+          "kind": "user_provided",
+          "reference": "Final v8 visual review; read-only Column dependency sample.column-pilot.paper10"
+        },
+        "rights": {
+          "status": "metadata_only",
+          "canStoreMetadata": true,
+          "canStoreBinary": false
+        },
+        "boundaryFeatureIds": [
+          "boundary.geometry.main-reading-flow",
+          "boundary.geometry.independent-object",
+          "boundary.geometry.protected-object",
+          "boundary.geometry.column-dependency"
+        ],
+        "expectedOutcomes": [
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.reviewed-boxes",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper10-geometry-oracle.json",
+              "oracleSha256": "16b0344b94b9ed8ab897ec7f1df0f8edf72da80b4d61bc413035fb8285874157",
+              "bodyExportSha256": "b83c0b1eb0a29e2f02c6c7303b439cb4641e4b1621adca221e85fe0594fe1225",
+              "nonBodyExportSha256": "c67dfa627934dc29df68d79c3528a40e81a9bc83645feee5bb6fbdc8ca8a2cee"
+            }
+          },
+          {
+            "capabilityId": "cap.layout-geometry",
+            "assertionId": "assert.geometry.identity-structure-tolerance",
+            "oracleType": "manual",
+            "expected": {
+              "oracleFile": "oracles/paper10-geometry-oracle.json",
+              "oracleSha256": "16b0344b94b9ed8ab897ec7f1df0f8edf72da80b4d61bc413035fb8285874157",
+              "failureClasses": [
+                "identity_failure",
+                "structural_failure",
+                "tolerance_deviation"
+              ]
+            }
+          }
+        ],
+        "evidenceRefs": [
+          "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+          "cap.layout-geometry/oracles/paper10-geometry-oracle.json"
+        ],
+        "storage": {
+          "binaryCommitted": false,
+          "externalSourceRequiredForRun": true
+        },
+        "authorityBoundary": {
+          "catalogRole": "regression_oracle",
+          "runtimeDecisionUse": "forbidden",
+          "finalDecisionsOwnedBy": [
+            "AA-GEOMETRY-001"
+          ]
+        }
+      },
+      "status": "accepted",
+      "promotedSampleId": "sample.layout-geometry.paper10",
+      "history": [
+        {
+          "sequence": 1,
+          "action": "submit",
+          "actor": "offline.geometry.candidate.builder",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper10: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": null,
+          "to": "pending",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper10-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "352f6c362fc30cf3ce56ad3c00ff70a27a48f432381818591aa96f844fedf2e7",
+          "previousHash": null,
+          "hash": "9f0331b2dccee693683521161f8ea2fdbbff32186d97f96a1779c29b0f42a99a"
+        },
+        {
+          "sequence": 2,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper10: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "pending",
+          "to": "under_review",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper10-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "352f6c362fc30cf3ce56ad3c00ff70a27a48f432381818591aa96f844fedf2e7",
+          "previousHash": "9f0331b2dccee693683521161f8ea2fdbbff32186d97f96a1779c29b0f42a99a",
+          "hash": "6e3459e6909a53cb5b9466575ffbce892f7ebd5e6830b49bbb9ba5dbb9fd559d"
+        },
+        {
+          "sequence": 3,
+          "action": "review",
+          "actor": "rioin (user-confirmed visual review)",
+          "at": "2026-09-28T07:12:45.555Z",
+          "reason": "paper10: source and reviewed oracle hash verified; acceptance is Evidence-only and does not promote or authorize runtime use",
+          "from": "under_review",
+          "to": "accepted",
+          "evidenceRefs": [
+            "cap.layout-geometry/reviewed-v8/FREEZE_MANIFEST.json",
+            "cap.layout-geometry/oracles/paper10-geometry-oracle.json"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "352f6c362fc30cf3ce56ad3c00ff70a27a48f432381818591aa96f844fedf2e7",
+          "previousHash": "6e3459e6909a53cb5b9466575ffbce892f7ebd5e6830b49bbb9ba5dbb9fd559d",
+          "hash": "32198b0ee567c596bd1f6ae051b78fc06219c1d088a875a6f4a83453782e5811"
+        },
+        {
+          "sequence": 4,
+          "action": "promote",
+          "actor": "rioin (explicit Geometry promotion authorization)",
+          "at": "2026-09-30T13:30:08.206Z",
+          "reason": "paper10: reviewed versioned Oracle and formal comparator Gate verified; evidence-only promotion",
+          "from": "accepted",
+          "to": "accepted",
+          "evidenceRefs": [
+            ".governance/tasks/layout-geometry-capability-audit/evidence/geometry-v9-accepted-transaction/COMMITTED",
+            ".governance/tasks/layout-geometry-capability-audit/FORMAL_PROMOTION_PREFLIGHT_2026-09-30.md"
+          ],
+          "expectedOutcomes": [],
+          "sampleHash": "352f6c362fc30cf3ce56ad3c00ff70a27a48f432381818591aa96f844fedf2e7",
+          "previousHash": "32198b0ee567c596bd1f6ae051b78fc06219c1d088a875a6f4a83453782e5811",
+          "hash": "c2106926f9b6deccbea871146eae64654396da80099846288d3f650985c21006"
+        }
+      ]
+    }
+  ]
 }

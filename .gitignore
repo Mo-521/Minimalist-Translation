@@ -40,6 +40,8 @@
 /.claude/
 /.cursor/
 /.governance/
+/.migration-backups/
+/lingoflow-client/tools/.geometry-review-vendor/
 .DS_Store
 Thumbs.db
 .vscode/

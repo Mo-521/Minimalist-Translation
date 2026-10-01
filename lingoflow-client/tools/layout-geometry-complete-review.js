@@ -11,7 +11,8 @@ const ROOT = path.resolve(__dirname, "../..");
 const EVIDENCE = path.join(
   ROOT,
   ".governance",
-  "tasks",
+  "archive",
+  "evidence",
   "layout-geometry-capability-audit",
   "evidence",
   "phase-2-paper-geometry",

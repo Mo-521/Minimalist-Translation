@@ -11,7 +11,7 @@ const { validateOracle } = require("../electron-app/capability-library/geometry-
 
 const ROOT = path.resolve(__dirname, "../..");
 const APP = path.resolve(__dirname, "../electron-app");
-const EVIDENCE = path.join(ROOT, ".governance/tasks/layout-geometry-capability-audit/evidence/phase-2-paper-geometry");
+const EVIDENCE = path.join(ROOT, ".governance/archive/evidence/layout-geometry-capability-audit/evidence/phase-2-paper-geometry");
 const outputArgIndex = process.argv.indexOf("--output");
 const outputName = outputArgIndex >= 0 ? process.argv[outputArgIndex + 1] : "human-review";
 if (!outputName || path.basename(outputName) !== outputName) throw new Error("--output must be one directory name inside phase-2-paper-geometry");

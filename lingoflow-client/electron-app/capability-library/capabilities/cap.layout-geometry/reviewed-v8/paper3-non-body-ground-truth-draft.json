@@ -1,0 +1,664 @@
+{
+  "schemaVersion": "layout-geometry-non-body-ground-truth-draft/v1",
+  "capabilityId": "cap.layout-geometry",
+  "scope": "non_body_objects_only",
+  "paper": "paper3",
+  "sourcePdfSha256": "fa33485f517b3c94d2f6e4d4366f3ab14a1e413a738db512e1862f4a0944f5f9",
+  "coordinateSpace": "pdf-page-top-left-points",
+  "runtimeDecisionUse": "forbidden",
+  "candidateAcceptance": "not_performed",
+  "promotion": "not_performed",
+  "bodyBaseline": "body-main-reading-flow-paper1-7-2026-09-23",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [
+        {
+          "id": "p1.independent.title.1",
+          "sourceRegionId": "p1.independent.title.1",
+          "objectType": "title",
+          "regionClass": "independent_region",
+          "semanticRegionType": "title",
+          "protectedKind": null,
+          "geometry": {
+            "x": 78.7,
+            "y": 95.45,
+            "width": 451.49,
+            "height": 39.86
+          }
+        },
+        {
+          "id": "p1.independent.abstract.2",
+          "sourceRegionId": "p1.independent.abstract.2",
+          "objectType": "abstract",
+          "regionClass": "independent_region",
+          "semanticRegionType": "abstract",
+          "protectedKind": null,
+          "geometry": {
+            "x": 107.87,
+            "y": 184.12,
+            "width": 51.11,
+            "height": 9.96
+          }
+        },
+        {
+          "id": "p1.independent.section_heading.3",
+          "sourceRegionId": "p1.independent.section_heading.3",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 256.05,
+            "y": 376.23,
+            "width": 96.78,
+            "height": 11.96
+          }
+        },
+        {
+          "id": "p1.independent.section_heading.4",
+          "sourceRegionId": "p1.independent.section_heading.4",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 83.95,
+            "y": 723.81,
+            "width": 177.25,
+            "height": 9.96
+          }
+        },
+        {
+          "id": "p1.protected.page_number.1",
+          "sourceRegionId": "p1.protected.page_number.1",
+          "objectType": "page_number",
+          "regionClass": "protected_region",
+          "semanticRegionType": null,
+          "protectedKind": "page_number",
+          "geometry": {
+            "x": 302.14,
+            "y": 748.87,
+            "width": 4.61,
+            "height": 8.97
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p1.independent.title.1",
+          "sourceRegionId": "p1.independent.title.1",
+          "objectType": "title",
+          "regionClass": "independent_region",
+          "semanticRegionType": "title",
+          "protectedKind": null,
+          "geometry": {
+            "x": 78.7,
+            "y": 95.45,
+            "width": 451.49,
+            "height": 39.86
+          }
+        },
+        {
+          "id": "p1.independent.abstract.2",
+          "sourceRegionId": "p1.independent.abstract.2",
+          "objectType": "abstract",
+          "regionClass": "independent_region",
+          "semanticRegionType": "abstract",
+          "protectedKind": null,
+          "geometry": {
+            "x": 107.87,
+            "y": 184.12,
+            "width": 51.11,
+            "height": 9.96
+          }
+        },
+        {
+          "id": "p1.independent.section_heading.3",
+          "sourceRegionId": "p1.independent.section_heading.3",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 256.05,
+            "y": 376.23,
+            "width": 96.78,
+            "height": 11.96
+          }
+        },
+        {
+          "id": "p1.protected.page_number.1",
+          "sourceRegionId": "p1.protected.page_number.1",
+          "objectType": "page_number",
+          "regionClass": "protected_region",
+          "semanticRegionType": null,
+          "protectedKind": "page_number",
+          "geometry": {
+            "x": 302.14,
+            "y": 748.87,
+            "width": 4.61,
+            "height": 8.97
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 2,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [],
+      "corrected": [],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 3,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [
+        {
+          "id": "p3.independent.section_heading.1",
+          "sourceRegionId": "p3.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 72,
+            "y": 127.82,
+            "width": 77.91,
+            "height": 11.96
+          }
+        },
+        {
+          "id": "p3.independent.section_heading.2",
+          "sourceRegionId": "p3.independent.section_heading.2",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 72,
+            "y": 615.37,
+            "width": 108.78,
+            "height": 11.96
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p3.independent.section_heading.1",
+          "sourceRegionId": "p3.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 72,
+            "y": 127.82,
+            "width": 77.91,
+            "height": 11.96
+          }
+        },
+        {
+          "id": "p3.independent.section_heading.2",
+          "sourceRegionId": "p3.independent.section_heading.2",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 72,
+            "y": 615.37,
+            "width": 108.78,
+            "height": 11.96
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 4,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [
+        {
+          "id": "p4.independent.section_heading.1",
+          "sourceRegionId": "p4.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 234.66,
+            "y": 63.57,
+            "width": 139.55,
+            "height": 11.96
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p4.independent.section_heading.1",
+          "sourceRegionId": "p4.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 234.66,
+            "y": 63.57,
+            "width": 139.55,
+            "height": 11.96
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 5,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [
+        {
+          "id": "p5.independent.section_heading.1",
+          "sourceRegionId": "p5.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 72,
+            "y": 63.57,
+            "width": 93.23,
+            "height": 11.96
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p5.independent.section_heading.1",
+          "sourceRegionId": "p5.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 72,
+            "y": 63.57,
+            "width": 93.23,
+            "height": 11.96
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 6,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [],
+      "corrected": [],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 7,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [],
+      "corrected": [],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 8,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [],
+      "corrected": [],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 9,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [
+        {
+          "id": "p9.independent.section_heading.1",
+          "sourceRegionId": "p9.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 229.5,
+            "y": 608.71,
+            "width": 149.88,
+            "height": 11.96
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p9.independent.section_heading.1",
+          "sourceRegionId": "p9.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 229.5,
+            "y": 608.71,
+            "width": 149.88,
+            "height": 11.96
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 10,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [
+        {
+          "id": "p10.independent.section_heading.1",
+          "sourceRegionId": "p10.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 72,
+            "y": 63.57,
+            "width": 64.18,
+            "height": 11.96
+          }
+        },
+        {
+          "id": "p10.independent.section_heading.2",
+          "sourceRegionId": "p10.independent.section_heading.2",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 72,
+            "y": 595.58,
+            "width": 68.56,
+            "height": 11.96
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p10.independent.section_heading.1",
+          "sourceRegionId": "p10.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 72,
+            "y": 63.57,
+            "width": 64.18,
+            "height": 11.96
+          }
+        },
+        {
+          "id": "p10.independent.section_heading.2",
+          "sourceRegionId": "p10.independent.section_heading.2",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 72,
+            "y": 595.58,
+            "width": 68.56,
+            "height": 11.96
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 11,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [
+        {
+          "id": "p11.independent.section_heading.1",
+          "sourceRegionId": "p11.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 72,
+            "y": 63.57,
+            "width": 73.68,
+            "height": 11.96
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p11.independent.section_heading.1",
+          "sourceRegionId": "p11.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 72,
+            "y": 63.57,
+            "width": 73.68,
+            "height": 11.96
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 12,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [
+        {
+          "id": "p12.independent.section_heading.1",
+          "sourceRegionId": "p12.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 72,
+            "y": 683.12,
+            "width": 71.67,
+            "height": 11.96
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p12.independent.section_heading.1",
+          "sourceRegionId": "p12.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 72,
+            "y": 683.12,
+            "width": 71.67,
+            "height": 11.96
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 13,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [
+        {
+          "id": "p13.independent.section_heading.1",
+          "sourceRegionId": "p13.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 153.1,
+            "y": 569.03,
+            "width": 72.02,
+            "height": 11.96
+          }
+        },
+        {
+          "id": "p13.independent.section_heading.2",
+          "sourceRegionId": "p13.independent.section_heading.2",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 230.96,
+            "y": 569.03,
+            "width": 224.83,
+            "height": 11.96
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p13.independent.section_heading.1",
+          "sourceRegionId": "p13.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 153.1,
+            "y": 569.03,
+            "width": 72.02,
+            "height": 11.96
+          }
+        },
+        {
+          "id": "p13.independent.section_heading.2",
+          "sourceRegionId": "p13.independent.section_heading.2",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 230.96,
+            "y": 569.03,
+            "width": 224.83,
+            "height": 11.96
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 14,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [
+        {
+          "id": "p14.independent.references_section_header.1",
+          "sourceRegionId": "p14.independent.references_section_header.1",
+          "objectType": "references_section_header",
+          "regionClass": "independent_region",
+          "semanticRegionType": "references_section_header",
+          "protectedKind": null,
+          "geometry": {
+            "x": 269.42,
+            "y": 63.57,
+            "width": 70.04,
+            "height": 11.96
+          }
+        },
+        {
+          "id": "p14.protected.reference_entries.1",
+          "sourceRegionId": "p14.protected.reference_entries.1",
+          "objectType": "reference_entries",
+          "regionClass": "protected_region",
+          "semanticRegionType": null,
+          "protectedKind": "reference_entries",
+          "geometry": {
+            "x": 87.94,
+            "y": 84.5,
+            "width": 448.95,
+            "height": 618.18
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p14.independent.references_section_header.1",
+          "sourceRegionId": "p14.independent.references_section_header.1",
+          "objectType": "references_section_header",
+          "regionClass": "independent_region",
+          "semanticRegionType": "references_section_header",
+          "protectedKind": null,
+          "geometry": {
+            "x": 269.42,
+            "y": 63.57,
+            "width": 70.04,
+            "height": 11.96
+          }
+        },
+        {
+          "id": "p14.protected.reference_entries.1",
+          "sourceRegionId": "p14.protected.reference_entries.1",
+          "objectType": "reference_entries",
+          "regionClass": "protected_region",
+          "semanticRegionType": null,
+          "protectedKind": "reference_entries",
+          "geometry": {
+            "x": 87.94,
+            "y": 84.5,
+            "width": 448.95,
+            "height": 618.18
+          }
+        }
+      ],
+      "confirmed": true
+    }
+  ]
+}

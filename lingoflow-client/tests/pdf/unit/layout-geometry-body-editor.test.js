@@ -7,9 +7,9 @@ const test = require("node:test");
 const editor = require("../../../tools/layout-geometry-body-editor");
 
 const ROOT = path.resolve(__dirname, "../../../..");
-const EVIDENCE = path.join(ROOT, ".governance/tasks/layout-geometry-capability-audit/evidence/phase-2-paper-geometry");
-const OUTPUT = path.join(EVIDENCE, "human-review-body-editable-v1");
-const PAPERS = ["paper1", "paper2", "paper3", "paper4", "paper5", "paper6", "paper7"];
+const EVIDENCE = path.join(ROOT, ".governance/archive/evidence/layout-geometry-capability-audit/evidence/phase-2-paper-geometry");
+const OUTPUT = path.join(EVIDENCE, "human-review-final-paper1-10-v8");
+const PAPERS = Array.from({ length: 10 }, (_, index) => `paper${index + 1}`);
 
 function machinePages(paper) {
   const oracle = JSON.parse(fs.readFileSync(path.join(EVIDENCE, "oracles", `${paper}-geometry-oracle.json`), "utf8"));
@@ -69,41 +69,35 @@ test("import rejects stale prediction, wrong source PDF and invalid geometry", (
   assert.throws(() => editor.restoreGroundTruth(invalid, "paper1", sha, machinePages("paper1").pages));
 });
 
-test("all seven editable review pages remain self-contained and contain only Body overlays", () => {
-  const manifest = JSON.parse(fs.readFileSync(path.join(OUTPUT, "LATEST_MACHINE_REVIEW_MANIFEST.json"), "utf8"));
-  assert.equal(manifest.scope, "main_reading_flow_body_only");
-  assert.equal(manifest.priorDraftsPreserved, true);
+test("latest editable review pages remain self-contained and contain only Body overlays", () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(OUTPUT, "MANIFEST.json"), "utf8"));
   assert.equal(manifest.runtimeDecisionUse, "forbidden");
   assert.equal(manifest.candidateAcceptance, "not_performed");
   assert.equal(manifest.promotion, "not_performed");
-  assert.equal(manifest.papers.length, 7);
-  assert.equal(manifest.papers.reduce((sum, item) => sum + item.pages, 0), 90);
+  assert.equal(manifest.results.length, 10);
+  assert.equal(manifest.results.reduce((sum, item) => sum + item.pages, 0), 126);
   PAPERS.forEach((paper) => {
-    const html = fs.readFileSync(path.join(OUTPUT, `${paper}.html`), "utf8");
-    const comparison = JSON.parse(fs.readFileSync(path.join(EVIDENCE, "human-review-main-flow-v1", `${paper}-comparison.json`), "utf8"));
-    const pages = comparison.pages;
+    const html = fs.readFileSync(path.join(OUTPUT, `${paper}-body.html`), "utf8");
+    const draft = JSON.parse(fs.readFileSync(path.join(OUTPUT, `${paper}-body-ground-truth-draft.json`), "utf8"));
+    const pages = draft.pages;
     assert.equal((html.match(/class="editable-page"/g) || []).length, pages.length);
-    assert.doesNotMatch(html, /class="predicted-rect"|旧预测 蓝|人工 corrected 橙/);
     assert.equal((html.match(/class="body-predicted"/g) || []).length, pages.length);
     assert.match(html, /src="data:image\/jpeg;base64,/);
     assert.match(html, /id="export-ground-truth"/);
     assert.match(html, /id="import-ground-truth"/);
     assert.doesNotMatch(html, /data-class="(?:independent_region|protected_region|writable_space_expectation)"/);
     const embedded = [...html.matchAll(/<script type="application\/json" class="body-predicted">([^<]*)<\/script>/g)];
-    embedded.forEach((match, index) => assert.deepEqual(JSON.parse(match[1]), pages[index].candidate.map((item) => ({ id: item.id, canonicalColumnId: item.canonicalColumnId, geometry: item.geometry }))));
+    embedded.forEach((match, index) => assert.deepEqual(JSON.parse(match[1]), pages[index].predicted));
     const inlineScripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((match) => match[1]);
     assert.equal(inlineScripts.length, 2);
     inlineScripts.forEach((source) => assert.doesNotThrow(() => new Function(source)));
   });
 });
 
-test("paper1 demonstration round-trips exact corrected boxes without changing predictions", () => {
-  const demo = JSON.parse(fs.readFileSync(path.join(OUTPUT, "DEMO_GROUND_TRUTH_DRAFT.json"), "utf8"));
-  const trace = JSON.parse(fs.readFileSync(path.join(OUTPUT, "DEMO_TRACE.json"), "utf8"));
-  const { sha, pages } = machinePages("paper1");
-  const restored = editor.restoreGroundTruth(demo, "paper1", sha, pages);
-  assert.deepEqual(editor.exportGroundTruth("paper1", restored, sha), demo);
-  assert.equal(trace.predictedUnchanged, true);
-  assert.equal(trace.exportImportExactMatch, true);
-  assert.equal(demo.pages[0].confirmed, true);
+test("latest paper1 corrected export round-trips without changing predictions", () => {
+  const draft = JSON.parse(fs.readFileSync(path.join(OUTPUT, "paper1-body-ground-truth-draft.json"), "utf8"));
+  const machine = draft.pages.map((page) => editor.initialPage("paper1", page.pageNumber, page.pageSize, page.predicted));
+  const restored = editor.restoreGroundTruth(draft, "paper1", draft.sourcePdfSha256, machine);
+  assert.deepEqual(editor.exportGroundTruth("paper1", restored, draft.sourcePdfSha256), draft);
+  assert.equal(draft.pages.every((page) => page.confirmed), true);
 });

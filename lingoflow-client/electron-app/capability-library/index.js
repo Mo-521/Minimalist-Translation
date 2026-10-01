@@ -222,13 +222,19 @@ function loadCapabilityCatalogState(options) {
     fail("CAPABILITY_LIBRARY_DUPLICATE_ID", "Capability subdirectories cannot redefine an existing capability");
   }
   const sampleIds = new Set();
-  const sampleHashes = new Set();
+  const sampleHashes = new Map();
   corpusCatalog.samples.forEach((sample) => {
-    if (sampleIds.has(sample.id) || sampleHashes.has(sample.source.sha256)) {
+    const capabilityIdsForSample = new Set(sample.expectedOutcomes.map((outcome) => outcome.capabilityId));
+    const matchingSource = sampleHashes.get(sample.source.sha256);
+    if (sampleIds.has(sample.id) || (matchingSource && [...capabilityIdsForSample].some((id) => matchingSource.capabilityIds.has(id)))) {
       fail("CAPABILITY_LIBRARY_DUPLICATE_ID", `Capability subdirectories contain a duplicate sample '${sample.id}'`);
     }
+    if (matchingSource && (matchingSource.bytes !== sample.source.bytes || matchingSource.pageCount !== sample.source.pageCount || matchingSource.mediaType !== sample.source.mediaType)) {
+      fail("CAPABILITY_LIBRARY_DUPLICATE_ID", `Shared PDF hash has inconsistent source metadata for sample '${sample.id}'`);
+    }
     sampleIds.add(sample.id);
-    sampleHashes.add(sample.source.sha256);
+    if (matchingSource) capabilityIdsForSample.forEach((id) => matchingSource.capabilityIds.add(id));
+    else sampleHashes.set(sample.source.sha256, { capabilityIds: capabilityIdsForSample, bytes: sample.source.bytes, pageCount: sample.source.pageCount, mediaType: sample.source.mediaType });
     sample.expectedOutcomes.forEach((outcome) => {
       if (!capabilityIds.has(outcome.capabilityId)) {
         fail("CAPABILITY_LIBRARY_UNKNOWN_CAPABILITY", `Sample '${sample.id}' references unknown capability '${outcome.capabilityId}'`);

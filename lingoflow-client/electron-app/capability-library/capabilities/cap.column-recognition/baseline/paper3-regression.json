@@ -2739,9 +2739,9 @@
       }
     }
   ],
-  "findingCount": 0,
   "limitations": [
     "Region geometry and ownership require explicit reviewed region/object oracles; page matches alone do not certify them.",
     "No Issue lifecycle or runtime decisions are modified."
-  ]
+  ],
+  "findingCount": 0
 }

@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "column-promotion-evidence/v1",
+  "capabilityId": "cap.column-recognition",
+  "authority": "AA-COLUMN-001",
+  "date": "2026-09-27",
+  "promotedSampleIds": [
+    "sample.column-pilot.paper8",
+    "sample.column-pilot.paper9",
+    "sample.column-pilot.paper10"
+  ],
+  "review": {
+    "paper8": "User explicitly approved the unchanged Column prediction without exporting a JSON file.",
+    "paper9": "User explicitly approved the unchanged Column prediction without exporting a JSON file.",
+    "paper10": "All 10 pages confirmed in paper10-column-ground-truth-draft.json; corrected layouts equal the predictions.",
+    "independentRegionSource": "Separately confirmed paper8-10 non-body review exports; only types in the Column finite vocabulary were retained."
+  },
+  "regression": {
+    "samples": 10,
+    "pages": 126,
+    "passes": 126,
+    "findings": 0,
+    "originalSevenTruthsUnchanged": true,
+    "singleColumnPages": 71,
+    "doubleColumnPages": 55,
+    "mixedBodyFlowPages": 0
+  },
+  "workflow": {
+    "candidateHistory": "../../../candidates.json",
+    "localReviewEvidence": ".governance/tasks/layout-geometry-capability-audit/evidence/phase-2-paper-geometry/human-review-column-paper8-10-v1/",
+    "runtimeDecisionUse": "forbidden",
+    "layoutGeometryPromotion": false
+  }
+}

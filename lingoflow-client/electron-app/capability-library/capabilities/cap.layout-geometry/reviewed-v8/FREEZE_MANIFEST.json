@@ -1,0 +1,193 @@
+{
+  "schemaVersion": "layout-geometry-reviewed-freeze/v1",
+  "capabilityId": "cap.layout-geometry",
+  "status": "human_review_confirmed_formal_promotion_pending",
+  "runtimeDecisionUse": "forbidden",
+  "reviewStatement": "User confirmed the latest paper1–10 visual review on 2026-09-27; minor residual imperfections acknowledged. All 126 Body and non-Body pages were confirmed in the exported review JSON.",
+  "sourceReviewDirectory": ".governance/tasks/layout-geometry-capability-audit/evidence/phase-2-paper-geometry/human-review-final-paper1-10-v8",
+  "sourceManifestSha256": "a0a677a504e5d4aa044b7bdf5b84fbb686c40addfcf3ff16bcb8d7a21f3b6a02",
+  "columnCorpusSha256": "4380a9242660ad938856830e31c561709685fd6217c36c377cb9c154230226f1",
+  "papers": [
+    {
+      "paper": "paper1",
+      "sourcePdfSha256": "7ba73a901c7bacf14cdff7d9e16480cc451ca3a521977795a3de9c4e67bba0ac",
+      "pages": 6,
+      "columnSampleId": "sample.column-pilot.paper1",
+      "exports": {
+        "body": {
+          "file": "paper1-body-ground-truth-draft.json",
+          "sha256": "99bfcf9dbd8771e0b773bd4e5887e1bf18fe3392cb9d3e89152e0f662ccd483c",
+          "confirmedPages": 6
+        },
+        "non-body": {
+          "file": "paper1-non-body-ground-truth-draft.json",
+          "sha256": "7b4b6c31e9f462c1e8ad8e502fcea2823d2eecf5e66eb545ec788b035dc0f8b6",
+          "confirmedPages": 6
+        }
+      }
+    },
+    {
+      "paper": "paper2",
+      "sourcePdfSha256": "a3caa00f90f1b68a2068bbed07b2b91b6b40b3f65d1c3b22302e21333510e36f",
+      "pages": 11,
+      "columnSampleId": "sample.column-pilot.paper2",
+      "exports": {
+        "body": {
+          "file": "paper2-body-ground-truth-draft.json",
+          "sha256": "2143916edcf95b11b2db2f7c087d663f2a3652625e55c41dc280f80f341092f1",
+          "confirmedPages": 11
+        },
+        "non-body": {
+          "file": "paper2-non-body-ground-truth-draft.json",
+          "sha256": "d19b419584dae409ccf97ea8971386fd1bcf319dc0901bb8eb7b30b415f7aca9",
+          "confirmedPages": 11
+        }
+      }
+    },
+    {
+      "paper": "paper3",
+      "sourcePdfSha256": "fa33485f517b3c94d2f6e4d4366f3ab14a1e413a738db512e1862f4a0944f5f9",
+      "pages": 14,
+      "columnSampleId": "sample.column-pilot.paper3",
+      "exports": {
+        "body": {
+          "file": "paper3-body-ground-truth-draft.json",
+          "sha256": "ef78f4dde4062f632a87f9d6c28dc2b35c97cc70584052ad790b909c4abd835a",
+          "confirmedPages": 14
+        },
+        "non-body": {
+          "file": "paper3-non-body-ground-truth-draft.json",
+          "sha256": "1ec8e08af31675330a56588ca11b89b42fe4b570da6aa07a031b08a3c18eec56",
+          "confirmedPages": 14
+        }
+      }
+    },
+    {
+      "paper": "paper4",
+      "sourcePdfSha256": "8984769b011698352fba9532e6eed4d81a1683451e888ee85a2caa8042149e8b",
+      "pages": 16,
+      "columnSampleId": "sample.column-pilot.paper4",
+      "exports": {
+        "body": {
+          "file": "paper4-body-ground-truth-draft.json",
+          "sha256": "430ea40260cd2ecd048955e146dc4bd64cf489fa70b839103b93e246c6fa8d35",
+          "confirmedPages": 16
+        },
+        "non-body": {
+          "file": "paper4-non-body-ground-truth-draft.json",
+          "sha256": "0542d70f6b2dbff099ce6a86a4fc4b9c62db66d5b814e751813182091ddf8a6d",
+          "confirmedPages": 16
+        }
+      }
+    },
+    {
+      "paper": "paper5",
+      "sourcePdfSha256": "c3efd26afb65cafaa9e35525d0c2c182199b330cf101645e84f63901eca8bc48",
+      "pages": 14,
+      "columnSampleId": "sample.column-pilot.paper5",
+      "exports": {
+        "body": {
+          "file": "paper5-body-ground-truth-draft.json",
+          "sha256": "5c3f3a71d06c504979a3d1ee54bae249c06c4e0b25db5883390280e6ad3ab9ca",
+          "confirmedPages": 14
+        },
+        "non-body": {
+          "file": "paper5-non-body-ground-truth-draft.json",
+          "sha256": "dfbf602a8a893a2834873e5356d929333d750c0172852a51ce4b0f694ab27814",
+          "confirmedPages": 14
+        }
+      }
+    },
+    {
+      "paper": "paper6",
+      "sourcePdfSha256": "6f4cb19da2d60bb5eed20cd5d56f0360b2afb552e60a199792cc4be6b752189e",
+      "pages": 18,
+      "columnSampleId": "sample.column-pilot.paper6",
+      "exports": {
+        "body": {
+          "file": "paper6-body-ground-truth-draft.json",
+          "sha256": "4703362ce771eae427b5974132894f6beb34d35d2548ebbd0271b1f02541bfa0",
+          "confirmedPages": 18
+        },
+        "non-body": {
+          "file": "paper6-non-body-ground-truth-draft.json",
+          "sha256": "3f0ccf2add23ddd9b07e94086f2fb2bf51d8bc1acddb0ebc9d3566bb3e49fea7",
+          "confirmedPages": 18
+        }
+      }
+    },
+    {
+      "paper": "paper7",
+      "sourcePdfSha256": "ab244887804a95c4904e5efe5425fa1446d55f54fb2a707424439eb53c0bc1da",
+      "pages": 11,
+      "columnSampleId": "sample.column-pilot.paper7",
+      "exports": {
+        "body": {
+          "file": "paper7-body-ground-truth-draft.json",
+          "sha256": "6382e08fd83cb8b4be4384205a784b23c2e6efe27708d45ed897e530f37ac2c5",
+          "confirmedPages": 11
+        },
+        "non-body": {
+          "file": "paper7-non-body-ground-truth-draft.json",
+          "sha256": "f462393b0b35e43b6f1ca0a0f873afd34c72640ed4f0258b8174693543aa0db9",
+          "confirmedPages": 11
+        }
+      }
+    },
+    {
+      "paper": "paper8",
+      "sourcePdfSha256": "12e71bd65faecb793f64043c6812d7a3fd372e7f54ceed390e132839fd2504e4",
+      "pages": 11,
+      "columnSampleId": "sample.column-pilot.paper8",
+      "exports": {
+        "body": {
+          "file": "paper8-body-ground-truth-draft.json",
+          "sha256": "0a3d730426447a6a71b9df2639def79237bb2458cd8099ef674988aa2dc4bdfc",
+          "confirmedPages": 11
+        },
+        "non-body": {
+          "file": "paper8-non-body-ground-truth-draft.json",
+          "sha256": "9fd5b7147b149c2325abe4cca8660a4ec3e6745c9307268754708be8913ad9d6",
+          "confirmedPages": 11
+        }
+      }
+    },
+    {
+      "paper": "paper9",
+      "sourcePdfSha256": "23cdb5dd51ba39d61b6d3093220cdedeb8c4e6f20c3a64640067a6e6659fb420",
+      "pages": 15,
+      "columnSampleId": "sample.column-pilot.paper9",
+      "exports": {
+        "body": {
+          "file": "paper9-body-ground-truth-draft.json",
+          "sha256": "1a87a63e25ab893aee5fc395fa1e87c24dba59e00c0e63a85183b188094f478b",
+          "confirmedPages": 15
+        },
+        "non-body": {
+          "file": "paper9-non-body-ground-truth-draft.json",
+          "sha256": "40df9c50960d833ab83e0679259fdac36f9dede1839b938c724bb77593c3c10a",
+          "confirmedPages": 15
+        }
+      }
+    },
+    {
+      "paper": "paper10",
+      "sourcePdfSha256": "bfa5b8767c9cce7eca3d4cda064bec56a03a9e344eb13a87271f8a8784527b63",
+      "pages": 10,
+      "columnSampleId": "sample.column-pilot.paper10",
+      "exports": {
+        "body": {
+          "file": "paper10-body-ground-truth-draft.json",
+          "sha256": "b83c0b1eb0a29e2f02c6c7303b439cb4641e4b1621adca221e85fe0594fe1225",
+          "confirmedPages": 10
+        },
+        "non-body": {
+          "file": "paper10-non-body-ground-truth-draft.json",
+          "sha256": "c67dfa627934dc29df68d79c3528a40e81a9bc83645feee5bb6fbdc8ca8a2cee",
+          "confirmedPages": 10
+        }
+      }
+    }
+  ],
+  "promotionBlocker": "Candidate Pool and catalog loader reject the same PDF SHA-256 in a second capability sample; Column already owns these ten source hashes."
+}

@@ -1,0 +1,674 @@
+{
+  "schemaVersion": "layout-geometry-non-body-ground-truth-draft/v1",
+  "capabilityId": "cap.layout-geometry",
+  "scope": "non_body_objects_only",
+  "paper": "paper1",
+  "sourcePdfSha256": "7ba73a901c7bacf14cdff7d9e16480cc451ca3a521977795a3de9c4e67bba0ac",
+  "coordinateSpace": "pdf-page-top-left-points",
+  "runtimeDecisionUse": "forbidden",
+  "candidateAcceptance": "not_performed",
+  "promotion": "not_performed",
+  "bodyBaseline": "body-main-reading-flow-paper1-7-2026-09-23",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [
+        {
+          "id": "p1.independent.title.1",
+          "sourceRegionId": "p1.independent.title.1",
+          "objectType": "title",
+          "regionClass": "independent_region",
+          "semanticRegionType": "title",
+          "protectedKind": null,
+          "geometry": {
+            "x": 52.82,
+            "y": 106.32,
+            "width": 507.04,
+            "height": 22.41
+          }
+        },
+        {
+          "id": "p1.independent.author_affiliation.2",
+          "sourceRegionId": "p1.independent.author_affiliation.2",
+          "objectType": "author_affiliation",
+          "regionClass": "independent_region",
+          "semanticRegionType": "author_affiliation",
+          "protectedKind": null,
+          "geometry": {
+            "x": 98.53,
+            "y": 138.81,
+            "width": 411.63,
+            "height": 26.73
+          }
+        },
+        {
+          "id": "p1.independent.abstract.3",
+          "sourceRegionId": "p1.independent.abstract.3",
+          "objectType": "abstract",
+          "regionClass": "independent_region",
+          "semanticRegionType": "abstract",
+          "protectedKind": null,
+          "geometry": {
+            "x": 84.61,
+            "y": 179.99,
+            "width": 442.35,
+            "height": 212.04
+          }
+        },
+        {
+          "id": "p1.independent.keywords.4",
+          "sourceRegionId": "p1.independent.keywords.4",
+          "objectType": "keywords",
+          "regionClass": "independent_region",
+          "semanticRegionType": "keywords",
+          "protectedKind": null,
+          "geometry": {
+            "x": 84.61,
+            "y": 420.24,
+            "width": 441.33,
+            "height": 9.96
+          }
+        },
+        {
+          "id": "p1.independent.section_heading.5",
+          "sourceRegionId": "p1.independent.section_heading.5",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 124.08,
+            "y": 457.1,
+            "width": 94.68,
+            "height": 9.96
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p1.independent.title.1",
+          "sourceRegionId": "p1.independent.title.1",
+          "objectType": "title",
+          "regionClass": "independent_region",
+          "semanticRegionType": "title",
+          "protectedKind": null,
+          "geometry": {
+            "x": 52.82,
+            "y": 106.32,
+            "width": 507.04,
+            "height": 22.41
+          }
+        },
+        {
+          "id": "p1.independent.author_affiliation.2",
+          "sourceRegionId": "p1.independent.author_affiliation.2",
+          "objectType": "author_affiliation",
+          "regionClass": "independent_region",
+          "semanticRegionType": "author_affiliation",
+          "protectedKind": null,
+          "geometry": {
+            "x": 98.53,
+            "y": 138.81,
+            "width": 411.63,
+            "height": 26.73
+          }
+        },
+        {
+          "id": "p1.independent.abstract.3",
+          "sourceRegionId": "p1.independent.abstract.3",
+          "objectType": "abstract",
+          "regionClass": "independent_region",
+          "semanticRegionType": "abstract",
+          "protectedKind": null,
+          "geometry": {
+            "x": 84.61,
+            "y": 179.99,
+            "width": 442.35,
+            "height": 212.04
+          }
+        },
+        {
+          "id": "p1.independent.keywords.4",
+          "sourceRegionId": "p1.independent.keywords.4",
+          "objectType": "keywords",
+          "regionClass": "independent_region",
+          "semanticRegionType": "keywords",
+          "protectedKind": null,
+          "geometry": {
+            "x": 84.61,
+            "y": 420.24,
+            "width": 441.33,
+            "height": 9.96
+          }
+        },
+        {
+          "id": "p1.independent.section_heading.5",
+          "sourceRegionId": "p1.independent.section_heading.5",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 124.08,
+            "y": 457.1,
+            "width": 94.68,
+            "height": 9.96
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 2,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [
+        {
+          "id": "p2.independent.section_heading.1",
+          "sourceRegionId": "p2.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 331.71,
+            "y": 242.84,
+            "width": 219.1,
+            "height": 9.96
+          }
+        },
+        {
+          "id": "p2.independent.section_heading.2",
+          "sourceRegionId": "p2.independent.section_heading.2",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 111.28,
+            "y": 462.43,
+            "width": 120.28,
+            "height": 26.39
+          }
+        },
+        {
+          "id": "p2.independent.section_heading.3",
+          "sourceRegionId": "p2.independent.section_heading.3",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 397.9,
+            "y": 537.15,
+            "width": 86.73,
+            "height": 26.39
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p2.independent.section_heading.1",
+          "sourceRegionId": "p2.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 331.71,
+            "y": 242.84,
+            "width": 219.1,
+            "height": 9.96
+          }
+        },
+        {
+          "id": "p2.independent.section_heading.2",
+          "sourceRegionId": "p2.independent.section_heading.2",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 111.28,
+            "y": 462.43,
+            "width": 120.28,
+            "height": 26.39
+          }
+        },
+        {
+          "id": "p2.independent.section_heading.3",
+          "sourceRegionId": "p2.independent.section_heading.3",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 397.9,
+            "y": 537.15,
+            "width": 86.73,
+            "height": 26.39
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 3,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [
+        {
+          "id": "p3.independent.section_heading.1",
+          "sourceRegionId": "p3.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 385.11,
+            "y": 376.85,
+            "width": 112.3,
+            "height": 9.96
+          }
+        },
+        {
+          "id": "p3.independent.section_heading.2",
+          "sourceRegionId": "p3.independent.section_heading.2",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 380.21,
+            "y": 640.76,
+            "width": 122.1,
+            "height": 9.96
+          }
+        },
+        {
+          "id": "p3.independent.figure_caption.3",
+          "sourceRegionId": "p3.independent.figure_caption.3",
+          "objectType": "figure_caption",
+          "regionClass": "independent_region",
+          "semanticRegionType": "figure_caption",
+          "protectedKind": null,
+          "geometry": {
+            "x": 50.74,
+            "y": 253.65,
+            "width": 244.69,
+            "height": 19.93
+          }
+        },
+        {
+          "id": "p3.independent.figure_caption.4",
+          "sourceRegionId": "p3.independent.figure_caption.4",
+          "objectType": "figure_caption",
+          "regionClass": "independent_region",
+          "semanticRegionType": "figure_caption",
+          "protectedKind": null,
+          "geometry": {
+            "x": 50.74,
+            "y": 531.41,
+            "width": 241.37,
+            "height": 52.8
+          }
+        },
+        {
+          "id": "p3.independent.figure.5",
+          "sourceRegionId": "p3.independent.figure.5",
+          "objectType": "figure",
+          "regionClass": "independent_region",
+          "semanticRegionType": "figure",
+          "protectedKind": null,
+          "geometry": {
+            "x": 90.61,
+            "y": 62.11,
+            "width": 434.52,
+            "height": 184.57
+          }
+        },
+        {
+          "id": "p3.independent.figure.6",
+          "sourceRegionId": "p3.independent.figure.6",
+          "objectType": "figure",
+          "regionClass": "independent_region",
+          "semanticRegionType": "figure",
+          "protectedKind": null,
+          "geometry": {
+            "x": 50.74,
+            "y": 286.53,
+            "width": 224.8,
+            "height": 237.9
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p3.independent.section_heading.1",
+          "sourceRegionId": "p3.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 385.11,
+            "y": 376.85,
+            "width": 112.3,
+            "height": 9.96
+          }
+        },
+        {
+          "id": "p3.independent.section_heading.2",
+          "sourceRegionId": "p3.independent.section_heading.2",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 380.21,
+            "y": 640.76,
+            "width": 122.1,
+            "height": 9.96
+          }
+        },
+        {
+          "id": "p3.independent.figure_caption.3",
+          "sourceRegionId": "p3.independent.figure_caption.3",
+          "objectType": "figure_caption",
+          "regionClass": "independent_region",
+          "semanticRegionType": "figure_caption",
+          "protectedKind": null,
+          "geometry": {
+            "x": 50.74,
+            "y": 253.65,
+            "width": 513.2,
+            "height": 48.49
+          }
+        },
+        {
+          "id": "p3.independent.figure_caption.4",
+          "sourceRegionId": "p3.independent.figure_caption.4",
+          "objectType": "figure_caption",
+          "regionClass": "independent_region",
+          "semanticRegionType": "figure_caption",
+          "protectedKind": null,
+          "geometry": {
+            "x": 50.74,
+            "y": 531.41,
+            "width": 241.37,
+            "height": 52.8
+          }
+        },
+        {
+          "id": "p3.independent.figure.5",
+          "sourceRegionId": "p3.independent.figure.5",
+          "objectType": "figure",
+          "regionClass": "independent_region",
+          "semanticRegionType": "figure",
+          "protectedKind": null,
+          "geometry": {
+            "x": 90.61,
+            "y": 62.11,
+            "width": 434.52,
+            "height": 184.57
+          }
+        },
+        {
+          "id": "p3.independent.figure.6",
+          "sourceRegionId": "p3.independent.figure.6",
+          "objectType": "figure",
+          "regionClass": "independent_region",
+          "semanticRegionType": "figure",
+          "protectedKind": null,
+          "geometry": {
+            "x": 50.74,
+            "y": 300.81,
+            "width": 224.8,
+            "height": 223.62
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 4,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [
+        {
+          "id": "p4.independent.section_heading.1",
+          "sourceRegionId": "p4.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 78.39,
+            "y": 558.78,
+            "width": 186.06,
+            "height": 9.96
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p4.independent.section_heading.1",
+          "sourceRegionId": "p4.independent.section_heading.1",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 78.39,
+            "y": 558.78,
+            "width": 186.06,
+            "height": 9.96
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 5,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [
+        {
+          "id": "p5.independent.references_section_header.1",
+          "sourceRegionId": "p5.independent.references_section_header.1",
+          "objectType": "references_section_header",
+          "regionClass": "independent_region",
+          "semanticRegionType": "references_section_header",
+          "protectedKind": null,
+          "geometry": {
+            "x": 272.09,
+            "y": 298.28,
+            "width": 68.49,
+            "height": 9.96
+          }
+        },
+        {
+          "id": "p5.independent.section_heading.2",
+          "sourceRegionId": "p5.independent.section_heading.2",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 408.24,
+            "y": 64.6,
+            "width": 66.03,
+            "height": 9.96
+          }
+        },
+        {
+          "id": "p5.protected.reference_entries.1",
+          "sourceRegionId": "p5.protected.reference_entries.1",
+          "objectType": "reference_entries",
+          "regionClass": "protected_region",
+          "semanticRegionType": null,
+          "protectedKind": "reference_entries",
+          "geometry": {
+            "x": 50.74,
+            "y": 317.7,
+            "width": 241.36,
+            "height": 396.07
+          }
+        },
+        {
+          "id": "p5.protected.reference_entries.2",
+          "sourceRegionId": "p5.protected.reference_entries.2",
+          "objectType": "reference_entries",
+          "regionClass": "protected_region",
+          "semanticRegionType": null,
+          "protectedKind": "reference_entries",
+          "geometry": {
+            "x": 320.58,
+            "y": 317.7,
+            "width": 240.94,
+            "height": 396.36
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p5.independent.references_section_header.1",
+          "sourceRegionId": "p5.independent.references_section_header.1",
+          "objectType": "references_section_header",
+          "regionClass": "independent_region",
+          "semanticRegionType": "references_section_header",
+          "protectedKind": null,
+          "geometry": {
+            "x": 272.09,
+            "y": 298.28,
+            "width": 68.49,
+            "height": 9.96
+          }
+        },
+        {
+          "id": "p5.independent.section_heading.2",
+          "sourceRegionId": "p5.independent.section_heading.2",
+          "objectType": "section_heading",
+          "regionClass": "independent_region",
+          "semanticRegionType": "section_heading",
+          "protectedKind": null,
+          "geometry": {
+            "x": 408.24,
+            "y": 64.6,
+            "width": 66.03,
+            "height": 9.96
+          }
+        },
+        {
+          "id": "p5.protected.reference_entries.1",
+          "sourceRegionId": "p5.protected.reference_entries.1",
+          "objectType": "reference_entries",
+          "regionClass": "protected_region",
+          "semanticRegionType": null,
+          "protectedKind": "reference_entries",
+          "geometry": {
+            "x": 50.74,
+            "y": 317.7,
+            "width": 241.36,
+            "height": 396.07
+          }
+        },
+        {
+          "id": "p5.protected.reference_entries.2",
+          "sourceRegionId": "p5.protected.reference_entries.2",
+          "objectType": "reference_entries",
+          "regionClass": "protected_region",
+          "semanticRegionType": null,
+          "protectedKind": "reference_entries",
+          "geometry": {
+            "x": 320.58,
+            "y": 317.7,
+            "width": 240.94,
+            "height": 396.36
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 6,
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "predicted": [
+        {
+          "id": "p6.protected.reference_entries.1",
+          "sourceRegionId": "p6.protected.reference_entries.1",
+          "objectType": "reference_entries",
+          "regionClass": "protected_region",
+          "semanticRegionType": null,
+          "protectedKind": "reference_entries",
+          "geometry": {
+            "x": 50.74,
+            "y": 41.66,
+            "width": 236.44,
+            "height": 227.17
+          }
+        },
+        {
+          "id": "p6.protected.reference_entries.2",
+          "sourceRegionId": "p6.protected.reference_entries.2",
+          "objectType": "reference_entries",
+          "regionClass": "protected_region",
+          "semanticRegionType": null,
+          "protectedKind": "reference_entries",
+          "geometry": {
+            "x": 320.58,
+            "y": 65.59,
+            "width": 233.99,
+            "height": 190.65
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p6.protected.reference_entries.1",
+          "sourceRegionId": "p6.protected.reference_entries.1",
+          "objectType": "reference_entries",
+          "regionClass": "protected_region",
+          "semanticRegionType": null,
+          "protectedKind": "reference_entries",
+          "geometry": {
+            "x": 50.74,
+            "y": 41.66,
+            "width": 236.44,
+            "height": 227.17
+          }
+        },
+        {
+          "id": "p6.protected.reference_entries.2",
+          "sourceRegionId": "p6.protected.reference_entries.2",
+          "objectType": "reference_entries",
+          "regionClass": "protected_region",
+          "semanticRegionType": null,
+          "protectedKind": "reference_entries",
+          "geometry": {
+            "x": 320.58,
+            "y": 65.59,
+            "width": 233.99,
+            "height": 190.65
+          }
+        }
+      ],
+      "confirmed": true
+    }
+  ]
+}

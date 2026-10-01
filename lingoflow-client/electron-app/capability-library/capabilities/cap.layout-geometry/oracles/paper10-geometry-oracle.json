@@ -1,0 +1,1965 @@
+{
+  "schemaVersion": "layout-geometry-oracle/v1",
+  "capabilityId": "cap.layout-geometry",
+  "catalogRole": "regression_oracle",
+  "runtimeDecisionUse": "forbidden",
+  "sample": {
+    "sampleId": "sample.layout-geometry.paper10",
+    "sourceDocumentId": "doc.layout-geometry.paper10",
+    "fileName": "论文样本10.pdf",
+    "mediaType": "application/pdf",
+    "sha256": "bfa5b8767c9cce7eca3d4cda064bec56a03a9e344eb13a87271f8a8784527b63",
+    "bytes": 864810,
+    "pageCount": 10,
+    "provenance": {
+      "kind": "user_provided",
+      "reference": "reviewed-v8 exports; sample.column-pilot.paper10 is the read-only Column dependency"
+    }
+  },
+  "coordinateContract": {
+    "coordinateSpace": "pdf-page-top-left-points",
+    "unit": "point",
+    "origin": "top_left",
+    "xDirection": "right",
+    "yDirection": "down",
+    "rotationApplied": 0,
+    "cropBoxBaseline": {
+      "x": 0,
+      "y": 0,
+      "width": 612,
+      "height": 792
+    },
+    "mediaBoxBaseline": {
+      "x": 0,
+      "y": 0,
+      "width": 612,
+      "height": 792
+    }
+  },
+  "toleranceProfiles": [
+    {
+      "id": "body-edge",
+      "absolutePoints": 3,
+      "relativeToPage": 0.005,
+      "appliesTo": [
+        "x",
+        "y",
+        "width",
+        "height",
+        "edge_distance"
+      ],
+      "rationale": "Human Body boundaries include small approximate safety room; identity and topology stay exact.",
+      "cannotOverride": [
+        "identity_failure",
+        "structural_failure"
+      ]
+    },
+    {
+      "id": "object-edge",
+      "absolutePoints": 4,
+      "relativeToPage": 0.006,
+      "appliesTo": [
+        "x",
+        "y",
+        "width",
+        "height",
+        "edge_distance"
+      ],
+      "rationale": "Tight independent/protected object edges were visually reviewed; small PDF extraction differences are tolerated.",
+      "cannotOverride": [
+        "identity_failure",
+        "structural_failure"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "identity": {
+        "sourceDocumentId": "doc.layout-geometry.paper10",
+        "pageNumber": 1,
+        "pageId": "page-1",
+        "pageColumnModelRef": "page-column-model/v1:page-1",
+        "pageColumnModelHash": "2d4ddf29210819dd24328a8e687c0f47a257f56022867728386e5e604f89a36d"
+      },
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "rotation": 0,
+      "cropBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "mediaBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "regions": [
+        {
+          "regionId": "p1.main-flow.left.1",
+          "regionClass": "body_column",
+          "owner": "column:left",
+          "expectedGeometry": {
+            "x": 36.72,
+            "y": 180.08,
+            "width": 258.57,
+            "height": 560.42
+          },
+          "toleranceProfileId": "body-edge",
+          "relations": [
+            {
+              "kind": "left_of",
+              "targetRegionId": "p1.main-flow.right.1",
+              "minimumGapPoints": 0
+            }
+          ],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-body-ground-truth-draft.json:p1:p1.main-flow.left.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-body-ground-truth-draft.json"
+          ],
+          "canonicalColumnRef": {
+            "pageColumnModelRef": "page-column-model/v1:page-1",
+            "authority": "AA-COLUMN-001",
+            "columnId": "left"
+          }
+        },
+        {
+          "regionId": "p1.main-flow.right.1",
+          "regionClass": "body_column",
+          "owner": "column:right",
+          "expectedGeometry": {
+            "x": 316.71,
+            "y": 179.09,
+            "width": 258.57,
+            "height": 561.41
+          },
+          "toleranceProfileId": "body-edge",
+          "relations": [
+            {
+              "kind": "right_of",
+              "targetRegionId": "p1.main-flow.left.1",
+              "minimumGapPoints": 0
+            }
+          ],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-body-ground-truth-draft.json:p1:p1.main-flow.right.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-body-ground-truth-draft.json"
+          ],
+          "canonicalColumnRef": {
+            "pageColumnModelRef": "page-column-model/v1:page-1",
+            "authority": "AA-COLUMN-001",
+            "columnId": "right"
+          }
+        },
+        {
+          "regionId": "p1.independent.title.1",
+          "regionClass": "independent_region",
+          "owner": "geometry:title",
+          "expectedGeometry": {
+            "x": 60.38,
+            "y": 72.37,
+            "width": 491.24,
+            "height": 51.8
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p1:p1.independent.title.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "title"
+        },
+        {
+          "regionId": "p1.independent.abstract.2",
+          "regionClass": "independent_region",
+          "owner": "geometry:abstract",
+          "expectedGeometry": {
+            "x": 54,
+            "y": 182.58,
+            "width": 246.02,
+            "height": 228.4
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p1:p1.independent.abstract.2",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "abstract"
+        },
+        {
+          "regionId": "p1.independent.section_heading.3",
+          "regionClass": "independent_region",
+          "owner": "geometry:section_heading",
+          "expectedGeometry": {
+            "x": 138.14,
+            "y": 424.63,
+            "width": 77.76,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p1:p1.independent.section_heading.3",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "section_heading"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "sourceDocumentId": "doc.layout-geometry.paper10",
+        "pageNumber": 2,
+        "pageId": "page-2",
+        "pageColumnModelRef": "page-column-model/v1:page-2",
+        "pageColumnModelHash": "1e6f12f2be978eb8291cf9bb90f2e74767bde8db7ab82be84f6a3927300d3787"
+      },
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "rotation": 0,
+      "cropBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "mediaBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "regions": [
+        {
+          "regionId": "p2.main-flow.left.1",
+          "regionClass": "body_column",
+          "owner": "column:left",
+          "expectedGeometry": {
+            "x": 36.72,
+            "y": 71.5,
+            "width": 258.57,
+            "height": 666.91
+          },
+          "toleranceProfileId": "body-edge",
+          "relations": [
+            {
+              "kind": "left_of",
+              "targetRegionId": "p2.main-flow.right.1",
+              "minimumGapPoints": 0
+            }
+          ],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-body-ground-truth-draft.json:p2:p2.main-flow.left.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-body-ground-truth-draft.json"
+          ],
+          "canonicalColumnRef": {
+            "pageColumnModelRef": "page-column-model/v1:page-2",
+            "authority": "AA-COLUMN-001",
+            "columnId": "left"
+          }
+        },
+        {
+          "regionId": "p2.main-flow.right.1",
+          "regionClass": "body_column",
+          "owner": "column:right",
+          "expectedGeometry": {
+            "x": 316.71,
+            "y": 71.5,
+            "width": 258.57,
+            "height": 669
+          },
+          "toleranceProfileId": "body-edge",
+          "relations": [
+            {
+              "kind": "right_of",
+              "targetRegionId": "p2.main-flow.left.1",
+              "minimumGapPoints": 0
+            }
+          ],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-body-ground-truth-draft.json:p2:p2.main-flow.right.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-body-ground-truth-draft.json"
+          ],
+          "canonicalColumnRef": {
+            "pageColumnModelRef": "page-column-model/v1:page-2",
+            "authority": "AA-COLUMN-001",
+            "columnId": "right"
+          }
+        },
+        {
+          "regionId": "p2.independent.section_heading.1",
+          "regionClass": "independent_region",
+          "owner": "geometry:section_heading",
+          "expectedGeometry": {
+            "x": 115.45,
+            "y": 241.34,
+            "width": 123.13,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p2:p2.independent.section_heading.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "section_heading"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "sourceDocumentId": "doc.layout-geometry.paper10",
+        "pageNumber": 3,
+        "pageId": "page-3",
+        "pageColumnModelRef": "page-column-model/v1:page-3",
+        "pageColumnModelHash": "051710900b64b796b10e90d82a773ef9a2e4e16700c949ba79082d0f5f1440ae"
+      },
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "rotation": 0,
+      "cropBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "mediaBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "regions": [
+        {
+          "regionId": "p3.main-flow.left.1",
+          "regionClass": "body_column",
+          "owner": "column:left",
+          "expectedGeometry": {
+            "x": 36.72,
+            "y": 71.5,
+            "width": 258.57,
+            "height": 657.04
+          },
+          "toleranceProfileId": "body-edge",
+          "relations": [
+            {
+              "kind": "left_of",
+              "targetRegionId": "p3.main-flow.right.1",
+              "minimumGapPoints": 0
+            }
+          ],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-body-ground-truth-draft.json:p3:p3.main-flow.left.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-body-ground-truth-draft.json"
+          ],
+          "canonicalColumnRef": {
+            "pageColumnModelRef": "page-column-model/v1:page-3",
+            "authority": "AA-COLUMN-001",
+            "columnId": "left"
+          }
+        },
+        {
+          "regionId": "p3.main-flow.right.1",
+          "regionClass": "body_column",
+          "owner": "column:right",
+          "expectedGeometry": {
+            "x": 316.71,
+            "y": 71.5,
+            "width": 258.57,
+            "height": 663.13
+          },
+          "toleranceProfileId": "body-edge",
+          "relations": [
+            {
+              "kind": "right_of",
+              "targetRegionId": "p3.main-flow.left.1",
+              "minimumGapPoints": 0
+            }
+          ],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-body-ground-truth-draft.json:p3:p3.main-flow.right.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-body-ground-truth-draft.json"
+          ],
+          "canonicalColumnRef": {
+            "pageColumnModelRef": "page-column-model/v1:page-3",
+            "authority": "AA-COLUMN-001",
+            "columnId": "right"
+          }
+        },
+        {
+          "regionId": "p3.independent.section_heading.1",
+          "regionClass": "independent_region",
+          "owner": "geometry:section_heading",
+          "expectedGeometry": {
+            "x": 54,
+            "y": 127.64,
+            "width": 42.55,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p3:p3.independent.section_heading.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "section_heading"
+        },
+        {
+          "regionId": "p3.independent.section_heading.2",
+          "regionClass": "independent_region",
+          "owner": "geometry:section_heading",
+          "expectedGeometry": {
+            "x": 392.49,
+            "y": 583.49,
+            "width": 85,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p3:p3.independent.section_heading.2",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "section_heading"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "sourceDocumentId": "doc.layout-geometry.paper10",
+        "pageNumber": 4,
+        "pageId": "page-4",
+        "pageColumnModelRef": "page-column-model/v1:page-4",
+        "pageColumnModelHash": "bc5c1b1dfacf0db54aed0918f63e7798c9796f34344f4a5b5c62da0d99513ae2"
+      },
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "rotation": 0,
+      "cropBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "mediaBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "regions": [
+        {
+          "regionId": "p4.main-flow.left.1",
+          "regionClass": "body_column",
+          "owner": "column:left",
+          "expectedGeometry": {
+            "x": 36.72,
+            "y": 71.5,
+            "width": 258.57,
+            "height": 669
+          },
+          "toleranceProfileId": "body-edge",
+          "relations": [
+            {
+              "kind": "left_of",
+              "targetRegionId": "p4.main-flow.right.1",
+              "minimumGapPoints": 0
+            }
+          ],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-body-ground-truth-draft.json:p4:p4.main-flow.left.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-body-ground-truth-draft.json"
+          ],
+          "canonicalColumnRef": {
+            "pageColumnModelRef": "page-column-model/v1:page-4",
+            "authority": "AA-COLUMN-001",
+            "columnId": "left"
+          }
+        },
+        {
+          "regionId": "p4.main-flow.right.1",
+          "regionClass": "body_column",
+          "owner": "column:right",
+          "expectedGeometry": {
+            "x": 316.71,
+            "y": 395.49,
+            "width": 258.57,
+            "height": 338.89
+          },
+          "toleranceProfileId": "body-edge",
+          "relations": [
+            {
+              "kind": "right_of",
+              "targetRegionId": "p4.main-flow.left.1",
+              "minimumGapPoints": 0
+            }
+          ],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-body-ground-truth-draft.json:p4:p4.main-flow.right.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-body-ground-truth-draft.json"
+          ],
+          "canonicalColumnRef": {
+            "pageColumnModelRef": "page-column-model/v1:page-4",
+            "authority": "AA-COLUMN-001",
+            "columnId": "right"
+          }
+        },
+        {
+          "regionId": "p4.independent.section_heading.1",
+          "regionClass": "independent_region",
+          "owner": "geometry:section_heading",
+          "expectedGeometry": {
+            "x": 54,
+            "y": 139.81,
+            "width": 50.49,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p4:p4.independent.section_heading.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "section_heading"
+        },
+        {
+          "regionId": "p4.independent.section_heading.2",
+          "regionClass": "independent_region",
+          "owner": "geometry:section_heading",
+          "expectedGeometry": {
+            "x": 54,
+            "y": 570.64,
+            "width": 39.62,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p4:p4.independent.section_heading.2",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "section_heading"
+        },
+        {
+          "regionId": "p4.independent.figure_caption.3",
+          "regionClass": "independent_region",
+          "owner": "geometry:figure_caption",
+          "expectedGeometry": {
+            "x": 311.98,
+            "y": 327.49,
+            "width": 246.03,
+            "height": 35.37
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p4:p4.independent.figure_caption.3",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "figure_caption"
+        },
+        {
+          "regionId": "p4.independent.figure.4",
+          "regionClass": "independent_region",
+          "owner": "geometry:figure",
+          "expectedGeometry": {
+            "x": 327.44,
+            "y": 76.91,
+            "width": 214.61,
+            "height": 229.78
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p4:p4.independent.figure.4",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "figure"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "sourceDocumentId": "doc.layout-geometry.paper10",
+        "pageNumber": 5,
+        "pageId": "page-5",
+        "pageColumnModelRef": "page-column-model/v1:page-5",
+        "pageColumnModelHash": "4397c50e40ba50a38423fa93b857a0c9b18d0993fd988b0071b8fd12df9cf719"
+      },
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "rotation": 0,
+      "cropBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "mediaBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "regions": [
+        {
+          "regionId": "p5.main-flow.left.1",
+          "regionClass": "body_column",
+          "owner": "column:left",
+          "expectedGeometry": {
+            "x": 36.72,
+            "y": 71.5,
+            "width": 258.57,
+            "height": 670.5
+          },
+          "toleranceProfileId": "body-edge",
+          "relations": [
+            {
+              "kind": "left_of",
+              "targetRegionId": "p5.main-flow.right.1",
+              "minimumGapPoints": 0
+            }
+          ],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-body-ground-truth-draft.json:p5:p5.main-flow.left.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-body-ground-truth-draft.json"
+          ],
+          "canonicalColumnRef": {
+            "pageColumnModelRef": "page-column-model/v1:page-5",
+            "authority": "AA-COLUMN-001",
+            "columnId": "left"
+          }
+        },
+        {
+          "regionId": "p5.main-flow.right.1",
+          "regionClass": "body_column",
+          "owner": "column:right",
+          "expectedGeometry": {
+            "x": 316.71,
+            "y": 71.5,
+            "width": 258.57,
+            "height": 667.88
+          },
+          "toleranceProfileId": "body-edge",
+          "relations": [
+            {
+              "kind": "right_of",
+              "targetRegionId": "p5.main-flow.left.1",
+              "minimumGapPoints": 0
+            }
+          ],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-body-ground-truth-draft.json:p5:p5.main-flow.right.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-body-ground-truth-draft.json"
+          ],
+          "canonicalColumnRef": {
+            "pageColumnModelRef": "page-column-model/v1:page-5",
+            "authority": "AA-COLUMN-001",
+            "columnId": "right"
+          }
+        },
+        {
+          "regionId": "p5.independent.section_heading.1",
+          "regionClass": "independent_region",
+          "owner": "geometry:section_heading",
+          "expectedGeometry": {
+            "x": 54,
+            "y": 74,
+            "width": 45.16,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p5:p5.independent.section_heading.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "section_heading"
+        },
+        {
+          "regionId": "p5.independent.section_heading.2",
+          "regionClass": "independent_region",
+          "owner": "geometry:section_heading",
+          "expectedGeometry": {
+            "x": 311.98,
+            "y": 297.42,
+            "width": 50.75,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p5:p5.independent.section_heading.2",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "section_heading"
+        },
+        {
+          "regionId": "p5.independent.section_heading.3",
+          "regionClass": "independent_region",
+          "owner": "geometry:section_heading",
+          "expectedGeometry": {
+            "x": 54,
+            "y": 473.71,
+            "width": 52.69,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p5:p5.independent.section_heading.3",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "section_heading"
+        },
+        {
+          "regionId": "p5.independent.section_heading.4",
+          "regionClass": "independent_region",
+          "owner": "geometry:section_heading",
+          "expectedGeometry": {
+            "x": 54,
+            "y": 716.09,
+            "width": 54.28,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p5:p5.independent.section_heading.4",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "section_heading"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "sourceDocumentId": "doc.layout-geometry.paper10",
+        "pageNumber": 6,
+        "pageId": "page-6",
+        "pageColumnModelRef": "page-column-model/v1:page-6",
+        "pageColumnModelHash": "5ad76158f6a61eefebb12cd70936e66b01ea94f140ef0bc8235f51e94f347368"
+      },
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "rotation": 0,
+      "cropBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "mediaBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "regions": [
+        {
+          "regionId": "p6.main-flow.left.1",
+          "regionClass": "body_column",
+          "owner": "column:left",
+          "expectedGeometry": {
+            "x": 36.72,
+            "y": 71.5,
+            "width": 258.57,
+            "height": 669
+          },
+          "toleranceProfileId": "body-edge",
+          "relations": [
+            {
+              "kind": "left_of",
+              "targetRegionId": "p6.main-flow.right.1",
+              "minimumGapPoints": 0
+            }
+          ],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-body-ground-truth-draft.json:p6:p6.main-flow.left.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-body-ground-truth-draft.json"
+          ],
+          "canonicalColumnRef": {
+            "pageColumnModelRef": "page-column-model/v1:page-6",
+            "authority": "AA-COLUMN-001",
+            "columnId": "left"
+          }
+        },
+        {
+          "regionId": "p6.main-flow.right.1",
+          "regionClass": "body_column",
+          "owner": "column:right",
+          "expectedGeometry": {
+            "x": 316.71,
+            "y": 71.5,
+            "width": 258.57,
+            "height": 670.49
+          },
+          "toleranceProfileId": "body-edge",
+          "relations": [
+            {
+              "kind": "right_of",
+              "targetRegionId": "p6.main-flow.left.1",
+              "minimumGapPoints": 0
+            }
+          ],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-body-ground-truth-draft.json:p6:p6.main-flow.right.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-body-ground-truth-draft.json"
+          ],
+          "canonicalColumnRef": {
+            "pageColumnModelRef": "page-column-model/v1:page-6",
+            "authority": "AA-COLUMN-001",
+            "columnId": "right"
+          }
+        },
+        {
+          "regionId": "p6.independent.section_heading.1",
+          "regionClass": "independent_region",
+          "owner": "geometry:section_heading",
+          "expectedGeometry": {
+            "x": 54,
+            "y": 259.22,
+            "width": 44.3,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p6:p6.independent.section_heading.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "section_heading"
+        },
+        {
+          "regionId": "p6.independent.section_heading.2",
+          "regionClass": "independent_region",
+          "owner": "geometry:section_heading",
+          "expectedGeometry": {
+            "x": 311.98,
+            "y": 307.32,
+            "width": 40.6,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p6:p6.independent.section_heading.2",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "section_heading"
+        },
+        {
+          "regionId": "p6.independent.section_heading.3",
+          "regionClass": "independent_region",
+          "owner": "geometry:section_heading",
+          "expectedGeometry": {
+            "x": 311.98,
+            "y": 534.65,
+            "width": 40.67,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p6:p6.independent.section_heading.3",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "section_heading"
+        },
+        {
+          "regionId": "p6.independent.section_heading.4",
+          "regionClass": "independent_region",
+          "owner": "geometry:section_heading",
+          "expectedGeometry": {
+            "x": 311.98,
+            "y": 625.9,
+            "width": 49.72,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p6:p6.independent.section_heading.4",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "section_heading"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "sourceDocumentId": "doc.layout-geometry.paper10",
+        "pageNumber": 7,
+        "pageId": "page-7",
+        "pageColumnModelRef": "page-column-model/v1:page-7",
+        "pageColumnModelHash": "8e3b765f1dd608c1d1a747d653f70c1434eb8edc171b48b15022f5a8020ce5ff"
+      },
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "rotation": 0,
+      "cropBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "mediaBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "regions": [
+        {
+          "regionId": "p7.main-flow.left.1",
+          "regionClass": "body_column",
+          "owner": "column:left",
+          "expectedGeometry": {
+            "x": 36.72,
+            "y": 216.42,
+            "width": 258.57,
+            "height": 524.08
+          },
+          "toleranceProfileId": "body-edge",
+          "relations": [
+            {
+              "kind": "left_of",
+              "targetRegionId": "p7.main-flow.right.1",
+              "minimumGapPoints": 0
+            }
+          ],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-body-ground-truth-draft.json:p7:p7.main-flow.left.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-body-ground-truth-draft.json"
+          ],
+          "canonicalColumnRef": {
+            "pageColumnModelRef": "page-column-model/v1:page-7",
+            "authority": "AA-COLUMN-001",
+            "columnId": "left"
+          }
+        },
+        {
+          "regionId": "p7.main-flow.right.1",
+          "regionClass": "body_column",
+          "owner": "column:right",
+          "expectedGeometry": {
+            "x": 316.71,
+            "y": 438.62,
+            "width": 258.57,
+            "height": 303.38
+          },
+          "toleranceProfileId": "body-edge",
+          "relations": [
+            {
+              "kind": "right_of",
+              "targetRegionId": "p7.main-flow.left.1",
+              "minimumGapPoints": 0
+            }
+          ],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-body-ground-truth-draft.json:p7:p7.main-flow.right.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-body-ground-truth-draft.json"
+          ],
+          "canonicalColumnRef": {
+            "pageColumnModelRef": "page-column-model/v1:page-7",
+            "authority": "AA-COLUMN-001",
+            "columnId": "right"
+          }
+        },
+        {
+          "regionId": "p7.independent.section_heading.1",
+          "regionClass": "independent_region",
+          "owner": "geometry:section_heading",
+          "expectedGeometry": {
+            "x": 138.34,
+            "y": 665.15,
+            "width": 77.35,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p7:p7.independent.section_heading.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "section_heading"
+        },
+        {
+          "regionId": "p7.independent.figure_caption.2",
+          "regionClass": "independent_region",
+          "owner": "geometry:figure_caption",
+          "expectedGeometry": {
+            "x": 328.66,
+            "y": 407.05,
+            "width": 212.66,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p7:p7.independent.figure_caption.2",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "figure_caption"
+        },
+        {
+          "regionId": "p7.independent.figure.3",
+          "regionClass": "independent_region",
+          "owner": "geometry:figure",
+          "expectedGeometry": {
+            "x": 315.59,
+            "y": 230.97,
+            "width": 239.53,
+            "height": 171.5
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p7:p7.independent.figure.3",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "figure"
+        },
+        {
+          "regionId": "p7.independent.table.4",
+          "regionClass": "independent_region",
+          "owner": "geometry:table",
+          "expectedGeometry": {
+            "x": 60.36,
+            "y": 70.41,
+            "width": 491.27,
+            "height": 125.39
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p7:p7.independent.table.4",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "table"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "sourceDocumentId": "doc.layout-geometry.paper10",
+        "pageNumber": 8,
+        "pageId": "page-8",
+        "pageColumnModelRef": "page-column-model/v1:page-8",
+        "pageColumnModelHash": "133d30c67a57358560669c7d1a3d20ddbbc88b9268552dcab10d2503887cc0d3"
+      },
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "rotation": 0,
+      "cropBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "mediaBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "regions": [
+        {
+          "regionId": "p8.main-flow.left.1",
+          "regionClass": "body_column",
+          "owner": "column:left",
+          "expectedGeometry": {
+            "x": 36.72,
+            "y": 629.06,
+            "width": 258.57,
+            "height": 112.93
+          },
+          "toleranceProfileId": "body-edge",
+          "relations": [
+            {
+              "kind": "left_of",
+              "targetRegionId": "p8.main-flow.right.1",
+              "minimumGapPoints": 0
+            }
+          ],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-body-ground-truth-draft.json:p8:p8.main-flow.left.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-body-ground-truth-draft.json"
+          ],
+          "canonicalColumnRef": {
+            "pageColumnModelRef": "page-column-model/v1:page-8",
+            "authority": "AA-COLUMN-001",
+            "columnId": "left"
+          }
+        },
+        {
+          "regionId": "p8.main-flow.right.1",
+          "regionClass": "body_column",
+          "owner": "column:right",
+          "expectedGeometry": {
+            "x": 316.71,
+            "y": 629.06,
+            "width": 258.57,
+            "height": 110.6
+          },
+          "toleranceProfileId": "body-edge",
+          "relations": [
+            {
+              "kind": "right_of",
+              "targetRegionId": "p8.main-flow.left.1",
+              "minimumGapPoints": 0
+            }
+          ],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-body-ground-truth-draft.json:p8:p8.main-flow.right.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-body-ground-truth-draft.json"
+          ],
+          "canonicalColumnRef": {
+            "pageColumnModelRef": "page-column-model/v1:page-8",
+            "authority": "AA-COLUMN-001",
+            "columnId": "right"
+          }
+        },
+        {
+          "regionId": "p8.independent.figure_caption.1",
+          "regionClass": "independent_region",
+          "owner": "geometry:figure_caption",
+          "expectedGeometry": {
+            "x": 155.27,
+            "y": 597.49,
+            "width": 301.46,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p8:p8.independent.figure_caption.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "figure_caption"
+        },
+        {
+          "regionId": "p8.independent.figure.2",
+          "regionClass": "independent_region",
+          "owner": "geometry:figure",
+          "expectedGeometry": {
+            "x": 75.72,
+            "y": 75.59,
+            "width": 460.56,
+            "height": 507.55
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p8:p8.independent.figure.2",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "figure"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "sourceDocumentId": "doc.layout-geometry.paper10",
+        "pageNumber": 9,
+        "pageId": "page-9",
+        "pageColumnModelRef": "page-column-model/v1:page-9",
+        "pageColumnModelHash": "150ed9cfc4e0483c753e92143a1515ab6b0d3823b64a3ef480849d05acbf50a2"
+      },
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "rotation": 0,
+      "cropBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "mediaBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "regions": [
+        {
+          "regionId": "p9.main-flow.left.1",
+          "regionClass": "body_column",
+          "owner": "column:left",
+          "expectedGeometry": {
+            "x": 36.72,
+            "y": 629.06,
+            "width": 258.57,
+            "height": 112.09
+          },
+          "toleranceProfileId": "body-edge",
+          "relations": [
+            {
+              "kind": "left_of",
+              "targetRegionId": "p9.main-flow.right.1",
+              "minimumGapPoints": 0
+            }
+          ],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-body-ground-truth-draft.json:p9:p9.main-flow.left.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-body-ground-truth-draft.json"
+          ],
+          "canonicalColumnRef": {
+            "pageColumnModelRef": "page-column-model/v1:page-9",
+            "authority": "AA-COLUMN-001",
+            "columnId": "left"
+          }
+        },
+        {
+          "regionId": "p9.main-flow.right.1",
+          "regionClass": "body_column",
+          "owner": "column:right",
+          "expectedGeometry": {
+            "x": 316.71,
+            "y": 629.06,
+            "width": 258.57,
+            "height": 111.44
+          },
+          "toleranceProfileId": "body-edge",
+          "relations": [
+            {
+              "kind": "right_of",
+              "targetRegionId": "p9.main-flow.left.1",
+              "minimumGapPoints": 0
+            }
+          ],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-body-ground-truth-draft.json:p9:p9.main-flow.right.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-body-ground-truth-draft.json"
+          ],
+          "canonicalColumnRef": {
+            "pageColumnModelRef": "page-column-model/v1:page-9",
+            "authority": "AA-COLUMN-001",
+            "columnId": "right"
+          }
+        },
+        {
+          "regionId": "p9.independent.section_heading.1",
+          "regionClass": "independent_region",
+          "owner": "geometry:section_heading",
+          "expectedGeometry": {
+            "x": 352.09,
+            "y": 631.56,
+            "width": 165.8,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p9:p9.independent.section_heading.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "section_heading"
+        },
+        {
+          "regionId": "p9.independent.figure_caption.2",
+          "regionClass": "independent_region",
+          "owner": "geometry:figure_caption",
+          "expectedGeometry": {
+            "x": 197.25,
+            "y": 597.49,
+            "width": 217.5,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p9:p9.independent.figure_caption.2",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "figure_caption"
+        },
+        {
+          "regionId": "p9.independent.figure.3",
+          "regionClass": "independent_region",
+          "owner": "geometry:figure",
+          "expectedGeometry": {
+            "x": 75.72,
+            "y": 75.59,
+            "width": 460.56,
+            "height": 507.55
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p9:p9.independent.figure.3",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "figure"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "sourceDocumentId": "doc.layout-geometry.paper10",
+        "pageNumber": 10,
+        "pageId": "page-10",
+        "pageColumnModelRef": "page-column-model/v1:page-10",
+        "pageColumnModelHash": "dc04471ba78b026c4560b298d0ca7af68dbb8aabb171331b6994c9d76a756813"
+      },
+      "pageSize": {
+        "width": 612,
+        "height": 792
+      },
+      "rotation": 0,
+      "cropBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "mediaBox": {
+        "x": 0,
+        "y": 0,
+        "width": 612,
+        "height": 792
+      },
+      "regions": [
+        {
+          "regionId": "p10.main-flow.single.1",
+          "regionClass": "body_column",
+          "owner": "column:single",
+          "expectedGeometry": {
+            "x": 36.72,
+            "y": 71.5,
+            "width": 258.57,
+            "height": 86.69
+          },
+          "toleranceProfileId": "body-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-body-ground-truth-draft.json:p10:p10.main-flow.single.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-body-ground-truth-draft.json"
+          ],
+          "canonicalColumnRef": {
+            "pageColumnModelRef": "page-column-model/v1:page-10",
+            "authority": "AA-COLUMN-001",
+            "columnId": "single"
+          }
+        },
+        {
+          "regionId": "p10.independent.references_section_header.1",
+          "regionClass": "independent_region",
+          "owner": "geometry:references_section_header",
+          "expectedGeometry": {
+            "x": 149.12,
+            "y": 168.26,
+            "width": 55.79,
+            "height": 9.96
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p10:p10.independent.references_section_header.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "semanticRegionType": "references_section_header"
+        },
+        {
+          "regionId": "p10.protected.reference_entries.1",
+          "regionClass": "protected_region",
+          "owner": "geometry:reference_entries",
+          "expectedGeometry": {
+            "x": 54,
+            "y": 187.77,
+            "width": 246.03,
+            "height": 550.23
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p10:p10.protected.reference_entries.1",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "protectedKind": "reference_entries"
+        },
+        {
+          "regionId": "p10.protected.reference_entries.2",
+          "regionClass": "protected_region",
+          "owner": "geometry:reference_entries",
+          "expectedGeometry": {
+            "x": 311.98,
+            "y": 75.99,
+            "width": 246.02,
+            "height": 115.56
+          },
+          "toleranceProfileId": "object-edge",
+          "relations": [],
+          "sourceProvenance": [
+            {
+              "sourceArtifactId": "paper10:paper10-non-body-ground-truth-draft.json:p10:p10.protected.reference_entries.2",
+              "producer": "human-corrected-review-export",
+              "coordinateSpace": "pdf-page-top-left-points",
+              "transformChain": [
+                "pdf-point-editor",
+                "user-confirmed-corrected-box"
+              ]
+            }
+          ],
+          "evidenceRefs": [
+            "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+          ],
+          "protectedKind": "reference_entries"
+        }
+      ]
+    }
+  ],
+  "failureClasses": [
+    "identity_failure",
+    "structural_failure",
+    "tolerance_deviation"
+  ],
+  "evidenceRefs": [
+    "reviewed-v8/FREEZE_MANIFEST.json",
+    "reviewed-v8/paper10-body-ground-truth-draft.json",
+    "reviewed-v8/paper10-non-body-ground-truth-draft.json"
+  ],
+  "reviewHistory": [
+    {
+      "sequence": 1,
+      "action": "created",
+      "actor": "offline.geometry.oracle.builder",
+      "at": "2026-09-28T07:12:45.555Z",
+      "reason": "Oracle materialized from the hash-bound v8 corrected exports; no prediction substituted for corrected truth.",
+      "previousHash": null,
+      "hash": "5dfd3184dd7c4d679c06d8a0424e971b76c71fe5e5648e8f4d362a6ead010193"
+    },
+    {
+      "sequence": 2,
+      "action": "review_started",
+      "actor": "rioin (user-confirmed visual review)",
+      "at": "2026-09-28T07:12:45.555Z",
+      "reason": "All 126 pages were confirmed separately for Body and non-Body in the editable visual review.",
+      "previousHash": "5dfd3184dd7c4d679c06d8a0424e971b76c71fe5e5648e8f4d362a6ead010193",
+      "hash": "4abd2c2cfda6bea523cfec3b7db160e7132cdc9431c2fba2e50f08bb33b850dd"
+    },
+    {
+      "sequence": 3,
+      "action": "accepted",
+      "actor": "rioin (user-confirmed visual review)",
+      "at": "2026-09-28T07:12:45.555Z",
+      "reason": "User reported no major issue in final paper1–10 review; minor imperfections remain visible in the machine audit.",
+      "previousHash": "4abd2c2cfda6bea523cfec3b7db160e7132cdc9431c2fba2e50f08bb33b850dd",
+      "hash": "9f35ae3be79b04290c195d83aca0b004660199627e1d558ab1f63f0ddb4f0040"
+    }
+  ],
+  "authorityBoundary": {
+    "geometryOwner": "AA-GEOMETRY-001",
+    "columnDependency": "AA-COLUMN-001",
+    "columnDependencyMode": "read_only_reference",
+    "runtimeDecisionUse": "forbidden",
+    "forbiddenActions": [
+      "reclassify_column",
+      "mutate_column_truth",
+      "auto_repair_runtime",
+      "auto_promote_candidate",
+      "override_identity_or_structure_with_tolerance"
+    ]
+  }
+}

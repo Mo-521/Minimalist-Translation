@@ -256,6 +256,45 @@ test('continuous English body lines prevent PDF text fragments from fabricating 
   assert.ok(columns[0].items.every(item => item.column === 'single'));
 });
 
+test('paired gutter prose rebuts merged spanning lines, but paired formula fragments do not', () => {
+  function detect(pairs) {
+    const context = vm.createContext({ Number, Math, String });
+    const items = [];
+    const lines = [];
+    pairs.forEach((pair, index) => {
+      const y = 100 + index * 20;
+      const left = { x: pair.leftX, y, width: pair.leftWidth, height: 10, fontSize: 10, text: pair.leftText, pageWidth: 612, pageHeight: 792 };
+      const right = { x: pair.rightX, y, width: pair.rightWidth, height: 10, fontSize: 10, text: pair.rightText, pageWidth: 612, pageHeight: 792 };
+      items.push(left, right);
+      lines.push({ bbox: { x: left.x, y, width: left.width, height: 10 }, text: left.text, items: [left], columnEvidenceSide: 'left' });
+      lines.push({ bbox: { x: right.x, y, width: right.width, height: 10 }, text: right.text, items: [right], columnEvidenceSide: 'right' });
+    });
+    // Same-page full-width front matter should not hide a repeated physical gutter.
+    for (let index = 0; index < 4; index += 1) {
+      const item = { x: 54, y: 20 + index * 12, width: 504, height: 10, fontSize: 10, text: 'Full width introduction text', pageWidth: 612, pageHeight: 792 };
+      items.push(item);
+      lines.push({ bbox: { x: 54, y: item.y, width: 504, height: 10 }, text: item.text, items: [item] });
+    }
+    context.filterHeaderFooterItems = input => input;
+    context.getPageBounds = () => ({ x: 54, y: 20, width: 504, height: 200 });
+    context.mergeTextItemsIntoColumnEvidenceLines = () => lines;
+    context.detectPageLayout = () => ({ layoutType: 'single_column', languageHint: 'en', confidence: 0.78, columnCount: 1 });
+    vm.runInContext(extractFunction(mainSource, 'detectPageColumns'), context);
+    return context.detectPageColumns(items);
+  }
+  const prose = Array.from({ length: 6 }, () => ({
+    leftX: 54, leftWidth: 246, rightX: 312, rightWidth: 246,
+    leftText: 'Left body paragraph continues across the page',
+    rightText: 'Right body paragraph continues independently',
+  }));
+  assert.equal(detect(prose)[0].layout.layoutType, 'double_column');
+  const formula = Array.from({ length: 6 }, () => ({
+    leftX: 180, leftWidth: 75, rightX: 330, rightWidth: 75,
+    leftText: 'x = y + z', rightText: 'rho = q',
+  }));
+  assert.equal(detect(formula)[0].layout.layoutType, 'single_column');
+});
+
 test('translated duplicate formula prefix is removed while translated prose remains', () => {
   const context = vm.createContext({ String, Array, RegExp, Set, Number, Math });
   context.normalizePdfLineBoxes = (segment) => segment.lineBoxes || [];

@@ -1,6 +1,6 @@
 {
   "name": "lingoflow-electron",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Local-first Electron client for desktop and PDF translation",
   "main": "main.js",
@@ -46,9 +46,16 @@
       "pdf-pipeline-diagnostics.js",
       "semantic-structure-authority.js",
       "semantic-structure-consumer-authority.js",
-      "capability-library/**/*",
+      "capability-library/index.js",
+      "capability-library/capability.schema.json",
+      "capability-library/sample-corpus.schema.json",
+      "capability-library/capabilities.json",
+      "capability-library/corpus.json",
+      "capability-library/capabilities/*/capabilities.json",
+      "capability-library/capabilities/*/corpus.json",
       "package.json",
-      "node_modules/**/*"
+      "node_modules/**/*",
+      "!node_modules/fast-uri/benchmark/**"
     ],
     "win": {
       "target": [

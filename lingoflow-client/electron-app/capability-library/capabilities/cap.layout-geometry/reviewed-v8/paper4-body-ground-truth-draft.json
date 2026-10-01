@@ -1,0 +1,768 @@
+{
+  "schemaVersion": "layout-geometry-body-ground-truth-draft/v1",
+  "capabilityId": "cap.layout-geometry",
+  "scope": "body_column_only",
+  "paper": "paper4",
+  "sourcePdfSha256": "8984769b011698352fba9532e6eed4d81a1683451e888ee85a2caa8042149e8b",
+  "coordinateSpace": "pdf-page-top-left-points",
+  "runtimeDecisionUse": "forbidden",
+  "candidateAcceptance": "not_performed",
+  "promotion": "not_performed",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p1.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 237.11,
+            "width": 251.51,
+            "height": 538.22
+          }
+        },
+        {
+          "id": "p1.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 231.01,
+            "width": 251.51,
+            "height": 544.32
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p1.main-flow.left.1",
+          "sourceRegionId": "p1.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 237.11,
+            "width": 251.51,
+            "height": 538.22
+          }
+        },
+        {
+          "id": "p1.main-flow.right.1",
+          "sourceRegionId": "p1.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 231.01,
+            "width": 251.51,
+            "height": 544.32
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 2,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p2.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 344.48,
+            "width": 251.51,
+            "height": 430.85
+          }
+        },
+        {
+          "id": "p2.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 344.48,
+            "width": 251.51,
+            "height": 430.85
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p2.main-flow.left.1",
+          "sourceRegionId": "p2.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 344.48,
+            "width": 251.51,
+            "height": 430.85
+          }
+        },
+        {
+          "id": "p2.main-flow.right.1",
+          "sourceRegionId": "p2.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 344.48,
+            "width": 251.51,
+            "height": 430.85
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 3,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p3.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 275.44,
+            "width": 251.51,
+            "height": 499.89
+          }
+        },
+        {
+          "id": "p3.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 275.44,
+            "width": 251.51,
+            "height": 499.89
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p3.main-flow.left.1",
+          "sourceRegionId": "p3.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 275.44,
+            "width": 251.51,
+            "height": 499.89
+          }
+        },
+        {
+          "id": "p3.main-flow.right.1",
+          "sourceRegionId": "p3.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 275.44,
+            "width": 251.51,
+            "height": 499.89
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 4,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p4.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 68.41,
+            "width": 251.51,
+            "height": 706.92
+          }
+        },
+        {
+          "id": "p4.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 68.41,
+            "width": 251.51,
+            "height": 706.92
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p4.main-flow.left.1",
+          "sourceRegionId": "p4.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 68.41,
+            "width": 251.51,
+            "height": 706.92
+          }
+        },
+        {
+          "id": "p4.main-flow.right.1",
+          "sourceRegionId": "p4.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 68.41,
+            "width": 251.51,
+            "height": 706.92
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 5,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p5.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 209.29,
+            "width": 251.51,
+            "height": 566.04
+          }
+        },
+        {
+          "id": "p5.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 68.41,
+            "width": 251.51,
+            "height": 709.62
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p5.main-flow.left.1",
+          "sourceRegionId": "p5.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 365.59,
+            "width": 251.51,
+            "height": 409.74
+          }
+        },
+        {
+          "id": "p5.main-flow.right.1",
+          "sourceRegionId": "p5.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 68.41,
+            "width": 251.51,
+            "height": 709.62
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 6,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p6.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 68.41,
+            "width": 251.51,
+            "height": 706.92
+          }
+        },
+        {
+          "id": "p6.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 68.41,
+            "width": 251.51,
+            "height": 706.92
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p6.main-flow.left.1",
+          "sourceRegionId": "p6.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 68.41,
+            "width": 251.51,
+            "height": 706.92
+          }
+        },
+        {
+          "id": "p6.main-flow.right.1",
+          "sourceRegionId": "p6.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 68.41,
+            "width": 251.51,
+            "height": 706.92
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 7,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p7.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 382.63,
+            "width": 251.51,
+            "height": 392.7
+          }
+        },
+        {
+          "id": "p7.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 278.16,
+            "width": 251.51,
+            "height": 497.17
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p7.main-flow.left.1",
+          "sourceRegionId": "p7.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 382.63,
+            "width": 251.51,
+            "height": 392.7
+          }
+        },
+        {
+          "id": "p7.main-flow.right.1",
+          "sourceRegionId": "p7.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 278.16,
+            "width": 251.51,
+            "height": 497.17
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 8,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p8.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 68.41,
+            "width": 251.51,
+            "height": 706.92
+          }
+        },
+        {
+          "id": "p8.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 68.41,
+            "width": 251.51,
+            "height": 706.92
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p8.main-flow.left.1",
+          "sourceRegionId": "p8.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 68.41,
+            "width": 251.51,
+            "height": 706.92
+          }
+        },
+        {
+          "id": "p8.main-flow.right.1",
+          "sourceRegionId": "p8.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 68.41,
+            "width": 251.51,
+            "height": 706.92
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 9,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p9.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 577.47,
+            "width": 251.51,
+            "height": 197.86
+          }
+        },
+        {
+          "id": "p9.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 582.61,
+            "width": 251.51,
+            "height": 192.05
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p9.main-flow.left.1",
+          "sourceRegionId": "p9.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 546.02,
+            "width": 251.51,
+            "height": 229.31
+          }
+        },
+        {
+          "id": "p9.main-flow.right.1",
+          "sourceRegionId": "p9.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 545.44,
+            "width": 251.51,
+            "height": 229.22
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 10,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p10.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 67.36,
+            "width": 251.51,
+            "height": 707.97
+          }
+        },
+        {
+          "id": "p10.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 68.41,
+            "width": 251.51,
+            "height": 287
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p10.main-flow.left.1",
+          "sourceRegionId": "p10.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 67.36,
+            "width": 251.51,
+            "height": 707.97
+          }
+        },
+        {
+          "id": "p10.main-flow.right.1",
+          "sourceRegionId": "p10.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 68.41,
+            "width": 251.51,
+            "height": 287
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 11,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [],
+      "corrected": [],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 12,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [],
+      "corrected": [],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 13,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p13.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 128.92,
+            "width": 251.51,
+            "height": 637.2
+          }
+        },
+        {
+          "id": "p13.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 128.87,
+            "width": 251.51,
+            "height": 637.25
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p13.main-flow.left.1",
+          "sourceRegionId": "p13.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 128.92,
+            "width": 251.51,
+            "height": 637.2
+          }
+        },
+        {
+          "id": "p13.main-flow.right.1",
+          "sourceRegionId": "p13.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 128.87,
+            "width": 251.51,
+            "height": 637.25
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 14,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p14.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 68.36,
+            "width": 251.51,
+            "height": 697.76
+          }
+        },
+        {
+          "id": "p14.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 72.59,
+            "width": 251.51,
+            "height": 472.25
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p14.main-flow.left.1",
+          "sourceRegionId": "p14.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 68.36,
+            "width": 251.51,
+            "height": 697.76
+          }
+        },
+        {
+          "id": "p14.main-flow.right.1",
+          "sourceRegionId": "p14.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 72.59,
+            "width": 251.51,
+            "height": 472.25
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 15,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p15.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 67.36,
+            "width": 251.51,
+            "height": 707.97
+          }
+        },
+        {
+          "id": "p15.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 68.41,
+            "width": 251.51,
+            "height": 710.99
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p15.main-flow.left.1",
+          "sourceRegionId": "p15.main-flow.left.1",
+          "canonicalColumnId": "left",
+          "geometry": {
+            "x": 35.72,
+            "y": 67.36,
+            "width": 251.51,
+            "height": 707.97
+          }
+        },
+        {
+          "id": "p15.main-flow.right.1",
+          "sourceRegionId": "p15.main-flow.right.1",
+          "canonicalColumnId": "right",
+          "geometry": {
+            "x": 308.06,
+            "y": 68.41,
+            "width": 251.51,
+            "height": 710.99
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 16,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p16.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 68.37,
+            "y": 68.41,
+            "width": 223.27,
+            "height": 152.18
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p16.main-flow.single.1",
+          "sourceRegionId": "p16.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 68.37,
+            "y": 68.41,
+            "width": 223.27,
+            "height": 152.18
+          }
+        }
+      ],
+      "confirmed": true
+    }
+  ]
+}

@@ -113,17 +113,28 @@ test("capability presentation consumes the frozen catalog and confines technical
     assert.equal(details.children[2].textContent, definition.decisionAuthority.statement);
     const status = head.children[1];
     assert.equal(status.dataset.state, definition.status);
-    assert.equal(status.textContent, statusLabels[definition.status]);
+    const formalSampleCount = definition.regressionSampleIds.filter(sampleId => library.samples.some(sample => sample.id === sampleId)).length;
+    const expectedStatusLabel = definition.status === "pilot_ready" && formalSampleCount
+      ? "已纳入离线回归"
+      : statusLabels[definition.status];
+    assert.equal(status.textContent, expectedStatusLabel);
     assert.equal(card.children[3].children[1].tag, "span");
     assert.equal(card.children[3].children[1].textContent, "样本投递尚未开放");
   });
   const columnIndex = library.capabilities.findIndex((definition) => definition.id === "cap.column-recognition");
   const columnCard = cards[columnIndex];
-  assert.match(columnCard.children[2].children[0].textContent, /回归基线 7 个样本 \/ 90 页/);
+  assert.match(columnCard.children[2].children[0].textContent, /回归基线 10 个样本 \/ 126 页/);
   const sampleList = columnCard.children[3].children[0].children[10];
-  assert.equal(sampleList.children.length, 7);
+  assert.equal(sampleList.children.length, 10);
   assert.match(sampleList.children[0].textContent, /^paper1 · 论文样本1\.pdf · 6 页$/);
   assert.match(sampleList.children[6].textContent, /^paper7 · 论文样本7\.pdf · 11 页$/);
+  assert.match(sampleList.children[9].textContent, /^paper10 · 论文样本10\.pdf · 10 页$/);
+  const geometryIndex = library.capabilities.findIndex((definition) => definition.id === "cap.layout-geometry");
+  const geometryCard = cards[geometryIndex];
+  assert.equal(geometryCard.children[0].children[1].dataset.state, "pilot_ready");
+  assert.equal(geometryCard.children[0].children[1].textContent, "已纳入离线回归");
+  assert.match(geometryCard.children[2].children[0].textContent, /回归基线 10 个样本 \/ 126 页/);
+  assert.equal(library.capabilities[geometryIndex].decisionAuthority.owner, "Geometry Authority");
   assert.equal(JSON.stringify(library), before);
   assert.ok(Object.isFrozen(library));
 });

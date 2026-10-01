@@ -40,6 +40,8 @@ function append(candidate, action, to, audit) {
 }
 function checkHistory(candidate) {
   let status = null, previous = null, promoted = false;
+  const outcomeKey = (outcome) => `${outcome.capabilityId}/${outcome.assertionId}`;
+  const currentOutcomes = new Map(candidate.sample.expectedOutcomes.map((outcome) => [outcomeKey(outcome), outcome]));
   candidate.history.forEach((event, index) => {
     const { hash: digest, ...unsigned } = event;
     if (event.sequence !== index + 1 || event.from !== status || event.previousHash !== (previous ? previous.hash : null) || digest !== hash(unsigned) || event.sampleHash !== payloadHash(candidate)) fail("CANDIDATE_HISTORY_INVALID", "History or immutable submission was rewritten");
@@ -48,10 +50,22 @@ function checkHistory(candidate) {
       if (event.action !== "submit" || event.to !== "pending") fail("CANDIDATE_HISTORY_INVALID", "Submission must start pending");
     } else if (event.action === "review") {
       if (promoted || !(transitions[status] || []).includes(event.to)) fail("CANDIDATE_TRANSITION_INVALID", "Invalid review transition");
+    } else if (event.action === "revise") {
+      if (promoted || status !== "accepted" || event.to !== "under_review" || !event.evidenceRefs.length
+        || event.expectedOutcomes.length !== currentOutcomes.size) {
+        fail("CANDIDATE_REVISION_INVALID", "Revision requires an accepted unpromoted candidate, evidence and a complete outcome set");
+      }
+      const revised = new Map(event.expectedOutcomes.map((outcome) => [outcomeKey(outcome), outcome]));
+      if (revised.size !== currentOutcomes.size
+        || [...revised.keys()].some((key) => !currentOutcomes.has(key))
+        || [...revised].every(([key, outcome]) => hash(outcome) === hash(currentOutcomes.get(key)))) {
+        fail("CANDIDATE_REVISION_INVALID", "Revision must preserve assertion identities and change a reviewed outcome");
+      }
     } else if (event.action === "promote") {
       if (status !== "accepted" || event.to !== "accepted" || promoted || event.expectedOutcomes.length) fail("CANDIDATE_PROMOTION_FORBIDDEN", "Only one explicit accepted promotion with reviewed oracles is allowed");
       promoted = true;
     } else fail("CANDIDATE_HISTORY_INVALID", "Invalid audit action");
+    event.expectedOutcomes.forEach((outcome) => currentOutcomes.set(outcomeKey(outcome), outcome));
     status = event.to; previous = event;
   });
   if (candidate.status !== status || candidate.promotedSampleId !== (promoted ? candidate.sample.id : null)) fail("CANDIDATE_HISTORY_INVALID", "Materialized state differs from history");
@@ -59,6 +73,24 @@ function checkHistory(candidate) {
 function unique(items, key, label) {
   const seen = new Set();
   items.forEach((item) => { const value = key(item); if (seen.has(value)) fail("CANDIDATE_DUPLICATE", `Duplicate ${label}: ${value}`); seen.add(value); });
+}
+function sameSourceWithSharedCapability(left, right) {
+  if (left.sample.source.sha256 !== right.sample.source.sha256) return false;
+  return left.capabilityIds.some((id) => right.capabilityIds.includes(id));
+}
+function assertSharedSourceMetadata(entries) {
+  const seen = new Map();
+  entries.forEach((entry) => {
+    const source = entry.sample.source;
+    const prior = seen.get(source.sha256);
+    if (prior && (prior.bytes !== source.bytes || prior.pageCount !== source.pageCount || prior.mediaType !== source.mediaType)) {
+      fail("CANDIDATE_DUPLICATE", "Shared PDF hash has inconsistent source metadata");
+    }
+    seen.set(source.sha256, source);
+  });
+}
+function corpusEntry(sample) {
+  return { sample, capabilityIds: [...new Set(sample.expectedOutcomes.map((outcome) => outcome.capabilityId))] };
 }
 function checkSampleLinks(candidate, catalog, requireEvidence) {
   const capabilities = candidate.capabilityIds.map((id) => {
@@ -88,8 +120,15 @@ function validateState(state) {
     unique(capability.boundaries, (item) => item.id, "boundary ID");
     unique(capability.expectedOutcomes, (item) => item.id, "assertion ID");
   });
-  unique(state.corpus.samples, (item) => item.id, "sample ID"); unique(state.corpus.samples, (item) => item.source.sha256, "corpus PDF hash");
-  unique(state.pool.candidates, (item) => item.id, "candidate ID"); unique(state.pool.candidates, (item) => item.sample.id, "candidate sample ID"); unique(state.pool.candidates, (item) => item.sample.source.sha256, "candidate PDF hash");
+  unique(state.corpus.samples, (item) => item.id, "sample ID");
+  unique(state.pool.candidates, (item) => item.id, "candidate ID"); unique(state.pool.candidates, (item) => item.sample.id, "candidate sample ID");
+  const entries = [...state.corpus.samples.map(corpusEntry), ...state.pool.candidates];
+  assertSharedSourceMetadata(entries);
+  entries.forEach((entry, index) => {
+    if (entries.slice(0, index).some((prior) => prior.sample.id !== entry.sample.id && sameSourceWithSharedCapability(prior, entry))) {
+      fail("CANDIDATE_DUPLICATE", "Duplicate PDF hash for the same capability");
+    }
+  });
   state.pool.candidates.forEach((candidate) => {
     checkHistory(candidate);
     // Check every historical oracle, not only the latest, so invalid history cannot be hidden.
@@ -98,7 +137,7 @@ function validateState(state) {
       checkSampleLinks({ ...prefix, sample: promotedSample(prefix) }, state.capabilities, event.to === "accepted");
     });
     checkSampleLinks({ ...candidate, sample: promotedSample(candidate) }, state.capabilities, candidate.status === "accepted");
-    const existing = state.corpus.samples.find((sample) => sample.id === candidate.sample.id || sample.source.sha256 === candidate.sample.source.sha256);
+    const existing = state.corpus.samples.find((sample) => sample.id === candidate.sample.id);
     if (candidate.promotedSampleId) {
       const sample = promotedSample(candidate);
       if (!existing || hash(existing) !== hash(sample)) fail("CANDIDATE_PROMOTION_INVALID", "Promoted sample/provenance must match corpus");
@@ -122,8 +161,9 @@ function precheck(state, submission) {
   schemaCheck({ ...state.corpus, samples: [submission.sample] }, 1);
   if (!/^candidate\.[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(submission.id || "") || !Array.isArray(submission.capabilityIds) || !submission.capabilityIds.length || new Set(submission.capabilityIds).size !== submission.capabilityIds.length) fail("CANDIDATE_SCHEMA_INVALID", "Invalid candidate identity/capability links");
   checkSampleLinks({ ...submission, history: [] }, state.capabilities, false);
-  const duplicateCandidateIds = state.pool.candidates.filter((item) => item.id === submission.id || item.sample.id === submission.sample.id || item.sample.source.sha256 === submission.sample.source.sha256).map((item) => item.id);
-  const duplicateCorpusIds = state.corpus.samples.filter((item) => item.id === submission.sample.id || item.source.sha256 === submission.sample.source.sha256).map((item) => item.id);
+  assertSharedSourceMetadata([...state.corpus.samples.map(corpusEntry), ...state.pool.candidates, submission]);
+  const duplicateCandidateIds = state.pool.candidates.filter((item) => item.id === submission.id || item.sample.id === submission.sample.id || sameSourceWithSharedCapability(item, submission)).map((item) => item.id);
+  const duplicateCorpusIds = state.corpus.samples.filter((item) => item.id === submission.sample.id || sameSourceWithSharedCapability(corpusEntry(item), submission)).map((item) => item.id);
   return deepFreeze({ formatValid: true, duplicateCandidateIds, duplicateCorpusIds, rootCauseAssessment: "not_performed" });
 }
 function submitCandidate(state, submission, audit) {
@@ -138,6 +178,14 @@ function reviewCandidate(state, id, status, audit) {
   validateState(clone(state)); const next = clone(state), candidate = getCandidate(next, id);
   if (!(transitions[candidate.status] || []).includes(status)) fail("CANDIDATE_TRANSITION_INVALID", `${candidate.status} -> ${status} forbidden`);
   append(candidate, "review", status, audit);
+  return validateState(next);
+}
+function reviseCandidate(state, id, audit) {
+  validateState(clone(state)); const next = clone(state), candidate = getCandidate(next, id);
+  if (candidate.status !== "accepted" || candidate.promotedSampleId) {
+    fail("CANDIDATE_REVISION_INVALID", "Only an accepted unpromoted candidate may begin a truth revision");
+  }
+  append(candidate, "revise", "under_review", audit);
   return validateState(next);
 }
 function promotedSample(candidate) {
@@ -176,4 +224,4 @@ function loadCommittedState(rootDir) {
   if (fs.readFileSync(path.join(rootDir, "COMMITTED"), "utf8").trim() !== hash(state)) fail("CANDIDATE_TRANSACTION_INVALID", "Incomplete or changed snapshot");
   return state;
 }
-module.exports = { precheck, submitCandidate, reviewCandidate, promoteCandidate, validateState, loadState, saveState, loadCommittedState };
+module.exports = { precheck, submitCandidate, reviewCandidate, reviseCandidate, promoteCandidate, validateState, loadState, saveState, loadCommittedState };

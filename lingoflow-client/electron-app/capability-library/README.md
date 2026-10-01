@@ -4,7 +4,9 @@ This directory is an evidence and regression catalog. It is deliberately outside
 
 Capability-specific formal assets live under `capabilities/<capability-id>/`. The root `capabilities.json` and `corpus.json` contain only unlayered definitions; the loader validates and merges every capability subdirectory into one frozen read-only snapshot. A capability subdirectory is the canonical data source for that capability. Archived governance Tasks remain audit provenance and are never loaded by the application.
 
-The first layered capability is `capabilities/cap.column-recognition/`: seven formally promoted papers, 90 reviewed pages, frozen page/independent-region truth, the current 90/90 regression baseline, and the historical pre-repair findings/RCA.
+The first layered capability is `capabilities/cap.column-recognition/`: ten formally promoted papers, 126 reviewed pages, frozen page/independent-region truth, the current 126/126 regression baseline, and the historical paper1–7 pre-repair findings/RCA.
+
+`capabilities/cap.layout-geometry/` contains a hash-bound freeze of the user-confirmed paper1–10 Body and non-Body review exports (126 pages), plus validated original and versioned Geometry Oracles. Its formal corpus now has ten explicitly promoted paper1–10 samples; the fresh 126-page producer comparison against their promoted truth has zero findings. The Candidate Pool and catalog permit the same source PDF to support distinct capabilities while rejecting duplicate truth within one capability. Its definition remains `pilot_ready` and `runtimeDecisionUse: forbidden`: promotion is offline regression evidence, never runtime truth or automatic Issue closure.
 
 `geometry-oracle.schema.json` and `geometry-oracle.js` freeze the independent Layout Geometry regression contract. They are offline evidence validators. They must not be imported by Main, Writer, Export, Column producer or UI. They do not store paper1–7 coordinate truth.
 

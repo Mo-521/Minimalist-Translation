@@ -5,27 +5,79 @@
   "capabilityId": "cap.column-recognition",
   "authority": "AA-COLUMN-001",
   "basis": "body_text_flow_only",
-  "sampleCount": 7,
-  "pageCount": 90,
-  "passCount": 90,
+  "sampleCount": 10,
+  "pageCount": 126,
+  "passCount": 126,
   "findingCount": 0,
   "layoutCoverage": {
-    "singleColumnPages": 44,
-    "doubleColumnPages": 46,
+    "singleColumnPages": 71,
+    "doubleColumnPages": 55,
     "mixedBodyFlowPages": 0
   },
   "samples": [
-    {"id": "sample.column-pilot.paper1", "label": "paper1", "pages": 6, "baseline": "paper1-regression.json"},
-    {"id": "sample.column-pilot.paper2", "label": "paper2", "pages": 11, "baseline": "paper2-regression.json"},
-    {"id": "sample.column-pilot.paper3", "label": "paper3", "pages": 14, "baseline": "paper3-regression.json"},
-    {"id": "sample.column-pilot.paper4", "label": "paper4", "pages": 16, "baseline": "paper4-regression.json"},
-    {"id": "sample.column-pilot.paper5", "label": "paper5", "pages": 14, "baseline": "paper5-regression.json"},
-    {"id": "sample.column-pilot.paper6", "label": "paper6", "pages": 18, "baseline": "paper6-regression.json"},
-    {"id": "sample.column-pilot.paper7", "label": "paper7", "pages": 11, "baseline": "paper7-regression.json"}
+    {
+      "id": "sample.column-pilot.paper1",
+      "label": "paper1",
+      "pages": 6,
+      "baseline": "paper1-regression.json"
+    },
+    {
+      "id": "sample.column-pilot.paper2",
+      "label": "paper2",
+      "pages": 11,
+      "baseline": "paper2-regression.json"
+    },
+    {
+      "id": "sample.column-pilot.paper3",
+      "label": "paper3",
+      "pages": 14,
+      "baseline": "paper3-regression.json"
+    },
+    {
+      "id": "sample.column-pilot.paper4",
+      "label": "paper4",
+      "pages": 16,
+      "baseline": "paper4-regression.json"
+    },
+    {
+      "id": "sample.column-pilot.paper5",
+      "label": "paper5",
+      "pages": 14,
+      "baseline": "paper5-regression.json"
+    },
+    {
+      "id": "sample.column-pilot.paper6",
+      "label": "paper6",
+      "pages": 18,
+      "baseline": "paper6-regression.json"
+    },
+    {
+      "id": "sample.column-pilot.paper7",
+      "label": "paper7",
+      "pages": 11,
+      "baseline": "paper7-regression.json"
+    },
+    {
+      "id": "sample.column-pilot.paper8",
+      "label": "paper8",
+      "pages": 11,
+      "baseline": "paper8-regression.json"
+    },
+    {
+      "id": "sample.column-pilot.paper9",
+      "label": "paper9",
+      "pages": 15,
+      "baseline": "paper9-regression.json"
+    },
+    {
+      "id": "sample.column-pilot.paper10",
+      "label": "paper10",
+      "pages": 10,
+      "baseline": "paper10-regression.json"
+    }
   ],
   "limitations": [
-    "正式90页没有真实 mixed 正文文本流页面；mixed 能力仍待未来 accepted corpus 补充。",
-    "ordinary1、ordinary2 与 scan1 未晋升，不属于本正式回归基线。",
-    "能力库只提供离线 Evidence；任何 runtime 栏型事实仍由 AA-COLUMN-001 产生。"
+    "当前正式样本仍没有真实 mixed 正文文本流页面；mixed 能力等待未来审核样本。",
+    "能力库只提供离线 Evidence；Runtime 栏型事实仍由 AA-COLUMN-001 产生。"
   ]
 }

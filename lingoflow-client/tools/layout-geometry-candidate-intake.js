@@ -12,7 +12,7 @@ const workflow = require("../electron-app/capability-library/candidate-pool");
 
 const ROOT = path.resolve(__dirname, "../..");
 const APP = path.resolve(__dirname, "../electron-app");
-const TASK_EVIDENCE = path.join(ROOT, ".governance/tasks/layout-geometry-capability-audit/evidence/phase-2-paper-geometry");
+const TASK_EVIDENCE = path.join(ROOT, ".governance/archive/evidence/layout-geometry-capability-audit/evidence/phase-2-paper-geometry");
 const COLUMN_CORPUS = path.join(APP, "capability-library/capabilities/cap.column-recognition/corpus.json");
 const COLUMN_BASELINE_DIR = path.join(APP, "capability-library/capabilities/cap.column-recognition/baseline");
 const EVIDENCE_ID = "EVD-20260918-LAYOUT-GEOMETRY-PAPER-CANDIDATES";
@@ -931,7 +931,12 @@ function semanticHeadingRows(lines, page) {
       const numberingPrefix = last && /^(?:\d+(?:\.\d+)*|[A-Z](?:\.\d+)*)(?:[.)])?$/.test(normalizedLineText(last));
       const sharedFont = last && (last.fontNames || []).some((name) => (line.fontNames || []).includes(name));
       const styleBoundary = last && !sharedFont && !numberingPrefix && last.width > 18 && line.width > 18;
-      if (!last || gap > 24 || styleBoundary || (crossesCenter && last.width > 48 && line.width > 24)) {
+      // A short section number in the opposite column is still a separate
+      // reading lane. Requiring both fragments to be long merged labels such
+      // as "4.2" into the previous column's table caption or prose.
+      const pairedLanes = page.headingLanes && Object.values(page.headingLanes).length > 1;
+      const acrossGutter = crossesCenter && (pairedLanes ? gap > 8 : last.width > 48 && line.width > 24);
+      if (!last || gap > 24 || styleBoundary || acrossGutter) {
         out.push({ ...line, items: [...line.items] });
       } else {
         const geometry = unionBoxes([lineBox(last), lineBox(line)]);
@@ -1014,7 +1019,8 @@ function splitAtCanonicalGutter(lines, page, columnModel) {
 }
 
 function isSectionHeadingLine(line, page) {
-  const text = compactPdfSmallCaps(normalizedLineText(line)).replace(/\s*\|\s*/g, " ");
+  const rawText = compactPdfSmallCaps(normalizedLineText(line));
+  const text = rawText.replace(/\s*\|\s*/g, " ");
   if (!text || text.length > 110 || isReferencesHeadingLine(line) || isKeywordsLine(line) || isFigureCaptionLine(line) || isTableCaptionLine(line)) return false;
   if (/^Prompt\.?$/i.test(text)) return false;
   const knownHeadingTypeface = page.headingFontNames instanceof Set
@@ -1027,6 +1033,8 @@ function isSectionHeadingLine(line, page) {
   }
   const numbered = text.match(/^((?:\d+(?:\.\d+)*|[A-D]|[IVXLCDM]+|[A-Z]\.\d+(?:\.\d+)*))(?:[.)])?\s+([A-Za-z].*)$/);
   if (numbered) {
+    // A bare four-digit prefix is year-like metadata, not credible section numbering.
+    if (/^\d{4,}$/.test(numbered[1])) return false;
     const label = numbered[2].trim();
     const words = label.split(/\s+/).filter(Boolean);
     const mathSignals = (label.match(/[=<>∑∫√≈≤≥α-ωΑ-Ωλρδψημσ]|\b(?:sin|cos|log|exp)\b/gi) || []).length;
@@ -1037,15 +1045,24 @@ function isSectionHeadingLine(line, page) {
     const numberedListItem = /^\d+[.)]\s/.test(text) && !/^\d+\.\d+/.test(text);
     const flushWithLane = !(page.headingLanes && Object.values(page.headingLanes).length)
       || Object.values(page.headingLanes).some((lane) => Math.abs(line.x - lane.x) <= 10);
+    const centeredInLane = page.headingLanes && Object.values(page.headingLanes).some((lane) => {
+      const lineCenter = line.x + line.width / 2;
+      const laneCenter = lane.x + lane.width / 2;
+      return Math.abs(lineCenter - laneCenter) <= lane.width * 0.09
+        && line.width <= lane.width * 0.82;
+    });
+    const explicitlyStructured = /^(?:\d+(?:\.\d+)*|[A-D](?:\.\d+)*)(?:[.)])?\s*\|/.test(rawText)
+      || /^\d+\.\d+/.test(text);
     return line.maxFont >= 8.5
       && (knownHeadingTypeface || /^[A-Z]/.test(label))
       && headingPositionCredible(line, page)
-      && (!numberedListItem || flushWithLane)
+      && (!numberedListItem || flushWithLane || centeredInLane)
       && words.length >= 1
       && words.length <= 12
       && label.length <= 88
       && (lowercaseLetters >= 2 || uppercaseLetters >= 3)
-      && !/^(?:The|This|That|These|Those|It|We)\b/.test(label)
+      && (!/^(?:The|This|That|These|Those|It|We)\b/.test(label)
+        || (knownHeadingTypeface && (explicitlyStructured || centeredInLane)))
       && !/:$/.test(label)
       && !isRunInPeriodProse(label)
       && mathSignals === 0
@@ -1131,7 +1148,9 @@ function buildIndependentRegions(page, types, lines, columnModel) {
   const usedClusters = new Set();
   page.headingStyleAllowed = columnModel.layoutType === "single_column";
   page.headingLanes = columnPartition(page, columnModel.layoutType, columnModel).lanes;
-  const semanticRows = semanticHeadingRows(lines, page);
+  const headingInput = columnModel.layoutType === "double_column"
+    ? splitAtCanonicalGutter(lines, page, columnModel) : lines;
+  const semanticRows = semanticHeadingRows(headingInput, page);
 
   const pushMeasured = (type, geometry, provenance) => {
     let clipped = clipToPage(geometry, page) || geometry;
@@ -1149,10 +1168,12 @@ function buildIndependentRegions(page, types, lines, columnModel) {
     return true;
   };
 
-  const tryText = (type, block, provenance) => {
+  const tryText = (type, block, provenance, bottomMargin = 0) => {
     const available = block.filter((line) => !used.has(line));
     if (!available.length) return false;
-    const pushed = pushMeasured(type, unionBoxes(available.map(lineBox)), provenance);
+    const measured = unionBoxes(available.map(lineBox));
+    const geometry = bottomMargin ? box(measured.x, measured.y, measured.width, measured.height + bottomMargin) : measured;
+    const pushed = pushMeasured(type, geometry, provenance);
     if (pushed) available.forEach((line) => used.add(line));
     return pushed;
   };
@@ -1189,11 +1210,21 @@ function buildIndependentRegions(page, types, lines, columnModel) {
       const lane = Object.values(partition.walls).find((wall) => centerInside(lineBox(heading), wall));
       const local = lane ? sourceRows.filter((line) => centerInside(lineBox(line), lane)
         && (!usesCanonicalLane || line.width <= lane.width * 1.18)).sort((a, b) => a.y - b.y || a.x - b.x) : sourceRows;
-      const block = lineSequence(local, local.indexOf(heading), (line) => (!usesCanonicalLane && isKeywordsLine(line)) || isSectionHeadingLine(line, page), 36, 24)
+      const semanticHeadingAt = (line) => semanticRows.some((row) => {
+        if (!isSectionHeadingLine(row, page) || Math.abs(row.y - line.y) > 2.5) return false;
+        return Math.min(row.x + row.width, line.x + line.width) - Math.max(row.x, line.x) > 0;
+      });
+      const block = lineSequence(local, local.indexOf(heading), (line) =>
+        (!usesCanonicalLane && isKeywordsLine(line)) || isSectionHeadingLine(line, page)
+        || semanticHeadingAt(line), 36, 24)
         .filter((line) => line.y < heading.y + page.pageSize.height * 0.46);
-      if (!usesCanonicalLane) return block;
+      // A rotated arXiv side mark can share an abstract's vertical span and
+      // inflate its measured box across the gutter. It is page furniture,
+      // never an abstract continuation.
+      if (!usesCanonicalLane) return block.filter((line) => !/^arxiv:/i.test(normalizedLineText(line)));
       const keyword = block.find(isKeywordsLine);
-      return keyword ? block.filter((line) => line.y <= keyword.y + 36) : block;
+      const bounded = keyword ? block.filter((line) => line.y <= keyword.y + 36) : block;
+      return bounded.filter((line) => !/^arxiv:/i.test(normalizedLineText(line)));
     }
     return [];
   };
@@ -1223,7 +1254,7 @@ function buildIndependentRegions(page, types, lines, columnModel) {
       let bottom = line.y + line.height;
       for (const next of rows) {
         if (next.y <= line.y + 1 || next.y - bottom > 8) continue;
-        if (Math.abs(next.x - line.x) > 16) continue;
+        if (Math.abs(next.x - line.x) > 32) continue;
         const text = normalizedLineText(next).replace(/\s*\|\s*/g, " ");
         const words = text.split(/\s+/).filter(Boolean);
         if (!text || words.length > 8 || text.length > 78 || /[.!?]$/.test(text)) continue;
@@ -1266,26 +1297,48 @@ function buildIndependentRegions(page, types, lines, columnModel) {
     .filter((line) => page.pageNumber === 1 && /^(correspondence|received|revised|accepted|funding|conflicts? of interest|copyright)\s*:/i.test(normalizedLineText(line)))
     .map((line) => [line]);
 
-  const captionBlocks = (kind) => {
+  const captionBlocks = (kind, joinSpanningContinuation = false) => {
     const match = kind === "table" ? isTableCaptionLine : isFigureCaptionLine;
     const rows = splitCrossColumnLines(lines, page, columnModel).sort((a, b) => a.y - b.y || a.x - b.x);
     return rows.map((line, index) => ({ line, index })).filter(({ line }) => match(line)).map(({ line, index }) => {
       const block = [line];
       let bottom = line.y + line.height;
       const captionPartition = columnPartition(page, columnModel.layoutType, columnModel);
+      const spansColumns = line.width > page.pageSize.width * 0.58;
       const captionSide = captionPartition.layout === "double_column"
         ? (line.x + line.width / 2 < captionPartition.gutterMid ? "left" : "right")
         : "single";
-      for (let cursor = index + 1; cursor < rows.length && block.length < 10; cursor += 1) {
+      for (let cursor = index + 1; cursor < rows.length && block.length < 20; cursor += 1) {
         const next = rows[cursor];
-        if (captionPartition.layout === "double_column") {
+        const accumulated = unionBoxes(block.map(lineBox));
+        const adjacentSpanningContinuation = joinSpanningContinuation && captionPartition.gutterMid
+          && Math.abs(next.y - line.y) <= 2.5
+          && next.x <= accumulated.x + accumulated.width + 18
+          && next.x + next.width >= accumulated.x - 18
+          && next.x < captionPartition.gutterMid
+          && next.x + next.width > captionPartition.gutterMid;
+        const accumulatedSpansColumns = joinSpanningContinuation
+          && accumulated.x < captionPartition.gutterMid
+          && accumulated.x + accumulated.width > captionPartition.gutterMid;
+        if (captionPartition.layout === "double_column" && !spansColumns
+          && !adjacentSpanningContinuation && !accumulatedSpansColumns) {
           const nextSide = next.x + next.width / 2 < captionPartition.gutterMid ? "left" : "right";
           if (nextSide !== captionSide) continue;
         }
+        // A compact subscript or formula glyph fully enclosed by the caption's
+        // current baseline is not a font-style boundary for the next text row.
+        // It already lies inside the measured span; skip only this fragment.
+        const enclosedSmallGlyph = joinSpanningContinuation
+          && next.maxFont < line.maxFont - 1.35
+          && next.width <= line.maxFont * 1.2
+          && next.x >= accumulated.x
+          && next.x + next.width <= accumulated.x + accumulated.width
+          && next.y >= line.y - 2
+          && next.y + next.height <= line.y + line.height + 2;
+        if (enclosedSmallGlyph) continue;
         const verticalGap = next.y - bottom;
-        if (verticalGap > 6 || next.y >= line.y + 96) break;
+        if (verticalGap > 6 || next.y >= line.y + 180) break;
         if (isSectionHeadingLine(next, page) || isFigureCaptionLine(next) || isTableCaptionLine(next)) break;
-        const accumulated = unionBoxes(block.map(lineBox));
         const previous = block[block.length - 1];
         const separatedByGutter = kind === "table" && captionPartition.layout === "double_column"
           && (accumulated.x + accumulated.width / 2 < captionPartition.gutterMid) !== (next.x + next.width / 2 < captionPartition.gutterMid);
@@ -1305,6 +1358,58 @@ function buildIndependentRegions(page, types, lines, columnModel) {
     });
   };
 
+  const tableCaptions = captionBlocks("table");
+  const boxedTableGrids = tableCaptions.map((block) => {
+    const captionBox = unionBoxes(block.map(lineBox));
+    const nextCaptionY = lines.filter((line) => line.y > captionBox.y + 1
+      && (isTableCaptionLine(line) || isFigureCaptionLine(line)))
+      .reduce((value, line) => Math.min(value, line.y), Number.POSITIVE_INFINITY);
+    const bottomLimit = Math.min(captionBox.y + page.pageSize.height * 0.32, nextCaptionY);
+    const cells = [...new Map((page.drawings || []).filter(({ geometry }) =>
+      geometry.y >= captionBox.y + captionBox.height - 1
+      && geometry.y + geometry.height <= bottomLimit + 2
+      && geometry.height >= 7 && geometry.height <= 42
+      && geometry.width >= Math.max(32, captionBox.width * 0.18)
+      && geometry.width <= page.pageSize.width * 0.9
+      && overlapX(inflateBox(captionBox, 36), geometry))
+      .map((item) => [JSON.stringify(item.geometry), item])).values()];
+    const pairedRows = [];
+    for (const left of cells) {
+      for (const right of cells) {
+        const a = left.geometry;
+        const b = right.geometry;
+        const gap = b.x - (a.x + a.width);
+        if (gap < -1 || gap > 4 || Math.abs(a.y - b.y) > 1.5
+          || Math.abs(a.height - b.height) > 1.5) continue;
+        pairedRows.push({ left: a, right: b, geometry: unionBoxes([a, b]) });
+      }
+    }
+    let best = [];
+    for (const anchor of pairedRows) {
+      const aligned = pairedRows.filter((row) => Math.abs(row.left.x - anchor.left.x) <= 3
+        && Math.abs(row.right.x - anchor.right.x) <= 3
+        && Math.abs(row.right.x + row.right.width - anchor.right.x - anchor.right.width) <= 3)
+        .sort((a, b) => a.geometry.y - b.geometry.y);
+      let sequence = [];
+      for (const row of aligned) {
+        const previous = sequence[sequence.length - 1];
+        if (previous && row.geometry.y - (previous.geometry.y + previous.geometry.height) > 16) {
+          if (sequence.length > best.length) best = sequence;
+          sequence = [];
+        }
+        if (!sequence.some((item) => Math.abs(item.geometry.y - row.geometry.y) <= 1.5)) sequence.push(row);
+      }
+      if (sequence.length > best.length) best = sequence;
+    }
+    return best.length >= 3 ? { geometry: unionBoxes(best.map((row) => row.geometry)), rows: best } : null;
+  });
+
+  const belongsToBoxedTableGrid = (geometry) => boxedTableGrids.some((grid) => {
+    if (!grid) return false;
+    const hit = intersectBoxes(grid.geometry, geometry);
+    return hit && boxArea(hit) / Math.max(1, boxArea(geometry)) > 0.85;
+  });
+
   const captionAnchoredVisualEnvelope = (captionBox) => {
     const canonical = columnPartition(page, columnModel.layoutType, columnModel);
     const spansPage = captionBox.width >= page.pageSize.width * 0.55
@@ -1317,6 +1422,7 @@ function buildIndependentRegions(page, types, lines, columnModel) {
       const cx = geometry.x + geometry.width / 2;
       return geometry.y + geometry.height <= captionBox.y + 4
         && captionBox.y - (geometry.y + geometry.height) <= page.pageSize.height * 0.68
+        && !belongsToBoxedTableGrid(geometry)
         && cx >= wall.x && cx <= wall.x + wall.width
         && (spansPage || overlapX(inflateBox(captionBox, 42), geometry));
     }).sort((a, b) => (b.geometry.y + b.geometry.height) - (a.geometry.y + a.geometry.height));
@@ -1331,15 +1437,42 @@ function buildIndependentRegions(page, types, lines, columnModel) {
       top = Math.min(top, geometry.y);
     }
     let geometry = unionBoxes(selected.map((item) => item.geometry));
-    const text = lines.filter((line) => {
+    const textWindow = lines.filter((line) => {
       const lineGeometry = lineBox(line);
       const cx = lineGeometry.x + lineGeometry.width / 2;
       return lineGeometry.y >= geometry.y - 34
         && lineGeometry.y + lineGeometry.height <= captionBox.y + 2
         && cx >= wall.x && cx <= wall.x + wall.width
-        && (spansPage || (lineGeometry.x >= wall.x - 12 && lineGeometry.x + lineGeometry.width <= wall.x + wall.width + 12))
-        && !isBodyLikeLine(line);
+        && (spansPage || (lineGeometry.x >= wall.x - 12 && lineGeometry.x + lineGeometry.width <= wall.x + wall.width + 12));
     });
+    // PDF text items can split a prose baseline into a long Body run, a short
+    // tail, and a vertically shifted math glyph. None is a figure label merely
+    // because the short fragments fail isBodyLikeLine individually. Keep a
+    // detached small-font label, but exclude the connected prose/caption row.
+    const belongsToEarlierCaption = (line) => regions.some((region) =>
+      region.type === "figure_caption" && region.geometry.y < geometry.y
+      && centerInside(lineBox(line), region.geometry));
+    const attachedToProse = new Set(textWindow.filter((line) => line.y < geometry.y
+      && (isBodyLikeLine(line) || belongsToEarlierCaption(line))));
+    let expanded = true;
+    while (expanded) {
+      expanded = false;
+      for (const line of textWindow) {
+        if (line.y >= geometry.y || attachedToProse.has(line)) continue;
+        const candidate = lineBox(line);
+        const touches = [...attachedToProse].some((prose) => {
+          const anchor = lineBox(prose);
+          const horizontalGap = Math.max(0, candidate.x - (anchor.x + anchor.width),
+            anchor.x - (candidate.x + candidate.width));
+          return Math.abs(candidate.y - anchor.y) <= 6.5 && horizontalGap <= 12;
+        });
+        if (touches) {
+          attachedToProse.add(line);
+          expanded = true;
+        }
+      }
+    }
+    const text = textWindow.filter((line) => !isBodyLikeLine(line) && !attachedToProse.has(line));
     if (text.length) geometry = unionBoxes([geometry, ...text.map(lineBox)]);
     return { geometry, sources: selected };
   };
@@ -1362,7 +1495,13 @@ function buildIndependentRegions(page, types, lines, columnModel) {
   detectSectionHeadings().forEach((block, index) => tryText("section_heading", block, textProvenance("section_heading", index)));
 
   const figureCaptions = captionBlocks("figure");
-  figureCaptions.forEach((block, index) => tryText("figure_caption", block, textProvenance("figure_caption", index)));
+  const figureCaptionText = captionBlocks("figure", true);
+  figureCaptionText.forEach((block, index) => {
+    const joined = unionBoxes(block.map(lineBox));
+    const anchor = unionBoxes(figureCaptions[index].map(lineBox));
+    const expandedAcrossGutter = joined.width > anchor.width + 2;
+    tryText("figure_caption", block, textProvenance("figure_caption", index), expandedAcrossGutter ? 2 : 0);
+  });
   figureCaptions.forEach((block, captionIndex) => {
     const captionBox = unionBoxes(block.map(lineBox));
     const envelope = captionAnchoredVisualEnvelope(captionBox);
@@ -1434,7 +1573,7 @@ function buildIndependentRegions(page, types, lines, columnModel) {
     }]);
   });
 
-  captionBlocks("table").forEach((block, index) => {
+  tableCaptions.forEach((block, index) => {
     const caption = block[0];
     const captionBox = unionBoxes(block.map(lineBox));
     const tablePartition = columnPartition(page, columnModel.layoutType, columnModel);
@@ -1554,7 +1693,9 @@ function buildIndependentRegions(page, types, lines, columnModel) {
     const selectedBottom = selectedBands.length
       ? Math.max(...selectedBands.map((row) => row.geometry.y + row.geometry.height))
       : captionBox.y + captionBox.height;
-    const credibleVisual = visual && visual.height <= Math.max(140, selectedBottom - captionBox.y + 30) ? visual : null;
+    const boxedGrid = boxedTableGrids[index];
+    const credibleVisual = boxedGrid?.geometry
+      || (visual && visual.height <= Math.max(140, selectedBottom - captionBox.y + 30) ? visual : null);
     if (!credibleVisual && selectedEvidenceCount < 2) {
       gaps.push({ pageNumber: page.pageNumber, type: "table", reason: `table caption ${index + 1} has no credible aligned row evidence; no box invented` });
       return;
@@ -1748,9 +1889,15 @@ function referenceEntryRegions(page, lines, independents, referenceStartPage, la
       || ((ownsHeading || followsHeadingLane) && years.length >= 2)
       || (page.pageNumber > referenceStartPage && (citations.length >= 1 || years.length >= 1));
     if (!trustedLane) return [];
+    // When References starts in an earlier canonical lane, the next lane is
+    // bibliography from its first credible row. Signal *position*, not the
+    // priority of DOI over year, determines that lane's top boundary.
+    const firstSignalY = [leads[0], citations[0], years[0]]
+      .filter(Boolean).reduce((first, line) => Math.min(first, line.y), Infinity);
     let laneY0 = page.pageNumber > referenceStartPage
       ? laneLines[0]?.y ?? null
-      : leads[0]?.y ?? citations[0]?.y ?? years[0]?.y ?? null;
+      : followsHeadingLane && Number.isFinite(firstSignalY) ? firstSignalY
+        : leads[0]?.y ?? citations[0]?.y ?? years[0]?.y ?? null;
     if (headingGeometry) {
       const wallHit = intersectBoxes(headingGeometry, wall);
       if (wallHit && boxArea(wallHit) / Math.max(1, boxArea(headingGeometry)) >= 0.2) {

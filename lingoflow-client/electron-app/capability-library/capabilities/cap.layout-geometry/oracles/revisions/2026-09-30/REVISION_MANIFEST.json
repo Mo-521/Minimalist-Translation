@@ -1,0 +1,156 @@
+{
+  "schemaVersion": "layout-geometry-truth-revision/v1",
+  "status": "staged_reviewed_revision_not_promoted",
+  "runtimeDecisionUse": "forbidden",
+  "at": "2026-09-30T13:14:01.350Z",
+  "sourceReviews": [
+    {
+      "path": ".governance/tasks/layout-geometry-capability-audit/evidence/figure-boundary-review-2026-09-30.json",
+      "sha256": "400fd1442fd5a7f8da5ee90479ae333b369668713e9632668b773fc38f16394a"
+    },
+    {
+      "path": ".governance/tasks/layout-geometry-capability-audit/evidence/paper5-p4-object-boundary-review-2026-09-30.json",
+      "sha256": "519c07575eb0a6cdef9ce43fa51b47873294479f97df0dde2efcb28c4fce9630"
+    },
+    {
+      "path": ".governance/tasks/layout-geometry-capability-audit/evidence/paper2-p11-reference-boundary-review-2026-09-30.json",
+      "sha256": "af0e2a590fca32973e8da9d95de35a3478263ce7080c7c2021e99d0d2204790e"
+    }
+  ],
+  "papers": [
+    {
+      "paper": "paper1",
+      "file": "oracles/revisions/2026-09-30/paper1-geometry-oracle.json",
+      "previousOracleSha256": "598b2b1545e747a62736d65c4884d6d4b888e7a5a5332197c19231a00be82ad5",
+      "revisedOracleSha256": "dc2f3cb08c630f6dee6ae3c06b44dce70d027997f83283ca848bb815cbd57734",
+      "changedRegions": [
+        {
+          "pageNumber": 3,
+          "oldId": "p3.independent.figure.6",
+          "regionId": "p3.independent.figure.6",
+          "kind": "figure",
+          "oldBox": {
+            "x": 50.74,
+            "y": 300.81,
+            "width": 224.8,
+            "height": 223.62
+          },
+          "corrected": {
+            "x": 70.38,
+            "y": 301.22,
+            "width": 205.16,
+            "height": 223.21
+          }
+        }
+      ]
+    },
+    {
+      "paper": "paper2",
+      "file": "oracles/revisions/2026-09-30/paper2-geometry-oracle.json",
+      "previousOracleSha256": "623001a5b1070e4fbb069343189871be2a07047faa3480788c2923be4d4f7974",
+      "revisedOracleSha256": "82bac639290bec700f18abd3d0472ba880b76103b6b33112b82b43db44b13556",
+      "changedRegions": [
+        {
+          "pageNumber": 11,
+          "oldId": null,
+          "regionId": "p11.protected.reference_entries.5",
+          "kind": "reference_entries",
+          "corrected": {
+            "x": 306.14,
+            "y": 31.26,
+            "width": 243.81,
+            "height": 488
+          }
+        }
+      ]
+    },
+    {
+      "paper": "paper5",
+      "file": "oracles/revisions/2026-09-30/paper5-geometry-oracle.json",
+      "previousOracleSha256": "ab12387a2d48b78562af54708b1add5168473f944f5e1dfdc61a2b2fd32043c3",
+      "revisedOracleSha256": "b02f18627f554e4c828cc4b5e893378687c87db9e852677ba0e3e65182eb27fa",
+      "changedRegions": [
+        {
+          "pageNumber": 4,
+          "oldId": "manual-4-1790506195654-mnj36",
+          "regionId": "p4.independent.table.5",
+          "kind": "table",
+          "oldBox": {
+            "x": 46.06,
+            "y": 57.3,
+            "width": 508.93,
+            "height": 177.1
+          },
+          "corrected": {
+            "x": 56.17,
+            "y": 68.16,
+            "width": 476.5,
+            "height": 146.9
+          }
+        },
+        {
+          "pageNumber": 4,
+          "oldId": "p4.independent.figure.4",
+          "regionId": "p4.independent.figure.4",
+          "kind": "figure",
+          "oldBox": {
+            "x": 56.15,
+            "y": 242.34,
+            "width": 499.7,
+            "height": 221.25
+          },
+          "corrected": {
+            "x": 56.15,
+            "y": 219.54,
+            "width": 499.7,
+            "height": 244.05
+          }
+        }
+      ]
+    },
+    {
+      "paper": "paper8",
+      "file": "oracles/revisions/2026-09-30/paper8-geometry-oracle.json",
+      "previousOracleSha256": "83bc30c8ef6be2b7332875fe6db1def606d0a1d9fcc4e5f7c63a7040ac88db6c",
+      "revisedOracleSha256": "9c226d6ba1dd80a5a3b8bb7656eee7b63d0af663fe2b20b46cd0b5bdefc774bc",
+      "changedRegions": [
+        {
+          "pageNumber": 2,
+          "oldId": "p2.independent.figure.2",
+          "regionId": "p2.independent.figure.2",
+          "kind": "figure",
+          "oldBox": {
+            "x": 116.22,
+            "y": 525.06,
+            "width": 362.83,
+            "height": 163.95
+          },
+          "corrected": {
+            "x": 116.22,
+            "y": 530.27,
+            "width": 362.83,
+            "height": 158.74
+          }
+        },
+        {
+          "pageNumber": 7,
+          "oldId": "p7.independent.figure.3",
+          "regionId": "p7.independent.figure.3",
+          "kind": "figure",
+          "oldBox": {
+            "x": 70.87,
+            "y": 482.7,
+            "width": 408.18,
+            "height": 183.03
+          },
+          "corrected": {
+            "x": 116.69,
+            "y": 505.73,
+            "width": 362.83,
+            "height": 160
+          }
+        }
+      ]
+    }
+  ]
+}

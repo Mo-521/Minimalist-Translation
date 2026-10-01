@@ -11,10 +11,11 @@ const { spawnSync } = require("node:child_process");
 const { createRequire } = require("node:module");
 const { pathToFileURL } = require("node:url");
 const source = require("./layout-geometry-candidate-intake");
+const bodyFlow = require("./layout-geometry-main-flow-review");
 
 const ROOT = path.resolve(__dirname, "../..");
 const APP = path.join(ROOT, "lingoflow-client", "electron-app");
-const EVIDENCE = path.join(ROOT, ".governance", "tasks", "layout-geometry-capability-audit", "evidence", "phase-2-paper-geometry");
+const EVIDENCE = path.join(ROOT, ".governance", "archive", "evidence", "layout-geometry-capability-audit", "evidence", "phase-2-paper-geometry");
 const OUTPUT = path.join(EVIDENCE, "human-review-non-body-editable-v1");
 const RASTERS = path.join(OUTPUT, "pages");
 const COLUMN_CORPUS = path.join(APP, "capability-library", "capabilities", "cap.column-recognition", "corpus.json");
@@ -171,6 +172,7 @@ function predictNonBodyPages(paper, extracted, sample, models, identityLabel = "
   const headingFontNames = source.deriveHeadingFontNames(extracted);
   extracted.pages.forEach((page) => { page.headingFontNames = headingFontNames; });
   const referenceStartPage = source.detectReferenceStartPage(extracted);
+  const referenceFlow = bodyFlow.referenceBoundary(extracted);
   const gaps = [];
   const pages = extracted.pages.map((page) => {
     const column = source.columnIdentity(sample, page.pageNumber);
@@ -180,7 +182,14 @@ function predictNonBodyPages(paper, extracted, sample, models, identityLabel = "
     const independent = source.buildIndependentRegions(page, column.independentTypes, lines, model);
     independent.gaps.forEach((gap) => gaps.push(gap));
     const protectedRegions = source.protectedRegionsFromSemantics(page, lines, independent.regions, referenceStartPage, column.layout, model)
-      .filter((item) => !EXCLUDED_PROTECTED.has(item.kind));
+      .filter((item) => !EXCLUDED_PROTECTED.has(item.kind))
+      .map((item) => {
+        if (item.kind !== "reference_entries" || referenceFlow?.resumePageNumber !== page.pageNumber) return item;
+        const stop = referenceFlow.resumeY - 4;
+        return { ...item, geometry: { ...item.geometry,
+          height: Math.min(item.geometry.y + item.geometry.height, stop) - item.geometry.y } };
+      })
+      .filter((item) => item.geometry.height > 2);
     const independentRegions = independent.regions.filter((item) => {
       if (item.type !== "section_heading") return true;
       const regionText = lines.filter((line) => overlaps(item.geometry, source.lineBox(line)) > 0)

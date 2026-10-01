@@ -1964,9 +1964,34 @@ function detectPageColumns(items, authorityOverride = null) {
   const narrowCount = leftItems.length + rightItems.length;
   const stableGutterLines = preliminaryLines.filter((line) => line.columnEvidenceSide === "left" || line.columnEvidenceSide === "right");
   const stableGutterPairs = Math.floor(stableGutterLines.length / 2);
+  const anchoredProsePairs = stableGutterLines.reduce((count, line, index) => {
+    if (line.columnEvidenceSide !== "left") return count;
+    const right = stableGutterLines[index + 1];
+    if (!right || right.columnEvidenceSide !== "right") return count;
+    const leftBox = line.bbox || {};
+    const rightBox = right.bbox || {};
+    const leftText = String(line.text || "");
+    const rightText = String(right.text || "");
+    const prose = (leftText.match(/[A-Za-z]/g) || []).length >= 12 &&
+      (rightText.match(/[A-Za-z]/g) || []).length >= 12;
+    return count + Number(prose &&
+      Number(leftBox.x || 0) <= pageWidth * 0.25 &&
+      Number(leftBox.x || 0) + Number(leftBox.width || 0) <= pageWidth * 0.51 &&
+      Number(leftBox.width || 0) >= pageWidth * 0.15 &&
+      Number(rightBox.x || 0) >= pageWidth * 0.49 &&
+      Number(rightBox.width || 0) >= pageWidth * 0.15);
+  }, 0);
+  // A merged line can appear to span the page even when its PDF items form two
+  // separate, repeatedly aligned lanes. Let substantial paired gutter evidence
+  // rebut that false single-column signal, but require both lanes to carry text.
+  const strongPairedGutterEvidence = stableGutterPairs >= 4 && anchoredProsePairs >= 2 &&
+    stableGutterLines.length >= preliminaryLines.length * 0.25 &&
+    narrowCount >= 8 &&
+    leftItems.length > narrowCount * 0.25 &&
+    rightItems.length > narrowCount * 0.25;
   const hasTwoColumns =
     authorityOverride === "double_column" || (
-      !strongContinuousSingleColumnEvidence &&
+      (!strongContinuousSingleColumnEvidence || strongPairedGutterEvidence) &&
       (pageLayout.layoutType === "double_column" || pageLayout.layoutType === "mixed" || stableGutterPairs >= 4) &&
       narrowCount >= 8 &&
       leftItems.length > narrowCount * 0.25 &&
@@ -2063,7 +2088,10 @@ function buildDocumentColumnLayoutOverrides(initialColumnsByPage, pageCount) {
   if (detectedTwoColumnPages.length >= dominantTemplateThreshold) {
     const first = detectedTwoColumnPages[0];
     const last = detectedTwoColumnPages[detectedTwoColumnPages.length - 1];
-    const supportedEnd = Math.min(pageCount, last + 1);
+    // Normalize only between observed two-column pages. Extending one page past
+    // the final evidence turns trailing references or a short single-column
+    // continuation into a false two-column body model.
+    const supportedEnd = last;
     for (let pageNumber = first; pageNumber <= supportedEnd; pageNumber += 1) overrides.set(pageNumber, "double_column");
     return overrides;
   }
@@ -25438,10 +25466,6 @@ app.on("activate", () => {
     createWindow();
   }
 });
-
-
-
-
 
 
 

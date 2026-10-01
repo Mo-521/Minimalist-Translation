@@ -11,7 +11,7 @@ const source = require("./layout-geometry-candidate-intake");
 
 const ROOT = path.resolve(__dirname, "../..");
 const APP = path.join(ROOT, "lingoflow-client", "electron-app");
-const REVIEW = path.join(ROOT, ".governance", "tasks", "layout-geometry-capability-audit", "evidence", "phase-2-paper-geometry", "human-review-cross-sample-paper8-10-v1");
+const REVIEW = path.join(ROOT, ".governance", "archive", "evidence", "layout-geometry-capability-audit", "evidence", "phase-2-paper-geometry", "human-review-cross-sample-paper8-10-v1");
 const PAPERS = ["paper8", "paper9", "paper10"];
 const SOURCE_ROOTS = ["D:\\PDF测试", path.join(APP, "tmp", "pdfs")];
 

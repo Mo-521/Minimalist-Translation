@@ -8,7 +8,7 @@ const assert = require("node:assert/strict");
 const editor = require("./layout-geometry-body-editor");
 
 const ROOT = path.resolve(__dirname, "../..");
-const evidence = path.join(ROOT, ".governance/tasks/layout-geometry-capability-audit/evidence/phase-2-paper-geometry");
+const evidence = path.join(ROOT, ".governance/archive/evidence/layout-geometry-capability-audit/evidence/phase-2-paper-geometry");
 const output = path.join(evidence, "human-review-body-editable-v1");
 const oracle = JSON.parse(fs.readFileSync(path.join(evidence, "oracles/paper1-geometry-oracle.json"), "utf8"));
 const paper = "paper1";

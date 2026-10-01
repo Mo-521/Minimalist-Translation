@@ -1136,7 +1136,9 @@ function isPdfOverlayCandidate(segment) {
         var status = document.createElement("span");
         status.className = "capability-library-status";
         status.dataset.state = capability.status;
-        status.textContent = statusLabels[capability.status] || capability.status;
+        status.textContent = capability.status === "pilot_ready" && formalSamples.length
+          ? "已纳入离线回归"
+          : (statusLabels[capability.status] || capability.status);
         head.appendChild(title);
         head.appendChild(status);
 

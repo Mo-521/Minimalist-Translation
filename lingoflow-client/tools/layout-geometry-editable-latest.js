@@ -8,7 +8,7 @@ const path = require("node:path");
 const crypto = require("node:crypto");
 
 const ROOT = path.resolve(__dirname, "../..");
-const EVIDENCE = path.join(ROOT, ".governance/tasks/layout-geometry-capability-audit/evidence/phase-2-paper-geometry");
+const EVIDENCE = path.join(ROOT, ".governance/archive/evidence/layout-geometry-capability-audit/evidence/phase-2-paper-geometry");
 const SOURCE = path.join(EVIDENCE, "human-review-main-flow-v1");
 const OUTPUT = path.join(EVIDENCE, "human-review-body-editable-v1");
 const PAPERS = Array.from({ length: 7 }, (_, index) => `paper${index + 1}`);

@@ -913,6 +913,425 @@
           "AA-COLUMN-001"
         ]
       }
+    },
+    {
+      "id": "sample.column-pilot.paper8",
+      "displayName": "Column review paper8",
+      "source": {
+        "fileName": "论文样本8.pdf",
+        "sha256": "12e71bd65faecb793f64043c6812d7a3fd372e7f54ceed390e132839fd2504e4",
+        "bytes": 476899,
+        "pageCount": 11,
+        "mediaType": "application/pdf"
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Offline paper8 Column review before promotion"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.column.single",
+        "boundary.column.double",
+        "boundary.column.mixed-full-width",
+        "boundary.column.page-transition"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.column-recognition",
+          "assertionId": "assert.column.page-region-truth",
+          "oracleType": "exact",
+          "expected": {
+            "pageLayoutBasis": "body_text_flow_only",
+            "pages": [
+              {
+                "pageNumber": 1,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 2,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 3,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 4,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 5,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 6,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 7,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 8,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 9,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 10,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 11,
+                "layout": "single_column"
+              }
+            ],
+            "independentRegions": [
+              {
+                "pageNumber": 1,
+                "type": "abstract"
+              },
+              {
+                "pageNumber": 1,
+                "type": "title"
+              },
+              {
+                "pageNumber": 2,
+                "type": "figure"
+              },
+              {
+                "pageNumber": 2,
+                "type": "figure_caption"
+              },
+              {
+                "pageNumber": 6,
+                "type": "table"
+              },
+              {
+                "pageNumber": 7,
+                "type": "figure"
+              },
+              {
+                "pageNumber": 7,
+                "type": "figure_caption"
+              },
+              {
+                "pageNumber": 7,
+                "type": "table"
+              },
+              {
+                "pageNumber": 8,
+                "type": "references_section_header"
+              }
+            ]
+          },
+          "notes": "User explicitly approved unchanged machine Column layout without JSON export; independent types from separately confirmed non-body review"
+        }
+      ],
+      "evidenceRefs": [
+        "human-review-column-paper8-10-v1/paper8.html",
+        "human-review-cross-sample-paper8-10-v2-current/paper8-non-body-ground-truth-draft (3).json",
+        "2026-09-27 user authorization to promote after verification",
+        "human-review-column-paper8-10-v1/PROMOTION_PREPARED/VALIDATION.json"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-COLUMN-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.column-pilot.paper9",
+      "displayName": "Column review paper9",
+      "source": {
+        "fileName": "论文样本9.pdf",
+        "sha256": "23cdb5dd51ba39d61b6d3093220cdedeb8c4e6f20c3a64640067a6e6659fb420",
+        "bytes": 474547,
+        "pageCount": 15,
+        "mediaType": "application/pdf"
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Offline paper9 Column review before promotion"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.column.single",
+        "boundary.column.double",
+        "boundary.column.mixed-full-width",
+        "boundary.column.page-transition"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.column-recognition",
+          "assertionId": "assert.column.page-region-truth",
+          "oracleType": "exact",
+          "expected": {
+            "pageLayoutBasis": "body_text_flow_only",
+            "pages": [
+              {
+                "pageNumber": 1,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 2,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 3,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 4,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 5,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 6,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 7,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 8,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 9,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 10,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 11,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 12,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 13,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 14,
+                "layout": "single_column"
+              },
+              {
+                "pageNumber": 15,
+                "layout": "single_column"
+              }
+            ],
+            "independentRegions": [
+              {
+                "pageNumber": 1,
+                "type": "abstract"
+              },
+              {
+                "pageNumber": 1,
+                "type": "other_independent"
+              },
+              {
+                "pageNumber": 1,
+                "type": "title"
+              },
+              {
+                "pageNumber": 12,
+                "type": "references_section_header"
+              }
+            ]
+          },
+          "notes": "User explicitly approved unchanged machine Column layout without JSON export; independent types from separately confirmed non-body review"
+        }
+      ],
+      "evidenceRefs": [
+        "human-review-column-paper8-10-v1/paper9.html",
+        "human-review-cross-sample-paper8-10-v2-current/paper9-non-body-ground-truth-draft (2).json",
+        "2026-09-27 user authorization to promote after verification",
+        "human-review-column-paper8-10-v1/PROMOTION_PREPARED/VALIDATION.json"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-COLUMN-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.column-pilot.paper10",
+      "displayName": "Column review paper10",
+      "source": {
+        "fileName": "论文样本10.pdf",
+        "sha256": "bfa5b8767c9cce7eca3d4cda064bec56a03a9e344eb13a87271f8a8784527b63",
+        "bytes": 864810,
+        "pageCount": 10,
+        "mediaType": "application/pdf"
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Offline paper10 Column review before promotion"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.column.single",
+        "boundary.column.double",
+        "boundary.column.mixed-full-width",
+        "boundary.column.page-transition"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.column-recognition",
+          "assertionId": "assert.column.page-region-truth",
+          "oracleType": "exact",
+          "expected": {
+            "pageLayoutBasis": "body_text_flow_only",
+            "pages": [
+              {
+                "pageNumber": 1,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 2,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 3,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 4,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 5,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 6,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 7,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 8,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 9,
+                "layout": "double_column"
+              },
+              {
+                "pageNumber": 10,
+                "layout": "single_column"
+              }
+            ],
+            "independentRegions": [
+              {
+                "pageNumber": 1,
+                "type": "abstract"
+              },
+              {
+                "pageNumber": 1,
+                "type": "title"
+              },
+              {
+                "pageNumber": 4,
+                "type": "figure"
+              },
+              {
+                "pageNumber": 4,
+                "type": "figure_caption"
+              },
+              {
+                "pageNumber": 7,
+                "type": "figure"
+              },
+              {
+                "pageNumber": 7,
+                "type": "figure_caption"
+              },
+              {
+                "pageNumber": 7,
+                "type": "table"
+              },
+              {
+                "pageNumber": 8,
+                "type": "figure"
+              },
+              {
+                "pageNumber": 8,
+                "type": "figure_caption"
+              },
+              {
+                "pageNumber": 9,
+                "type": "figure"
+              },
+              {
+                "pageNumber": 9,
+                "type": "figure_caption"
+              },
+              {
+                "pageNumber": 10,
+                "type": "references_section_header"
+              }
+            ]
+          },
+          "notes": "10/10 pages confirmed in exported Column review; independent types from separately confirmed non-body review"
+        }
+      ],
+      "evidenceRefs": [
+        "human-review-column-paper8-10-v1/paper10.html",
+        "human-review-column-paper8-10-v1/paper10-column-ground-truth-draft.json",
+        "human-review-cross-sample-paper8-10-v2-current/paper10-non-body-ground-truth-draft (3).json",
+        "2026-09-27 user authorization to promote after verification",
+        "human-review-column-paper8-10-v1/PROMOTION_PREPARED/VALIDATION.json"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-COLUMN-001"
+        ]
+      }
     }
   ]
 }

@@ -1,0 +1,376 @@
+{
+  "schemaVersion": "layout-geometry-body-ground-truth-draft/v1",
+  "capabilityId": "cap.layout-geometry",
+  "scope": "body_column_only",
+  "paper": "paper8",
+  "sourcePdfSha256": "12e71bd65faecb793f64043c6812d7a3fd372e7f54ceed390e132839fd2504e4",
+  "coordinateSpace": "pdf-page-top-left-points",
+  "runtimeDecisionUse": "forbidden",
+  "candidateAcceptance": "not_performed",
+  "promotion": "not_performed",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p1.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 246.33,
+            "width": 523.85,
+            "height": 462.72
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p1.main-flow.single.1",
+          "sourceRegionId": "p1.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 246.33,
+            "width": 523.85,
+            "height": 462.72
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 2,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p2.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 84.81,
+            "width": 523.85,
+            "height": 430.86
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p2.main-flow.single.1",
+          "sourceRegionId": "p2.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 84.81,
+            "width": 523.85,
+            "height": 430.86
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 3,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p3.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 84.81,
+            "width": 523.85,
+            "height": 628.62
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p3.main-flow.single.1",
+          "sourceRegionId": "p3.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 84.81,
+            "width": 523.85,
+            "height": 628.62
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 4,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p4.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 84.81,
+            "width": 523.85,
+            "height": 628.62
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p4.main-flow.single.1",
+          "sourceRegionId": "p4.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 84.81,
+            "width": 523.85,
+            "height": 628.62
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 5,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p5.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 84.81,
+            "width": 523.85,
+            "height": 631.08
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p5.main-flow.single.1",
+          "sourceRegionId": "p5.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 84.81,
+            "width": 523.85,
+            "height": 631.08
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 6,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p6.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 82.81,
+            "width": 523.85,
+            "height": 623.64
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p6.main-flow.single.1",
+          "sourceRegionId": "p6.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 82.81,
+            "width": 523.85,
+            "height": 623.64
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 7,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p7.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 84.81,
+            "width": 523.85,
+            "height": 411.85
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p7.main-flow.single.1",
+          "sourceRegionId": "p7.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 84.81,
+            "width": 523.85,
+            "height": 411.85
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 8,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p8.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 80.42,
+            "width": 523.85,
+            "height": 369.29
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p8.main-flow.single.1",
+          "sourceRegionId": "p8.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 80.42,
+            "width": 523.85,
+            "height": 369.29
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 9,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p9.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 559.46,
+            "width": 523.85,
+            "height": 156.43
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p9.main-flow.single.1",
+          "sourceRegionId": "p9.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 559.46,
+            "width": 523.85,
+            "height": 156.43
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 10,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p10.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 84.81,
+            "width": 523.85,
+            "height": 631.09
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p10.main-flow.single.1",
+          "sourceRegionId": "p10.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 84.81,
+            "width": 523.85,
+            "height": 631.09
+          }
+        }
+      ],
+      "confirmed": true
+    },
+    {
+      "pageNumber": 11,
+      "pageSize": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "predicted": [
+        {
+          "id": "p11.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 82.81,
+            "width": 523.85,
+            "height": 224.99
+          }
+        }
+      ],
+      "corrected": [
+        {
+          "id": "p11.main-flow.single.1",
+          "sourceRegionId": "p11.main-flow.single.1",
+          "canonicalColumnId": "single",
+          "geometry": {
+            "x": 35.72,
+            "y": 82.81,
+            "width": 523.85,
+            "height": 224.99
+          }
+        }
+      ],
+      "confirmed": true
+    }
+  ]
+}

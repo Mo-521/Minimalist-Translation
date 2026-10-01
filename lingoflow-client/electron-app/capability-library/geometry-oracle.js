@@ -72,7 +72,27 @@ function collectUnique(values, label) {
   });
 }
 
+function stableCanonical(value) {
+  if (Array.isArray(value)) return `[${value.map(stableCanonical).join(",")}]`;
+  if (value && typeof value === "object") return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableCanonical(value[key])}`).join(",")}}`;
+  return JSON.stringify(value);
+}
+
+function validateReviewChain(history) {
+  let previous = null;
+  history.forEach((event, index) => {
+    const { hash: digest, ...unsigned } = event;
+    const legacy = hashCanonical(unsigned);
+    const canonical = crypto.createHash("sha256").update(stableCanonical(unsigned)).digest("hex");
+    if (event.sequence !== index + 1 || event.previousHash !== previous || (digest !== legacy && digest !== canonical)) {
+      fail("GEOMETRY_ORACLE_HISTORY_INVALID", "Review history hash chain is inconsistent", { sequence: event.sequence });
+    }
+    previous = digest;
+  });
+}
+
 function validateSemantics(oracle) {
+  validateReviewChain(oracle.reviewHistory);
   if (oracle.runtimeDecisionUse !== "forbidden") {
     fail("GEOMETRY_ORACLE_RUNTIME_AUTHORITY_FORBIDDEN", "runtimeDecisionUse must remain forbidden");
   }
@@ -210,6 +230,10 @@ function compareObserved(oracle, observed) {
 
   const expectedPages = new Map(oracle.pages.map((page) => [page.identity.pageId, page]));
   const observedPages = new Map((observed.pages || []).map((page) => [page.pageId, page]));
+  if (observedPages.size !== (observed.pages || []).length) add("identity_failure", "I-06", "duplicate observed page ID");
+  observedPages.forEach((_page, pageId) => {
+    if (!expectedPages.has(pageId)) add("identity_failure", "I-07", "unexpected page ID", { pageId });
+  });
   expectedPages.forEach((expectedPage, pageId) => {
     const observedPage = observedPages.get(pageId);
     if (!observedPage) {
@@ -231,6 +255,10 @@ function compareObserved(oracle, observed) {
 
     const expectedRegions = new Map(expectedPage.regions.map((region) => [region.regionId, region]));
     const observedRegions = new Map((observedPage.regions || []).map((region) => [region.regionId, region]));
+    if (observedRegions.size !== (observedPage.regions || []).length) add("identity_failure", "I-08", "duplicate observed region ID", { pageId });
+    observedRegions.forEach((_region, regionId) => {
+      if (!expectedRegions.has(regionId)) add("identity_failure", "I-09", "unexpected region ID", { pageId, regionId });
+    });
     expectedRegions.forEach((expectedRegion, regionId) => {
       const observedRegion = observedRegions.get(regionId);
       if (!observedRegion) {

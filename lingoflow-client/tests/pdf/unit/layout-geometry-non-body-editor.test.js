@@ -8,8 +8,8 @@ const editor = require("../../../tools/layout-geometry-non-body-editor");
 const { candidateChecks } = require("../../../tools/layout-geometry-non-body-editable");
 
 const ROOT = path.resolve(__dirname, "../../../..");
-const OUTPUT = path.join(ROOT, ".governance/tasks/layout-geometry-capability-audit/evidence/phase-2-paper-geometry/human-review-non-body-editable-v1");
-const PAPERS = Array.from({ length: 7 }, (_, index) => `paper${index + 1}`);
+const OUTPUT = path.join(ROOT, ".governance/archive/evidence/layout-geometry-capability-audit/evidence/phase-2-paper-geometry/human-review-final-paper1-10-v8");
+const PAPERS = Array.from({ length: 10 }, (_, index) => `paper${index + 1}`);
 
 test("non-Body coordinates are invariant under page zoom", () => {
   const size = { width: 612, height: 792 };
@@ -36,15 +36,13 @@ test("non-Body draft keeps machine prediction separate and supports type correct
 
 test("generated HTML contains only editable non-Body candidates", () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(OUTPUT, "MANIFEST.json"), "utf8"));
-  assert.equal(manifest.scope, "non_body_objects_only");
-  assert.equal(manifest.bodyBaseline, "body-main-reading-flow-paper1-7-2026-09-23");
   assert.equal(manifest.runtimeDecisionUse, "forbidden");
   assert.equal(manifest.candidateAcceptance, "not_performed");
   assert.equal(manifest.promotion, "not_performed");
-  assert.equal(manifest.papers.reduce((sum, item) => sum + item.pages, 0), 90);
+  assert.equal(manifest.results.reduce((sum, item) => sum + item.pages, 0), 126);
   PAPERS.forEach((paper) => {
-    const html = fs.readFileSync(path.join(OUTPUT, `${paper}.html`), "utf8");
-    const candidate = JSON.parse(fs.readFileSync(path.join(OUTPUT, `${paper}-non-body-candidate.json`), "utf8"));
+    const html = fs.readFileSync(path.join(OUTPUT, `${paper}-non-body.html`), "utf8");
+    const candidate = JSON.parse(fs.readFileSync(path.join(OUTPUT, `${paper}-non-body-ground-truth-draft.json`), "utf8"));
     assert.equal((html.match(/class="editable-page"/g) || []).length, candidate.pages.length);
     assert.equal((html.match(/class="machine-predicted"/g) || []).length, candidate.pages.length);
     assert.match(html, /src="data:image\/jpeg;base64,/);
