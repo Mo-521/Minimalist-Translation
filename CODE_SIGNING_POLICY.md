@@ -1,6 +1,6 @@
 # Code Signing Policy
 
-## Planned v1.1.0 decision
+## v1.1.0 decision
 
 v1.1.0 will continue the **unsigned Windows distribution** model at the user's explicit direction on 2026-10-01. The installer will not carry an Authenticode publisher signature or trusted timestamp. Windows may identify its publisher as **Unknown publisher** and Microsoft Defender SmartScreen may warn or block a first run. Such prompts do not by themselves prove that the file is malicious, and an unsigned file must not be represented as verified merely because it downloaded from a familiar site.
 
@@ -12,9 +12,9 @@ Get-FileHash -Algorithm SHA256 $releaseInstaller
 Get-AuthenticodeSignature $releaseInstaller
 ```
 
-The expected Authenticode result is `NotSigned`. The final filename, file size and SHA-256 are **not yet available**; they must be added only after the final installer is built and checked. If the downloaded file's hash differs from the official release hash, do not run it. A matching hash verifies equality to the published asset, not the identity of a code-signing publisher. Do not bypass an unexpected security warning without checking the official source and hash.
+The expected Authenticode result is `NotSigned`. The published installer is `Minimalist-Translation-Setup-1.1.0.exe`, 132,604,003 bytes, SHA-256 `4C373847B26BD11656EDD3B9D352C078FF2767AE4882FD9243BFD0880BB54304`. If the downloaded file's hash differs from the official release hash, do not run it. A matching hash verifies equality to the published asset, not the identity of a code-signing publisher. Do not bypass an unexpected security warning without checking the official source and hash.
 
-This is a release-policy decision, not a claim that v1.1.0 has already been built or published.
+The published asset and checksum are recorded in the [v1.1.0 GitHub Release](https://github.com/Mo-521/Minimalist-Translation/releases/tag/v1.1.0).
 
 ## v1.0.0 decision
 

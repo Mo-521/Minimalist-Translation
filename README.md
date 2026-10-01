@@ -2,14 +2,14 @@
 
 Minimalist Translation 是一款面向 Windows 的本地优先、源码可见（Source Available）翻译客户端。用户配置自己的 OpenAI-compatible Provider 后，可使用普通 PDF 与论文 PDF 翻译能力。
 
-`v1.0.0` 是本项目首个公开发布版本；`v1.1.0` 正在本地准备，尚未发布。当前以本地客户端为唯一发布主体，不包含官方托管 Proxy、真实凭据、私人论文样本或内部研发治理资料。
+`v1.0.0` 是本项目首个公开发布版本；当前最新发布版本为 `v1.1.0`。当前以本地客户端为唯一发布主体，不包含官方托管 Proxy、真实凭据、私人论文样本或内部研发治理资料。
 
 ## 当前能力
 
 - 普通 PDF 翻译：面向单栏普通文档，优先完整翻译正文并进行流式排版。
 - 论文 PDF 翻译：识别论文结构，翻译正文，同时保留图片、公式、Caption 与 References 等科研对象。
 - 统一 Provider 设置：支持 DeepSeek、OpenAI、OpenRouter、Ollama 与 Custom 等 OpenAI-compatible 服务。
-- 桌面翻译：相关源码保留为实验性模块，但 Desktop Float Ball 处于冻结/延后状态，未进入 `v1.0.0` 二进制，也不属于 `v1.1.0` 候选安装包。
+- 桌面翻译：相关源码保留为实验性模块，但 Desktop Float Ball 处于冻结/延后状态，未进入 `v1.0.0` 或 `v1.1.0` 安装包。
 
 ## 本地优先与数据边界
 
@@ -57,7 +57,7 @@ npm run pack:win-dir
 npm run pack:win
 ```
 
-`pack:win` 生成 NSIS 安装器。v1.0.0 已采用、v1.1.0 计划继续采用未签名发布策略，Windows 可能显示“未知发布者”或 SmartScreen 警告；只从正式 GitHub Release 下载，并按 [Code Signing Policy](CODE_SIGNING_POLICY.md) 核对该安装包公开的 SHA-256。
+`pack:win` 生成 NSIS 安装器。v1.0.0 与 v1.1.0 均采用未签名发布策略，Windows 可能显示“未知发布者”或 SmartScreen 警告；只从正式 GitHub Release 下载，并按 [Code Signing Policy](CODE_SIGNING_POLICY.md) 核对该安装包公开的 SHA-256。
 
 ## 目录结构
 
@@ -72,17 +72,17 @@ npm run pack:win
    └─ desktop-float-ball/               # 冻结/延后的桌面悬浮翻译源码
 ```
 
-托管 Proxy 已迁移为独立仓库，不属于本仓库公开客户端源码树。`desktop-tools/` 可作为实验性源码保留，但不进入 v1.0.0 安装包或 v1.1.0 候选安装包、发布资产和稳定支持范围。历史商业 Server、额度、登录与订阅材料也不属于当前客户端发布范围。
+托管 Proxy 已迁移为独立仓库，不属于本仓库公开客户端源码树。`desktop-tools/` 可作为实验性源码保留，但不进入 v1.0.0 或 v1.1.0 安装包、发布资产和稳定支持范围。历史商业 Server、额度、登录与订阅材料也不属于当前客户端发布范围。
 
 内部研发治理（Governance、Context、Tasks、Decisions、Knowledge、Prompt、Skill、Agent 工作流和审计流程）属于本地私有基础设施，不进入公开仓库，也不是构建、测试或开发本客户端的依赖。
 
 ## 发布状态
 
 - 目标仓库：<https://github.com/Mo-521/Minimalist-Translation>
-- 已发布版本：`v1.0.0`；下载与校验信息见 [GitHub Release](https://github.com/Mo-521/Minimalist-Translation/releases/tag/v1.0.0)。
-- 准备中的版本：`v1.1.0`。本地候选构建、测试和许可证清单不等于已发布版本；正式安装包与校验值须以未来对应的 GitHub Release 为准。
+- 最新发布版本：`v1.1.0`；下载与校验信息见 [GitHub Release](https://github.com/Mo-521/Minimalist-Translation/releases/tag/v1.1.0)。
+- 历史发布版本：`v1.0.0`；其资产和校验信息仍见 [v1.0.0 Release](https://github.com/Mo-521/Minimalist-Translation/releases/tag/v1.0.0)。
 
-以下完成状态仅指已发布的 v1.0.0：依赖安全、真实启动/翻译、Windows 打包、Tailwind 本地可复现构建、最终二进制许可证归档、代码签名策略和 Git History Reset 已通过。其历史凭据审计未发现真实凭据暴露，实际二进制为未签名状态；风险提示与校验方法见 [CODE_SIGNING_POLICY.md](CODE_SIGNING_POLICY.md)。v1.1.0 必须另行完成发布验收。
+v1.1.0 发布前完成源码、许可证、安全、Windows 打包和 PDF 回归检查；安装态 Provider 连接和普通／论文 PDF 导出可读性由用户验收。离线 Geometry／Column 样本与回归不代表 Geometry 已接管正式 PDF runtime。两个版本的 Windows 安装包均未签名；风险提示与校验方法见 [CODE_SIGNING_POLICY.md](CODE_SIGNING_POLICY.md)。
 
 ## 许可证
 

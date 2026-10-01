@@ -4,14 +4,14 @@ Minimalist Translation handles user documents, translated text, and user-supplie
 
 ## Supported versions
 
-Security fixes target the latest published stable release. At the time of this v1.1.0 candidate, that is still v1.0.0; v1.1.0 is not supported as a published release until its tag and GitHub Release actually exist. After v1.1.0 is published, it becomes the latest supported stable release and v1.0.x becomes an older snapshot. Desktop Float Ball is excluded from the v1.0.0 and v1.1.0 installers and binary assets and is not covered by a stability commitment. Security issues in retained experimental source remain reportable when they could affect contributors or a future distribution.
+Security fixes target the latest published stable release, currently v1.1.0. v1.0.x is an older snapshot. Desktop Float Ball is excluded from the v1.0.0 and v1.1.0 installers and binary assets and is not covered by a stability commitment. Security issues in retained experimental source remain reportable when they could affect contributors or a future distribution.
 
 | Version | Support status |
 |---|---|
-| Latest published stable release (currently v1.0.0; v1.1.0 only after publication) | Security reports accepted; receives security fixes |
-| Unpublished v1.1.0 candidate | Security reports accepted against the candidate commit; no published-version support claim |
+| Latest published stable release (currently v1.1.0) | Security reports accepted; receives security fixes |
+| v1.0.x and older snapshots | Not supported |
 | `main` after the latest release | Security reports accepted; development branch |
-| Older snapshots, generated artifacts, private forks | Not supported |
+| Generated artifacts and private forks | Not supported |
 | Independent `lingoflow-proxy` repository | Report to that repository; outside this client repository's scope |
 
 ## Reporting a vulnerability
@@ -60,7 +60,7 @@ Replace secrets with obvious placeholders. Reduce documents to the smallest synt
 
 ## Handling and disclosure
 
-The maintainer will acknowledge a usable private report when practical, validate scope and impact, and coordinate remediation and disclosure based on severity and release readiness. No fixed response or remediation deadline is promised during the pre-release phase.
+The maintainer will acknowledge a usable private report when practical, validate scope and impact, and coordinate remediation and disclosure based on severity and release readiness. No fixed response or remediation deadline is promised.
 
 Reporters should allow reasonable time for investigation and a safe release before public disclosure. The project will not request secrecy beyond what is needed to protect users and complete coordinated remediation. Acknowledgement may be provided with the reporter's consent.
 

@@ -4,7 +4,9 @@
 
 ## [Unreleased]
 
-以下为 v1.1.0 候选变更，尚未发布；最终内容须与冻结的源码提交及安装包核对。
+暂无已确认的下一版本变更。
+
+## [1.1.0] - 2026-10-01
 
 ### 改进
 
@@ -12,11 +14,11 @@
 - 更新主窗口与导航，完善自定义 OpenAI-compatible Provider 的设置帮助和配置体验。
 - 建立 Capability Library、候选池和 Column／Geometry 离线样本与回归机制；这些离线验证结果不表示 Geometry 已接管正式 PDF 运行时。
 - 收紧 Windows 安装包的 Capability Library 文件清单，避免将人工审核框、Oracle 和候选池数据打入安装包。
-- 更新依赖锁定与发布前安全检查；v1.1.0 的最终依赖和许可证清单仍待正式安装包复核。
+- 更新依赖锁定与发布前安全检查；按发布安装包归档第三方许可证与来源证据。
 
 ### 发布提示
 
-- v1.1.0 计划继续使用未签名 Windows 安装包，可能出现“未知发布者”或 SmartScreen 提示；正式发布时须提供安装包 SHA-256。详见 [Code Signing Policy](CODE_SIGNING_POLICY.md)。
+- v1.1.0 使用未签名 Windows 安装包，可能出现“未知发布者”或 SmartScreen 提示；安装包 SHA-256 见 [v1.1.0 GitHub Release](https://github.com/Mo-521/Minimalist-Translation/releases/tag/v1.1.0)。详见 [Code Signing Policy](CODE_SIGNING_POLICY.md)。
 
 ## [1.0.0] - 2026-08-28
 
