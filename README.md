@@ -1,95 +1,87 @@
-# Minimalist Translation（极简翻译）
+<div align="center">
 
-Minimalist Translation 是一款面向 Windows 的本地优先、源码可见（Source Available）翻译客户端。用户配置自己的 OpenAI-compatible Provider 后，可使用普通 PDF 与论文 PDF 翻译能力。
+# Minimalist Translation (极简翻译)
 
-`v1.0.0` 是本项目首个公开发布版本；当前最新发布版本为 `v1.1.0`。当前以本地客户端为唯一发布主体，不包含官方托管 Proxy、真实凭据、私人论文样本或内部研发治理资料。
+**专为学术科研与专业排版打造的本地优先双栏 PDF 翻译客户端**
 
-## 当前能力
+保留原始双栏排版 · 锁定 LaTeX 公式与图表 · 参考文献免译保护 · 本地优先隐私安全 · 自定义模型接入
 
-- 普通 PDF 翻译：面向单栏普通文档，优先完整翻译正文并进行流式排版。
-- 论文 PDF 翻译：识别论文结构，翻译正文，同时保留图片、公式、Caption 与 References 等科研对象。
-- 统一 Provider 设置：支持 DeepSeek、OpenAI、OpenRouter、Ollama 与 Custom 等 OpenAI-compatible 服务。
-- 桌面翻译：相关源码保留为实验性模块，但 Desktop Float Ball 处于冻结/延后状态，未进入 `v1.0.0` 或 `v1.1.0` 安装包。
+<br />
 
-## 本地优先与数据边界
+<img src="https://github.com/user-attachments/assets/2ce69a24-42f5-453b-a55e-b681e5f19d26" alt="极简翻译界面预览" width="85%" style="border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);" />
 
-- Provider 配置保存在用户本机，真实配置文件不会进入 Git。
-- 待翻译文本会发送到用户主动选择并连接的 Provider；除使用本地 Ollama 等本机服务外，不应将本产品理解为完全离线。
-- 项目默认不依赖登录、订阅、额度、支付或官方云服务。
-- 请自行了解所选 Provider 的费用、隐私政策与数据保留规则。
+</div>
 
-## 开发运行
+---
 
-### 环境
+## ✨ 为什么选择极简翻译？
 
-- Windows 10/11
-- Node.js 与 npm
+市面上常规翻译工具在处理学术论文时，常出现左右栏文字混排串行、数学公式被乱翻破坏、参考文献作者名强行直译等问题。
 
-### 启动主客户端
+**极简翻译**将版面语义提取与大模型翻译解耦，针对学术与复杂文献排版做了专门优化：
+
+- **双栏排版还原**：智能识别论文版面阅读流，避免左右栏混排串行，原位回写译文。
+- **科研对象锁定**：数学公式、矢量插图、Figure Caption 均予以锁定保留，防止公式变形或图片遮挡。
+- **参考文献保护**：自动识别 References 区域，翻译章节标题并完整保留引文条目原文与编号。
+- **本地优先与直连**：不上传到第三方中转云服务，配置均保存在本机，直连用户配置的模型服务商。
+- **自由挂接模型**：支持接入 DeepSeek、OpenAI、OpenRouter、阿里百炼等 OpenAI-compatible 服务，亦可连接本地 Ollama 离线运行。
+
+---
+
+## 📥 下载与使用
+
+### 1. 下载安装包
+
+前往 [GitHub Releases](https://github.com/Mo-521/Minimalist-Translation/releases) 下载最新版本的 Windows 安装器（`Minimalist-Translation-Setup.exe`）。
+
+> **提示**：安装包当前采用未签名发布策略，若 Windows SmartScreen 提示“未知发布者”，点击“更多信息” → “仍要运行”即可。详情可核对 [Code Signing Policy](CODE_SIGNING_POLICY.md)。
+
+### 2. 快速上手
+
+1. 启动客户端，进入 **Settings（设置）** 页面。
+2. 新建或选择 Provider（如 DeepSeek），填入 API Key 并点击连接验证。
+3. 进入 **PDF Translation（PDF 翻译）** 页面，拖入待翻译的论文，选择流程开始翻译并导出。
+
+---
+
+## 🛠️ 本地开发与构建
+
+如需参与排版算法改进或二次开发：
 
 ```powershell
+# 1. 克隆代码仓库
+git clone https://github.com/Mo-521/Minimalist-Translation.git
+cd Minimalist-Translation
+
+# 2. 进入 Electron 客户端目录并安装依赖
 cd .\lingoflow-client\electron-app
 npm install
+
+# 3. 启动开发环境
 npm start
-```
 
-首次启动后：
-
-1. 打开 Settings。
-2. 新建或选择 Provider，填写 API Key。
-3. 由用户主动点击连接并确认状态为“已连接”。
-4. 进入 PDF Translation，选择普通版或论文版流程。
-
-本地配置由应用写入 `config/lingoflow.json`；该文件已被忽略。公开结构模板见 `config/lingoflow.example.json`。
-
-### 测试
-
-```powershell
-cd .\lingoflow-client\electron-app
+# 4. 运行 PDF 契约回归测试
 npm run test:pdf
-```
 
-### Windows 打包
-
-```powershell
-cd .\lingoflow-client\electron-app
-npm run pack:win-dir
+# 5. 打包 Windows 安装程序
 npm run pack:win
 ```
 
-`pack:win` 生成 NSIS 安装器。v1.0.0 与 v1.1.0 均采用未签名发布策略，Windows 可能显示“未知发布者”或 SmartScreen 警告；只从正式 GitHub Release 下载，并按 [Code Signing Policy](CODE_SIGNING_POLICY.md) 核对该安装包公开的 SHA-256。
+---
 
-## 目录结构
+## 🔒 数据与隐私边界
 
-```text
-极简翻译1.0/
-├─ config/                              # 公开配置模板与被忽略的本地配置
-├─ lingoflow-client/
-│  ├─ electron-app/                     # 主 Electron 客户端与 PDF pipeline
-│  ├─ tests/                            # PDF pipeline 契约测试
-│  └─ tools/                            # 开发和诊断工具
-└─ desktop-tools/
-   └─ desktop-float-ball/               # 冻结/延后的桌面悬浮翻译源码
-```
+- **本地配置隔离**：Provider API Key 与个人配置仅保存在本地，真实配置文件已被 Git 忽略。
+- **端到端传输**：待翻译文本直接发送至用户主动连接的模型接口，不存在官方托管代理。
+- **无隐形收费**：项目不附带任何官方账号体系、额度充值或强制订阅，调用成本完全取决于用户自选的 Provider。
 
-托管 Proxy 已迁移为独立仓库，不属于本仓库公开客户端源码树。`desktop-tools/` 可作为实验性源码保留，但不进入 v1.0.0 或 v1.1.0 安装包、发布资产和稳定支持范围。历史商业 Server、额度、登录与订阅材料也不属于当前客户端发布范围。
+---
 
-内部研发治理（Governance、Context、Tasks、Decisions、Knowledge、Prompt、Skill、Agent 工作流和审计流程）属于本地私有基础设施，不进入公开仓库，也不是构建、测试或开发本客户端的依赖。
+## 📄 许可证说明
 
-## 发布状态
+本项目采用 Minimalist Translation Source Available Non-Commercial License 1.0：
 
-- 目标仓库：<https://github.com/Mo-521/Minimalist-Translation>
-- 最新发布版本：`v1.1.0`；下载与校验信息见 [GitHub Release](https://github.com/Mo-521/Minimalist-Translation/releases/tag/v1.1.0)。
-- 历史发布版本：`v1.0.0`；其资产和校验信息仍见 [v1.0.0 Release](https://github.com/Mo-521/Minimalist-Translation/releases/tag/v1.0.0)。
+- **允许**：个人学习、学术研究、教学评估等非商业用途免费使用、修改及按相同条款分发。
+- **限制**：严禁未经书面许可用于任何商业营利场景。
 
-v1.1.0 发布前完成源码、许可证、安全、Windows 打包和 PDF 回归检查；安装态 Provider 连接和普通／论文 PDF 导出可读性由用户验收。离线 Geometry／Column 样本与回归不代表 Geometry 已接管正式 PDF runtime。两个版本的 Windows 安装包均未签名；风险提示与校验方法见 [CODE_SIGNING_POLICY.md](CODE_SIGNING_POLICY.md)。
-
-## 许可证
-
-本项目使用 [Minimalist Translation Source Available Non-Commercial License 1.0](LICENSE)：允许个人、教育、学术研究、评估和其他非商业用途使用、修改与按相同条款分发；不允许商业使用。商业使用必须事先取得版权方明确的书面授权。
-
-这是带非商业限制的 Source Available 许可证，不是 OSI 批准的开源许可证。公开源代码不等于获得商业使用权。本许可证持续有效，任何许可证变更只以版权方明确书面授权为准。第三方依赖和资产继续遵循各自许可证与 [Third-Party Notices](THIRD_PARTY_NOTICES.md)。
-
-## 参与贡献
-
-开发环境、提交范围和验证要求见 [CONTRIBUTING.md](CONTRIBUTING.md)，安全问题请按 [SECURITY.md](SECURITY.md) 私密报告，版本变化见 [CHANGELOG.md](CHANGELOG.md)。
+第三方开源依赖继续遵循其各自的独立授权协议，详见 [Third-Party Notices](THIRD_PARTY_NOTICES.md)。
