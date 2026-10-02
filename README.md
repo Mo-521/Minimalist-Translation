@@ -10,6 +10,10 @@
 
 <img src="https://github.com/user-attachments/assets/2ce69a24-42f5-453b-a55e-b681e5f19d26" alt="极简翻译界面预览" width="85%" style="border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);" />
 
+<br /><br />
+
+**简体中文** | [English](README_EN.md)
+
 </div>
 
 ---
