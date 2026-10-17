@@ -1579,14 +1579,29 @@ function getLineVisualStats(line, metrics) {
   };
 }
 
-function isNoisePdfLine(line) {
+function getPdfReferenceEvidenceStartY(lines) {
+  const heading = (lines || []).find((line) => isReferencesHeadingText(line && line.text || ""));
+  if (heading) return Number(heading.bbox && heading.bbox.y || 0);
+  const entryStarts = (lines || []).filter((line) => {
+    const text = normalizeExtractedPdfText(line && line.text || "");
+    return /^\[\d{1,3}\]\s+(?:[A-Z]\.\s+\p{Lu}|\p{Lu}[\p{L}’'-]+,\s+[A-Z])/u.test(text) ||
+      /^\p{Lu}[\p{L}’'-]+,\s+[A-Z](?:\.|[a-z])/u.test(text);
+  });
+  return entryStarts.length >= 3
+    ? Math.max(0, Math.min(...entryStarts.map((line) => Number(line.bbox && line.bbox.y || 0))) - 30)
+    : Infinity;
+}
+
+function isNoisePdfLine(line, context = {}) {
   const text = normalizeExtractedPdfText(line && line.text || "");
   if (!text) return true;
   if (getPdfLineType(line) !== "body") return false;
   if (/^\d+$/.test(text)) return true;
   if (text.length < 5) return true;
   if (/^sec\s*=$/i.test(text)) return true;
-  if (/^[\d\s:.'′″+\-=]+$/.test(text)) return true;
+  const preservesCitationEvidence = Boolean(context.referenceFlow) ||
+    /\b(?:arxiv\s*:\s*\d{4}\.\d{4,5}|doi\s*:\s*10\.\d{4,9}\/\S+)/i.test(text);
+  if (!preservesCitationEvidence && /^[\d\s:.'′″+\-=]+$/.test(text)) return true;
   if (/^[.,;:)\]′″]/.test(text) && text.length < 40) return true;
   const alphaMatches = text.match(/[A-Za-z]{3,}/g) || [];
   const digitCount = (text.match(/\d/g) || []).length;
@@ -1596,7 +1611,7 @@ function isNoisePdfLine(line) {
     /\[\s*[A-Z]{1,3}\s*(?:I{1,4}|V|VI{0,3}|IX|X)\s*\]/i.test(text) ||
     /\d\s*_\s*[-+\d[\{]|\d\s*\^\s*[-+\d[\{]/.test(text) ||
     /(?:L_?bol|L_?edd|M_?bol|erg\s*s\^|keV\b)/i.test(text);
-  if (!hasFormulaNotation && text.length < 26 && alphaMatches.length <= 1 && digitCount / text.length > 0.25 && symbolCount / text.length > 0.18) {
+  if (!preservesCitationEvidence && !hasFormulaNotation && text.length < 26 && alphaMatches.length <= 1 && digitCount / text.length > 0.25 && symbolCount / text.length > 0.18) {
     return true;
   }
   const pageHeight = Number(line.items && line.items[0] && line.items[0].pageHeight || 0);
@@ -1697,12 +1712,13 @@ function splitAndMergeParagraphs(paragraphs) {
 function mergeLinesIntoParagraphs(lines) {
   const paragraphs = [];
   let current = null;
+  const referenceEvidenceStartY = getPdfReferenceEvidenceStartY(lines);
   const sortedLines = lines.slice().sort((a, b) => {
     if (a.pageNumber !== b.pageNumber) return a.pageNumber - b.pageNumber;
     if ((a.column || "single") !== (b.column || "single")) return String(a.column || "single").localeCompare(String(b.column || "single"));
     return a.bbox.y - b.bbox.y;
   }).filter((line) => {
-    if (!isNoisePdfLine(line)) return true;
+    if (!isNoisePdfLine(line, { referenceFlow: Number(line.bbox && line.bbox.y || 0) > referenceEvidenceStartY })) return true;
     if (/^\d+$/.test(normalizeExtractedPdfText(line && line.text || ""))) {
       currentPdfIgnoredPageNumberLines += 1;
     }
@@ -1885,10 +1901,17 @@ function isMarginTextItem(item) {
   const width = Number(item.width || 0);
   if (/Downloaded from https?:\/\/onlinelibrary\.wiley\.com/i.test(text)) return true;
   if (pageWidth > 0 && (x > pageWidth * 0.98 || x + width > pageWidth * 1.08)) return true;
-  if (/arxiv|astro-ph/i.test(text)) {
-    return Number(item.x || 0) < pageWidth * 0.2;
+  const transform = Array.isArray(item.transform) ? item.transform : [];
+  const verticallyOriented = Math.abs(Number(transform[1] || 0)) > Math.abs(Number(transform[0] || 0));
+  if (/arxiv|astro-ph/i.test(text) && pageWidth > 0 && x < pageWidth * 0.2 && verticallyOriented) {
+    return true;
   }
-  if (/(^|\b)(email|doi)\b/i.test(text) && pageHeight > 0 && Number(item.y || 0) > pageHeight * 0.88) {
+  // A bibliography entry may reach the lower text area and contain a DOI.
+  // Only a DOI in the physical page-edge band is treated as footer metadata.
+  if (/(^|\b)doi\b/i.test(text) && pageHeight > 0 && Number(item.y || 0) > pageHeight * 0.94) {
+    return true;
+  }
+  if (/(^|\b)email\b/i.test(text) && pageHeight > 0 && Number(item.y || 0) > pageHeight * 0.88) {
     return true;
   }
   const height = Number(item.height || 0);
@@ -1989,13 +2012,19 @@ function detectPageColumns(items, authorityOverride = null) {
     narrowCount >= 8 &&
     leftItems.length > narrowCount * 0.25 &&
     rightItems.length > narrowCount * 0.25;
+  // A short final column can have repeated, anchored prose pairs without contributing
+  // a quarter of the page's items. Its physical gutter is still stronger evidence
+  // than item-count balance, provided continuous single-column lines do not dominate.
+  const shortColumnPairedGutterEvidence = !strongContinuousSingleColumnEvidence &&
+    stableGutterPairs >= 4 && anchoredProsePairs >= 3 && narrowCount >= 12 &&
+    Math.min(leftItems.length, rightItems.length) >= Math.max(6, Math.ceil(narrowCount * 0.08));
   const hasTwoColumns =
     authorityOverride === "double_column" || (
       (!strongContinuousSingleColumnEvidence || strongPairedGutterEvidence) &&
       (pageLayout.layoutType === "double_column" || pageLayout.layoutType === "mixed" || stableGutterPairs >= 4) &&
       narrowCount >= 8 &&
-      leftItems.length > narrowCount * 0.25 &&
-      rightItems.length > narrowCount * 0.25
+      ((leftItems.length > narrowCount * 0.25 && rightItems.length > narrowCount * 0.25) ||
+        shortColumnPairedGutterEvidence)
     );
 
   if (!hasTwoColumns) {
@@ -6680,6 +6709,19 @@ async function selectAndExtractPdf(payload) {
     } catch (retryErr) {
       console.error("[pdf] pdf.js extract failed after retry:", retryErr && retryErr.message || retryErr);
       throw retryErr;
+    }
+  }
+  if (pipelineConfig.mode === "paper_pdf" && !app.isPackaged &&
+      process.env.LINGOFLOW_OBJECT_FIRST_SHADOW === "1") {
+    try {
+      const { scheduleShadowForPdf } = require(
+        "./capability-library/domains/document-structure-identity/capabilities/cap.document-structure/integration/shadow-runtime.cjs");
+      const shadow = scheduleShadowForPdf(filePath);
+      if (shadow.status !== "scheduled_non_authoritative")
+        console.warn("[object-first-shadow] not scheduled:", shadow.status);
+    } catch (shadowError) {
+      console.warn("[object-first-shadow] scheduling failed without runtime effect:",
+        shadowError && shadowError.message || shadowError);
     }
   }
   return {
@@ -25343,6 +25385,20 @@ async function exportTranslatedPdf(payload, requestedOutputPath) {
   };
 }
 
+function objectFirstToolsFile() {
+  return path.join(app.getPath("userData"), "object-first-native-tools.json");
+}
+
+function savedObjectFirstTools() {
+  try {
+    const value = JSON.parse(fs.readFileSync(objectFirstToolsFile(), "utf8"));
+    if (value.version !== 1 || !path.isAbsolute(value.python) ||
+        !path.isAbsolute(value.pdftoppm)) return null;
+    return { LINGOFLOW_OBJECT_FIRST_PYTHON: value.python,
+      LINGOFLOW_OBJECT_FIRST_PDFTOPPM: value.pdftoppm };
+  } catch (_error) { return null; }
+}
+
 function registerWindowChromeIpc() {
   ipcMain.handle("shell:open-path", async (_event, targetPath) => {
     const resolvedPath = String(targetPath || "").trim();
@@ -25423,6 +25479,57 @@ function registerWindowChromeIpc() {
       allSegments: payload && payload.segments,
     }, { stage: "main.paragraphIdentityTranslationPlan", mode: "paper_pdf" }).payload.segments));
   ipcMain.handle("pdf:select-and-extract", (_event, payload) => selectAndExtractPdf(payload));
+  ipcMain.handle("pdf:configure-object-first-tools", async () => {
+    try {
+      const { applicationConfiguration, probeNativeDependencies } = require(
+        "./capability-library/domains/document-structure-identity/capabilities/cap.document-structure/integration/shadow-runtime.cjs");
+      const current = savedObjectFirstTools();
+      const selected = {};
+      for (const [key, title] of [
+        ["LINGOFLOW_OBJECT_FIRST_PYTHON", "选择安装了 pdfplumber 和 Pillow 的 Python"],
+        ["LINGOFLOW_OBJECT_FIRST_PDFTOPPM", "选择 Poppler 的 pdftoppm"],
+      ]) {
+        const previous = current?.[key];
+        const choice = await dialog.showOpenDialog({ title,
+          defaultPath: previous && fs.existsSync(previous) ? previous : undefined,
+          properties: ["openFile"] });
+        if (choice.canceled || !choice.filePaths?.[0])
+          return { ok: false, status: "cancelled" };
+        selected[key] = choice.filePaths[0];
+      }
+      const config = applicationConfiguration({ ...process.env, ...selected });
+      if (config.status !== "ready") return { ok: false, status: config.status };
+      const native = probeNativeDependencies(config.python, config.pdftoppm);
+      if (native.status !== "ready") return { ok: false, status: native.status,
+        error: native.detail };
+      const file = objectFirstToolsFile();
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      const temporaryFile = `${file}.tmp-${crypto.randomUUID()}`;
+      try {
+        fs.writeFileSync(temporaryFile, JSON.stringify({ version: 1,
+          python: config.python, pdftoppm: config.pdftoppm }, null, 2) + "\n",
+        { mode: 0o600 });
+        fs.renameSync(temporaryFile, file);
+      } finally {
+        if (fs.existsSync(temporaryFile)) fs.unlinkSync(temporaryFile);
+      }
+      return { ok: true, status: "configured" };
+    } catch (error) {
+      return { ok: false, status: "configuration_failed",
+        error: String(error?.message || error) };
+    }
+  });
+  ipcMain.handle("pdf:object-first-structure", async (_event, payload) => {
+    try {
+      const { produceObjectFirstForApplication } = require(
+        "./capability-library/domains/document-structure-identity/capabilities/cap.document-structure/integration/shadow-runtime.cjs");
+      return await produceObjectFirstForApplication(payload?.pdfPath,
+        { env: { ...process.env, ...savedObjectFirstTools() } });
+    } catch (error) {
+      return { ok: false, status: "application_entry_failed",
+        error: String(error?.message || error) };
+    }
+  });
   ipcMain.handle("pdf:export-translated-txt", (_event, payload) => exportTranslatedTxt(payload));
   ipcMain.handle("pdf:export-translated-docx", (_event, payload) => exportTranslatedDocx(payload));
   ipcMain.handle("pdf:export-translated-pdf", (_event, payload) => exportPdfAtCurrentProgress(payload));

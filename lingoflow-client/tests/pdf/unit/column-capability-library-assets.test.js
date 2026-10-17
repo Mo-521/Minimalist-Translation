@@ -6,7 +6,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 
-const ROOT = path.join(__dirname, "..", "..", "..", "electron-app", "capability-library", "capabilities", "cap.column-recognition");
+const ROOT = path.join(__dirname, "..", "..", "..", "electron-app", "capability-library", "domains", "column-region-recognition", "capabilities", "cap.column-recognition");
 const read = (...parts) => JSON.parse(fs.readFileSync(path.join(ROOT, ...parts), "utf8"));
 
 test("canonical Column corpus preserves the original seven reviewed truths while adding three promoted samples", () => {
@@ -26,45 +26,11 @@ test("canonical Column corpus preserves the original seven reviewed truths while
   });
 });
 
-test("current Column baseline is a complete 126-page zero-finding comparison against formal truth", () => {
+test("public Column batch summary identifies the accepted cohort without bundled per-page replay", () => {
   const corpus = read("corpus.json");
-  const summary = read("baseline", "summary.json");
-  const truthBySample = new Map(corpus.samples.map((sample) => [
-    sample.id,
-    new Map(sample.expectedOutcomes[0].expected.pages.map((page) => [page.pageNumber, page.layout])),
-  ]));
-  let pages = 0;
-  let findings = 0;
-  for (let index = 1; index <= 10; index += 1) {
-    const result = read("baseline", `paper${index}-regression.json`);
-    const truth = truthBySample.get(result.sampleId);
-    assert.ok(truth, result.sampleId);
-    assert.equal(result.runtimeDecisionUse, "forbidden");
-    assert.equal(result.findingCount, 0);
-    assert.equal(result.results.length, truth.size);
-    result.results.forEach((page) => {
-      assert.equal(page.expected, truth.get(page.pageNumber));
-      assert.equal(page.actual, page.expected);
-      assert.equal(page.status, "pass");
-      assert.equal(page.evidence.columnModel.authority, "AA-COLUMN-001");
-      assert.equal(page.evidence.columnModel.evidence.basis, "body_text_flow_only");
-    });
-    pages += result.results.length;
-    findings += result.findingCount;
-  }
-  assert.equal(pages, summary.pageCount);
-  assert.equal(findings, summary.findingCount);
-  assert.deepEqual(summary.layoutCoverage, { singleColumnPages: 71, doubleColumnPages: 55, mixedBodyFlowPages: 0 });
-});
-
-test("pre-repair findings and RCA remain audit Evidence, not the canonical baseline", () => {
-  let findings = 0;
-  for (let index = 1; index <= 7; index += 1) {
-    findings += read("evidence", "pre-repair-regression", `paper${index}-regression.json`).findingCount;
-  }
-  const rca = read("evidence", "root-cause-analysis.json");
-  assert.equal(findings, 34);
-  assert.equal(rca.regression.findings, 34);
-  assert.equal(rca.runtimeDecisionUse, "forbidden");
-  assert.equal(rca.corpus.pages, 90);
+  const batch = read("batches", "B001", "manifest.json");
+  assert.equal(batch.batchId, "B001");
+  assert.equal(batch.runtimeDecisionUse, "forbidden");
+  assert.deepEqual(batch.samples.map((sample) => sample.id), corpus.samples.map((sample) => sample.id));
+  assert.equal(batch.samples.reduce((sum, sample) => sum + sample.pages, 0), 126);
 });

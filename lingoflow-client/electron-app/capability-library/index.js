@@ -4,12 +4,16 @@ const fs = require("fs");
 const path = require("path");
 const Ajv = require("ajv/dist/2020");
 const schemaValidator = new Ajv({ strict: true, allErrors: true });
-const capabilitySchema = JSON.parse(fs.readFileSync(path.join(__dirname, "capability.schema.json"), "utf8"));
-const corpusSchema = JSON.parse(fs.readFileSync(path.join(__dirname, "sample-corpus.schema.json"), "utf8"));
+const SCHEMAS_ROOT = path.join(__dirname, "schemas");
+const capabilitySchema = JSON.parse(fs.readFileSync(path.join(SCHEMAS_ROOT, "capability.schema.json"), "utf8"));
+const corpusSchema = JSON.parse(fs.readFileSync(path.join(SCHEMAS_ROOT, "sample-corpus.schema.json"), "utf8"));
+const domainSchema = JSON.parse(fs.readFileSync(path.join(SCHEMAS_ROOT, "domain.schema.json"), "utf8"));
 schemaValidator.addSchema(capabilitySchema);
 schemaValidator.addSchema(corpusSchema);
+schemaValidator.addSchema(domainSchema);
 const validateCapabilitySchema = schemaValidator.getSchema(capabilitySchema.$id);
 const validateCorpusSchema = schemaValidator.getSchema(corpusSchema.$id);
+const validateDomainSchema = schemaValidator.getSchema(domainSchema.$id);
 const validateSampleSchema = schemaValidator.compile({ $ref: corpusSchema.$id + "#/$defs/sample" });
 
 function validateSchema(value, validator) {
@@ -30,6 +34,14 @@ const FORBIDDEN_RUNTIME_DECISION_FIELDS = new Set([
 ]);
 const EVIDENCE_LEVELS = new Set(["unit_contract", "artifact", "real_run", "pixel_visual", "user_acceptance"]);
 const CAPABILITY_STATUSES = new Set(["defined", "pilot_ready", "covered", "deprecated"]);
+const CAPABILITY_RECORD_KINDS = new Set(["independent_capability", "acceptance_contract", "derived_status", "historical_compatibility"]);
+const REQUIRED_DOMAIN_IDS = [
+  "document-structure-identity",
+  "column-region-recognition",
+  "content-placement",
+  "layout-composition",
+  "export-validation",
+];
 
 function fail(code, message, details) {
   const error = new Error(message);
@@ -88,7 +100,7 @@ function validateAuthorityBoundary(catalog, expectedRole) {
 function validateCapabilityCatalog(catalog) {
   validateAuthorityBoundary(catalog, "evidence_and_regression_only");
   validateSchema(catalog, validateCapabilitySchema);
-  if (catalog.schemaVersion !== "capability-library/v1") {
+  if (catalog.schemaVersion !== "capability-library/v2") {
     fail("CAPABILITY_LIBRARY_SCHEMA_INVALID", "Unsupported capability catalog schemaVersion");
   }
   requireArray(catalog.capabilities, "capabilities");
@@ -96,16 +108,20 @@ function validateCapabilityCatalog(catalog) {
   catalog.capabilities.forEach((capability, index) => {
     const label = `capabilities[${index}]`;
     if (!isObject(capability)) fail("CAPABILITY_LIBRARY_SCHEMA_INVALID", `${label} must be an object`);
-    ["id", "name", "description", "architectureRecord", "status"].forEach((key) => requireString(capability[key], `${label}.${key}`));
+    ["id", "name", "displayName", "description", "recordKind", "domain", "architectureRecord", "status"].forEach((key) => requireString(capability[key], `${label}.${key}`));
     if (!/^cap\.[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(capability.id)) fail("CAPABILITY_LIBRARY_SCHEMA_INVALID", `${label}.id is invalid`);
     if (!/^AA-[A-Z]+-[0-9]{3}$/.test(capability.architectureRecord)) fail("CAPABILITY_LIBRARY_SCHEMA_INVALID", `${label}.architectureRecord is invalid`);
     if (!CAPABILITY_STATUSES.has(capability.status)) fail("CAPABILITY_LIBRARY_SCHEMA_INVALID", `${label}.status is invalid`);
+    if (!CAPABILITY_RECORD_KINDS.has(capability.recordKind)) fail("CAPABILITY_LIBRARY_SCHEMA_INVALID", `${label}.recordKind is invalid`);
     if (ids.has(capability.id)) fail("CAPABILITY_LIBRARY_DUPLICATE_ID", `Duplicate capability id '${capability.id}'`);
     ids.add(capability.id);
     if (!isObject(capability.decisionAuthority)) fail("CAPABILITY_LIBRARY_SCHEMA_INVALID", `${label}.decisionAuthority must be an object`);
     requireString(capability.decisionAuthority.owner, `${label}.decisionAuthority.owner`);
     requireString(capability.decisionAuthority.statement, `${label}.decisionAuthority.statement`);
-    ["boundaries", "expectedOutcomes", "evidenceRequirements", "regressionSampleIds"].forEach((key) => requireArray(capability[key], `${label}.${key}`));
+    ["responsibilities", "boundaries", "expectedOutcomes", "evidenceRequirements", "regressionSampleIds"].forEach((key) => requireArray(capability[key], `${label}.${key}`));
+    if (!capability.responsibilities.length) fail("CAPABILITY_LIBRARY_SCHEMA_INVALID", `${label}.responsibilities cannot be empty`);
+    if (!isObject(capability.dependencies)) fail("CAPABILITY_LIBRARY_SCHEMA_INVALID", `${label}.dependencies must be an object`);
+    ["requires", "produces", "consumed_by", "forbidden_to_override"].forEach((key) => requireArray(capability.dependencies[key], `${label}.dependencies.${key}`));
     capability.boundaries.forEach((boundary, boundaryIndex) => {
       const boundaryLabel = `${label}.boundaries[${boundaryIndex}]`;
       if (!isObject(boundary) || !/^boundary\.[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(boundary.id || "")) fail("CAPABILITY_LIBRARY_SCHEMA_INVALID", `${boundaryLabel}.id is invalid`);
@@ -123,6 +139,79 @@ function validateCapabilityCatalog(catalog) {
     });
   });
   return catalog;
+}
+
+function validateDomainCatalog(catalog) {
+  validateSchema(catalog, validateDomainSchema);
+  if (catalog.schemaVersion !== "capability-domains/v1" || catalog.registryRole !== "organization_and_presentation_only") {
+    fail("CAPABILITY_LIBRARY_SCHEMA_INVALID", "Unsupported Capability Domain registry");
+  }
+  const ids = catalog.domains.map((domain) => domain.id);
+  const orders = catalog.domains.map((domain) => domain.displayOrder);
+  if (new Set(ids).size !== ids.length || new Set(orders).size !== orders.length) {
+    fail("CAPABILITY_LIBRARY_DUPLICATE_ID", "Capability Domains require unique ids and display orders");
+  }
+  if (REQUIRED_DOMAIN_IDS.some((id) => !ids.includes(id))) {
+    fail("CAPABILITY_LIBRARY_SCHEMA_INVALID", "Capability Domain registry must contain exactly the five stable Domains");
+  }
+  return catalog;
+}
+
+function validateCapabilityArchitecture(capabilities, domains) {
+  const byId = new Map(capabilities.map((capability) => [capability.id, capability]));
+  const domainIds = new Set(domains.map((domain) => domain.id));
+  const edges = new Map(capabilities.map((capability) => [capability.id, []]));
+  capabilities.forEach((capability) => {
+    if (!domainIds.has(capability.domain)) {
+      fail("CAPABILITY_LIBRARY_UNKNOWN_DOMAIN", `Capability '${capability.id}' references unknown Domain '${capability.domain}'`);
+    }
+    const producedFacts = new Map(capability.dependencies.produces.map((item) => [item.factId, item]));
+    if (producedFacts.size !== capability.dependencies.produces.length) {
+      fail("CAPABILITY_LIBRARY_DUPLICATE_ID", `Capability '${capability.id}' declares a duplicate produced fact`);
+    }
+    capability.dependencies.requires.forEach((requirement) => {
+      const producer = byId.get(requirement.capabilityId);
+      if (!producer) fail("CAPABILITY_LIBRARY_UNKNOWN_CAPABILITY", `Capability '${capability.id}' requires unknown capability '${requirement.capabilityId}'`);
+      if (producer.id === capability.id) fail("CAPABILITY_LIBRARY_DEPENDENCY_CYCLE", `Capability '${capability.id}' cannot require itself`);
+      requirement.facts.forEach((factId) => {
+        const produced = producer.dependencies.produces.find((item) => item.factId === factId);
+        if (!produced) fail("CAPABILITY_LIBRARY_REFERENCE_INVALID", `Capability '${capability.id}' requires undeclared fact '${factId}' from '${producer.id}'`);
+        const mirror = producer.dependencies.consumed_by.find((item) => item.capabilityId === capability.id && item.facts.includes(factId));
+        if (!mirror) fail("CAPABILITY_LIBRARY_REFERENCE_INVALID", `Producer '${producer.id}' is missing consumed_by for '${capability.id}' and '${factId}'`);
+      });
+      edges.get(producer.id).push(capability.id);
+    });
+    capability.dependencies.consumed_by.forEach((consumerRef) => {
+      const consumer = byId.get(consumerRef.capabilityId);
+      if (!consumer) fail("CAPABILITY_LIBRARY_UNKNOWN_CAPABILITY", `Capability '${capability.id}' names unknown consumer '${consumerRef.capabilityId}'`);
+      consumerRef.facts.forEach((factId) => {
+        if (!producedFacts.has(factId)) fail("CAPABILITY_LIBRARY_REFERENCE_INVALID", `Capability '${capability.id}' cannot expose undeclared fact '${factId}'`);
+        const mirror = consumer.dependencies.requires.find((item) => item.capabilityId === capability.id && item.facts.includes(factId));
+        if (!mirror) fail("CAPABILITY_LIBRARY_REFERENCE_INVALID", `Consumer '${consumer.id}' is missing requires for '${capability.id}' and '${factId}'`);
+      });
+    });
+    capability.dependencies.forbidden_to_override.forEach((guard) => {
+      guard.facts.forEach((factId) => {
+        const requirement = capability.dependencies.requires.find((item) => item.facts.includes(factId));
+        const producer = requirement && byId.get(requirement.capabilityId);
+        const product = producer && producer.dependencies.produces.find((item) => item.factId === factId);
+        if (!product || product.authority !== guard.authority) {
+          fail("CAPABILITY_LIBRARY_REFERENCE_INVALID", `Capability '${capability.id}' cannot guard undeclared upstream fact '${factId}' for '${guard.authority}'`);
+        }
+      });
+    });
+  });
+  const visiting = new Set();
+  const visited = new Set();
+  function visit(id) {
+    if (visiting.has(id)) fail("CAPABILITY_LIBRARY_DEPENDENCY_CYCLE", `Capability dependency graph contains a cycle at '${id}'`);
+    if (visited.has(id)) return;
+    visiting.add(id);
+    edges.get(id).forEach(visit);
+    visiting.delete(id);
+    visited.add(id);
+  }
+  capabilities.forEach((capability) => visit(capability.id));
 }
 
 function validateCorpusSample(sample, label) {
@@ -191,22 +280,37 @@ function readJson(filePath) {
 }
 
 function listCapabilityCatalogRoots(rootDir) {
-  const capabilitiesRoot = path.join(rootDir, "capabilities");
-  if (!fs.existsSync(capabilitiesRoot)) return [];
-  return fs.readdirSync(capabilitiesRoot, { withFileTypes: true })
+  const domainsRoot = path.join(rootDir, "domains");
+  if (!fs.existsSync(domainsRoot)) return [];
+  return fs.readdirSync(domainsRoot, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
-    .map((entry) => path.join(capabilitiesRoot, entry.name))
+    .flatMap((domainEntry) => {
+      const capabilitiesRoot = path.join(domainsRoot, domainEntry.name, "capabilities");
+      if (!fs.existsSync(capabilitiesRoot)) return [];
+      return fs.readdirSync(capabilitiesRoot, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => path.join(capabilitiesRoot, entry.name));
+    })
     .filter((catalogRoot) => fs.existsSync(path.join(catalogRoot, "capabilities.json")) && fs.existsSync(path.join(catalogRoot, "corpus.json")))
     .sort();
 }
 
 function loadCapabilityCatalogState(options) {
   const rootDir = options && options.rootDir ? options.rootDir : __dirname;
-  const catalogRoots = [rootDir, ...listCapabilityCatalogRoots(rootDir)];
-  const capabilityCatalogs = catalogRoots.map((catalogRoot) => validateCapabilityCatalog(readJson(path.join(catalogRoot, "capabilities.json"))));
-  const corpusCatalogs = catalogRoots.map((catalogRoot) => validateCorpusCatalog(readJson(path.join(catalogRoot, "corpus.json"))));
+  const registryRoot = path.join(rootDir, "registry");
+  const sharedRoot = path.join(rootDir, "shared");
+  const domains = validateDomainCatalog(readJson(path.join(registryRoot, "domains.json")));
+  const catalogRoots = listCapabilityCatalogRoots(rootDir);
+  const capabilityCatalogs = [
+    validateCapabilityCatalog(readJson(path.join(registryRoot, "capabilities.json"))),
+    ...catalogRoots.map((catalogRoot) => validateCapabilityCatalog(readJson(path.join(catalogRoot, "capabilities.json")))),
+  ];
+  const corpusCatalogs = [
+    validateCorpusCatalog(readJson(path.join(sharedRoot, "corpus.json"))),
+    ...catalogRoots.map((catalogRoot) => validateCorpusCatalog(readJson(path.join(catalogRoot, "corpus.json")))),
+  ];
   const capabilityCatalog = validateCapabilityCatalog({
-    schemaVersion: "capability-library/v1",
+    schemaVersion: "capability-library/v2",
     catalogRole: "evidence_and_regression_only",
     runtimeDecisionUse: "forbidden",
     capabilities: capabilityCatalogs.flatMap((catalog) => catalog.capabilities),
@@ -221,6 +325,7 @@ function loadCapabilityCatalogState(options) {
   if (capabilityIds.size !== capabilityCatalog.capabilities.length) {
     fail("CAPABILITY_LIBRARY_DUPLICATE_ID", "Capability subdirectories cannot redefine an existing capability");
   }
+  validateCapabilityArchitecture(capabilityCatalog.capabilities, domains.domains);
   const sampleIds = new Set();
   const sampleHashes = new Map();
   corpusCatalog.samples.forEach((sample) => {
@@ -251,17 +356,36 @@ function loadCapabilityCatalogState(options) {
       fail("CAPABILITY_LIBRARY_REFERENCE_INVALID", `Capability '${capability.id}' has a dangling regression sample '${sampleId}'`);
     }
   }));
-  return deepFreeze({ capabilities: capabilityCatalog, corpus: corpusCatalog });
+  return deepFreeze({ domains, capabilities: capabilityCatalog, corpus: corpusCatalog });
 }
 
 function loadCapabilityLibrary(options) {
   const state = loadCapabilityCatalogState(options);
+  const rootDir = options && options.rootDir ? options.rootDir : __dirname;
+  const batches = state.capabilities.capabilities.flatMap((capability) => {
+    if (capability.recordKind !== "independent_capability") return [];
+    const capabilityRoot = path.join(rootDir, "domains", capability.domain, "capabilities", capability.id, "batches");
+    if (!fs.existsSync(capabilityRoot)) return [];
+    return fs.readdirSync(capabilityRoot, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && /^B[0-9]{3}$/.test(entry.name))
+      .map((entry) => {
+        const manifestPath = path.join(capabilityRoot, entry.name, "manifest.json");
+        if (!fs.existsSync(manifestPath)) return null;
+        const manifest = readJson(manifestPath);
+        if (manifest.capabilityId !== capability.id || manifest.batchId !== entry.name || manifest.runtimeDecisionUse !== "forbidden") {
+          fail("CAPABILITY_LIBRARY_SCHEMA_INVALID", `Invalid validation batch '${entry.name}' for '${capability.id}'`);
+        }
+        return { capabilityId: capability.id, batchId: manifest.batchId, capabilityStatus: manifest.capabilityStatus };
+      }).filter(Boolean);
+  });
   return deepFreeze({
-    schemaVersion: "capability-library-snapshot/v1",
+    schemaVersion: "capability-library-snapshot/v2",
     role: "evidence_and_regression_only",
     runtimeDecisionUse: "forbidden",
+    domains: state.domains.domains,
     capabilities: state.capabilities.capabilities,
     samples: state.corpus.samples,
+    batches,
   });
 }
 
@@ -272,7 +396,9 @@ module.exports = {
   deepFreeze,
   loadCapabilityCatalogState,
   loadCapabilityLibrary,
+  validateCapabilityArchitecture,
   validateCapabilityCatalog,
+  validateDomainCatalog,
   validateCorpusCatalog,
   validateCorpusSample,
 };

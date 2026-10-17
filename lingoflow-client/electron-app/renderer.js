@@ -3,6 +3,16 @@
   var semanticStructureConsumerAuthority = typeof require === "function"
     ? require("./semantic-structure-consumer-authority")
     : null;
+  var objectFirstContractAuthority = null;
+  var objectFirstCrypto = null;
+  if (typeof require === "function") {
+    try {
+      objectFirstContractAuthority = require("./capability-library/domains/document-structure-identity/capabilities/cap.document-structure/integration/object-first-contract.cjs");
+      objectFirstCrypto = require("node:crypto");
+    } catch (_d1LoadError) {
+      // D1 is independent; a missing optional module must not break legacy PDF translation.
+    }
+  }
 
   var DEFAULT_SERVER_BASE_URL = "https://lingoproxy-255344-7-1429669493.sh.run.tcloudbase.com";
   var DEFAULT_BETA_TOKEN = "lf_beta_test_token";
@@ -278,6 +288,11 @@ function isPdfOverlayCandidate(segment) {
     lastUsageRefreshAt: 0,
     testUsers: DEFAULT_TEST_USERS.slice(),
     pdfExtract: null,
+    d1Result: null,
+    d1Status: "idle",
+    d1Error: "",
+    d1RuntimeMessage: "",
+    d1TaskSeq: 0,
     pdfCurrentFileId: null,
     selectedFile: null,
     pdfTaskSeq: 0,
@@ -1072,145 +1087,289 @@ function isPdfOverlayCandidate(segment) {
   }
 
   function setupCapabilityLibraryPage() {
-    // Presentation-only labels: catalog data stays frozen; UI copy mirrors sandbox denoise.
-    var displayNames = {
-      "cap.semantic-structure": "语义段落解析",
-      "cap.column-recognition": "单／双栏与混合栏识别",
-      "cap.paragraph-object-identity": "段落与对象身份追踪",
-      "cap.geometry-layout": "版面几何与安全区",
-      "cap.mask-write": "遮盖与写回一致性",
-      "cap.scientific-object-fidelity": "科学公式与图表保真",
-      "cap.translation-completeness": "翻译完整性闭环",
-      "cap.write-completeness": "写回完整性",
-      "cap.export-state": "导出状态清晰",
-    };
-    var displayDescriptions = {
-      "cap.semantic-structure": "把标题、正文、脚注等段落类型分清楚，避免后面环节认错结构。",
-      "cap.column-recognition": "验证逐页与区域的单栏、双栏、混合栏及对象归栏；最终判断仍由 Column Authority 负责。",
-      "cap.paragraph-object-identity": "保证同一段文字在提取、翻译、回写全程可对应，不丢号、不串号。",
-      "cap.geometry-layout": "控制译文落位，避免跨栏、重叠、裁切或压到图公式。",
-      "cap.mask-write": "原位置擦除与写入成对完成，局部失败不会拖垮整页。",
-      "cap.scientific-object-fidelity": "图片、公式、表格与参考文献条目保持原貌，不被误翻或遮盖。",
-      "cap.translation-completeness": "该翻的段落都有明确结果：成功、重试或有原因地保留原文。",
-      "cap.write-completeness": "已接受的译文要么完整写回，要么明确说明为何保留原文。",
-      "cap.export-state": "翻译完成、写回完成、文件导出是三件独立事实，互不冒充。",
-    };
     var statusLabels = {
       defined: "已定义",
-      pilot_ready: "待试点",
+      pilot_ready: "有条件验收",
       covered: "已建立回归基线",
       deprecated: "已停用",
+    };
+    var kindLabels = {
+      independent_capability: "独立 Capability",
+      acceptance_contract: "验收契约",
+      derived_status: "派生状态",
+      historical_compatibility: "历史兼容表示",
     };
     var list = document.getElementById("capabilityLibraryList");
     if (!list) return;
     var errorBox = document.getElementById("capabilityLibraryError");
+    var loadStatus = document.getElementById("capabilityLibraryLoadStatus");
+    var home = document.getElementById("capabilityLibraryHome");
+    var detail = document.getElementById("capabilityDomainDetail");
+    var backButton = document.getElementById("btnBackCapabilityDomains");
+    var lastDomainButton = null;
     try {
       if (typeof require !== "function") throw new Error("当前预览环境不支持读取本地能力库。");
       var library = require("./capability-library").loadCapabilityLibrary();
-      var boundaryCount = library.capabilities.reduce(function (total, capability) {
-        return total + capability.boundaries.length;
-      }, 0);
-      var authorityCount = new Set(library.capabilities.map(function (capability) {
-        return capability.architectureRecord;
-      })).size;
-      setText("capabilityLibraryCapabilityCount", String(library.capabilities.length));
-      setText("capabilityLibraryBoundaryCount", String(boundaryCount));
-      setText("capabilityLibrarySampleCount", String(library.samples.length));
-      setText("capabilityLibraryAuthorityCount", String(authorityCount));
       setText("capabilityLibrarySchemaBadge", "数据版本 · " + library.schemaVersion.replace("capability-library-snapshot/", ""));
+      if (loadStatus) loadStatus.textContent = "能力域已加载，共 " + library.domains.length + " 项。";
       list.textContent = "";
-      library.capabilities.forEach(function (capability) {
-        var formalSamples = capability.regressionSampleIds.map(function (sampleId) {
+      function formalSamplesFor(capability) {
+        return capability.regressionSampleIds.map(function (sampleId) {
           return library.samples.find(function (sample) { return sample.id === sampleId; });
         }).filter(Boolean);
+      }
+      function batchesFor(capability) {
+        return (library.batches || []).filter(function (batch) { return batch.capabilityId === capability.id; });
+      }
+      function appendList(details, headingText, values) {
+        var heading = document.createElement("h5");
+        heading.textContent = headingText;
+        details.appendChild(heading);
+        var items = document.createElement("ul");
+        values.forEach(function (value) {
+          var item = document.createElement("li");
+          item.textContent = value;
+          items.appendChild(item);
+        });
+        details.appendChild(items);
+      }
+      function setHomeVisible(visible) {
+        if (home) home.hidden = !visible;
+        if (detail) detail.hidden = visible;
+      }
+      function dependencyLines(capability) {
+        var lines = [];
+        capability.dependencies.requires.forEach(function (dependency) {
+          lines.push("需要 " + dependency.capabilityId + " → " + dependency.facts.join("、") + "（只读既有事实）");
+        });
+        capability.dependencies.produces.forEach(function (product) {
+          lines.push("产生 " + product.factId + " · " + product.authority);
+        });
+        capability.dependencies.consumed_by.forEach(function (consumer) {
+          lines.push("由 " + consumer.capabilityId + " 消费 → " + consumer.facts.join("、"));
+        });
+        capability.dependencies.forbidden_to_override.forEach(function (guard) {
+          lines.push("禁止覆盖 " + guard.authority + " → " + guard.facts.join("、"));
+        });
+        return lines.length ? lines : ["无已建立的 Capability dependency；未记录未来规划依赖。"];
+      }
+      function evidenceSummary(capability) {
+        var formalSamples = formalSamplesFor(capability);
         var formalPageCount = formalSamples.reduce(function (total, sample) {
           return total + sample.source.pageCount;
         }, 0);
+        return "覆盖场景 " + capability.boundaries.length + " · 验收标准 " + capability.expectedOutcomes.length +
+          " · 正式样本 " + formalSamples.length + " 个" + (formalSamples.length ? " / " + formalPageCount + " 页" : "");
+      }
+      function createEstablishedCard(capability) {
+        var formalSamples = formalSamplesFor(capability);
         var card = document.createElement("article");
-        card.className = "capability-library-item";
+        card.className = "capability-established-card";
 
         var head = document.createElement("div");
-        head.className = "capability-library-item-head";
-        var title = document.createElement("h4");
-        title.textContent = displayNames[capability.id] || capability.name;
+        head.className = "capability-established-head";
+        var titleGroup = document.createElement("div");
+        var title = document.createElement("h5");
+        title.textContent = capability.displayName;
+        var technicalId = document.createElement("code");
+        technicalId.textContent = capability.id;
+        titleGroup.appendChild(title);
+        titleGroup.appendChild(technicalId);
+        var badges = document.createElement("div");
+        badges.className = "capability-established-badges";
         var status = document.createElement("span");
         status.className = "capability-library-status";
         status.dataset.state = capability.status;
-        status.textContent = capability.status === "pilot_ready" && formalSamples.length
-          ? "已纳入离线回归"
-          : (statusLabels[capability.status] || capability.status);
-        head.appendChild(title);
-        head.appendChild(status);
+        status.textContent = "阶段 · " + (statusLabels[capability.status] || capability.status);
+        var evidenceStatus = document.createElement("span");
+        evidenceStatus.className = "capability-evidence-status";
+        var batches = batchesFor(capability);
+        evidenceStatus.textContent = batches.length ? "验证批次 · " + batches.map(function (batch) { return batch.batchId; }).join("、") : "验证批次 · 尚无";
+        badges.appendChild(status);
+        badges.appendChild(evidenceStatus);
+        head.appendChild(titleGroup);
+        head.appendChild(badges);
 
         var description = document.createElement("p");
-        description.className = "capability-library-description";
-        description.textContent = displayDescriptions[capability.id] || capability.description;
+        description.className = "capability-established-description";
+        description.textContent = capability.description;
+
+        var responsibilityTitle = document.createElement("h6");
+        responsibilityTitle.textContent = "职责";
+        var responsibilities = document.createElement("ul");
+        responsibilities.className = "capability-established-responsibilities";
+        capability.responsibilities.forEach(function (value) {
+          var item = document.createElement("li");
+          item.textContent = value;
+          responsibilities.appendChild(item);
+        });
 
         var meta = document.createElement("div");
-        meta.className = "capability-library-meta";
-        var metaLine = document.createElement("span");
-        metaLine.textContent =
-          "覆盖场景 " + capability.boundaries.length +
-          " · 验收标准 " + capability.expectedOutcomes.length +
-          " · 回归基线 " + formalSamples.length + " 个样本" +
-          (formalSamples.length ? " / " + formalPageCount + " 页" : "");
-        meta.appendChild(metaLine);
+        meta.className = "capability-evidence-summary";
+        meta.textContent = "证据 / 回归 · " + evidenceSummary(capability);
+        if (capability.id === "cap.document-structure") {
+          meta.textContent += " · 已独立接入应用；当前 PDF 翻译仍使用旧结构链";
+        }
 
-        var cta = document.createElement("div");
-        cta.className = "capability-library-cta";
         var details = document.createElement("details");
         details.className = "capability-library-details";
         var summary = document.createElement("summary");
-        summary.textContent = "查看详情";
+        summary.textContent = "查看「" + capability.displayName + "」完整证据";
         details.appendChild(summary);
         var tech = document.createElement("p");
         tech.className = "capability-library-tech";
-        tech.textContent = "架构代号 · " + capability.architectureRecord + "  ·  " + capability.id;
+        tech.textContent = "技术信息 · " + capability.name + " · " + capability.id + " · " + capability.architectureRecord;
         details.appendChild(tech);
         var authorityStatement = document.createElement("p");
         authorityStatement.textContent = capability.decisionAuthority.statement;
         details.appendChild(authorityStatement);
         [
+          ["Dependency / canonical fact flow", dependencyLines(capability)],
           ["覆盖场景", capability.boundaries.map(function (boundary) { return boundary.description; })],
           ["验收标准", capability.expectedOutcomes.map(function (outcome) { return outcome.assertion; })],
           ["证据要求", capability.evidenceRequirements],
+          ["验证批次", batches.length ? batches.map(function (batch) {
+            return batch.batchId + " · " + (statusLabels[batch.capabilityStatus] || batch.capabilityStatus);
+          }) : ["尚无验证批次"]],
           ["正式回归样本", formalSamples.length ? formalSamples.map(function (sample) {
             var paperLabel = sample.id.split(".").pop();
             return paperLabel + " · " + sample.source.fileName + " · " + sample.source.pageCount + " 页";
           }) : ["尚无正式样本"]],
         ].forEach(function (group) {
-          var heading = document.createElement("h5");
-          heading.textContent = group[0];
-          details.appendChild(heading);
-          var items = document.createElement("ul");
-          group[1].forEach(function (value) {
-            var item = document.createElement("li");
-            item.textContent = value;
-            items.appendChild(item);
-          });
-          details.appendChild(items);
+          appendList(details, group[0], group[1]);
         });
-        cta.appendChild(details);
-        var contribute = document.createElement("span");
-        contribute.className = "capability-library-contribute";
-        contribute.textContent = "样本投递尚未开放";
-        contribute.title = "样本投递入口随后续候选池接线开放";
-        cta.appendChild(contribute);
 
         card.appendChild(head);
         card.appendChild(description);
+        card.appendChild(responsibilityTitle);
+        card.appendChild(responsibilities);
         card.appendChild(meta);
-        card.appendChild(cta);
-        list.appendChild(card);
+        card.appendChild(details);
+        return card;
+      }
+      function createContractRow(capability) {
+        var row = document.createElement("article");
+        row.className = "capability-contract-row";
+        var marker = document.createElement("span");
+        marker.className = "capability-contract-kind";
+        marker.dataset.kind = capability.recordKind;
+        marker.textContent = kindLabels[capability.recordKind] || capability.recordKind;
+        var body = document.createElement("div");
+        var title = document.createElement("h5");
+        title.textContent = capability.displayName;
+        var responsibility = document.createElement("p");
+        responsibility.textContent = capability.responsibilities[0] || capability.description;
+        var note = document.createElement("small");
+        note.textContent = "仅定义验收意义，不代表已建立 Capability";
+        body.appendChild(title);
+        body.appendChild(responsibility);
+        body.appendChild(note);
+        row.appendChild(marker);
+        row.appendChild(body);
+        return row;
+      }
+      function openDomain(domain, button) {
+        var records = library.capabilities.filter(function (capability) { return capability.domain === domain.id; });
+        var independent = records.filter(function (capability) { return capability.recordKind === "independent_capability"; });
+        var contracts = records.filter(function (capability) { return capability.recordKind !== "independent_capability"; });
+        var establishedList = document.getElementById("capabilityEstablishedList");
+        var contractList = document.getElementById("capabilityContractsList");
+        lastDomainButton = button;
+        setText("capabilityDomainOrder", String(domain.displayOrder).padStart(2, "0"));
+        setText("capabilityDomainTitle", domain.name);
+        setText("capabilityDomainResponsibility", domain.responsibility);
+        setText("capabilityEstablishedCount", independent.length + " 项");
+        setText("capabilityContractsCount", contracts.length + " 项");
+        var sampleCount = independent.reduce(function (total, capability) { return total + formalSamplesFor(capability).length; }, 0);
+        var definedCount = independent.filter(function (capability) { return capability.status === "defined"; }).length;
+        setText("capabilityDomainMaturity", independent.length
+          ? independent.length + " 项独立能力" + (definedCount ? "（" + definedCount + " 项待验证）" : "") + " · " + sampleCount + " 份正式回归样本"
+          : "尚无独立能力 · 保留 " + contracts.length + " 项验收契约");
+        establishedList.textContent = "";
+        contractList.textContent = "";
+        if (independent.length) independent.forEach(function (capability) { establishedList.appendChild(createEstablishedCard(capability)); });
+        else {
+          var emptyEstablished = document.createElement("p");
+          emptyEstablished.className = "capability-detail-empty";
+          emptyEstablished.textContent = "此能力域尚未建立独立 Capability。";
+          establishedList.appendChild(emptyEstablished);
+        }
+        if (contracts.length) contracts.forEach(function (capability) { contractList.appendChild(createContractRow(capability)); });
+        else {
+          var emptyContracts = document.createElement("p");
+          emptyContracts.className = "capability-detail-empty";
+          emptyContracts.textContent = "此能力域没有验收契约。";
+          contractList.appendChild(emptyContracts);
+        }
+        setHomeVisible(false);
+        var detailTitle = document.getElementById("capabilityDomainTitle");
+        if (detailTitle && typeof detailTitle.focus === "function") detailTitle.focus();
+      }
+      library.domains.slice().sort(function (left, right) {
+        return left.displayOrder - right.displayOrder;
+      }).forEach(function (domain) {
+        var domainRecords = library.capabilities.filter(function (capability) { return capability.domain === domain.id; });
+        var independent = domainRecords.filter(function (capability) { return capability.recordKind === "independent_capability"; });
+        var contracts = domainRecords.filter(function (capability) { return capability.recordKind !== "independent_capability"; });
+        var domainCard = document.createElement("article");
+        domainCard.className = "capability-domain-item";
+        domainCard.dataset.domain = domain.id;
+        var order = document.createElement("span");
+        order.className = "capability-domain-order";
+        order.textContent = String(domain.displayOrder).padStart(2, "0");
+        var domainCopy = document.createElement("div");
+        domainCopy.className = "capability-domain-copy";
+        var domainHead = document.createElement("div");
+        domainHead.className = "capability-domain-head";
+        var domainTitle = document.createElement("h3");
+        domainTitle.textContent = domain.name;
+        domainHead.appendChild(domainTitle);
+        var domainResponsibility = document.createElement("p");
+        domainResponsibility.className = "capability-domain-responsibility";
+        domainResponsibility.textContent = domain.responsibility;
+        domainCopy.appendChild(domainHead);
+        domainCopy.appendChild(domainResponsibility);
+        var metrics = document.createElement("div");
+        metrics.className = "capability-domain-metrics";
+        var independentMetric = document.createElement("span");
+        independentMetric.textContent = "独立能力 " + independent.length;
+        var contractMetric = document.createElement("span");
+        contractMetric.textContent = "验收契约 " + contracts.length;
+        var maturity = document.createElement("strong");
+        var hasFormalBaseline = independent.some(function (capability) {
+          return capability.status === "covered" && formalSamplesFor(capability).length > 0;
+        });
+        var hasAcceptedPilot = independent.some(function (capability) { return capability.status === "pilot_ready"; });
+        maturity.textContent = hasFormalBaseline ? "已有工程基线" : hasAcceptedPilot ? "已有条件验收能力" : independent.length ? "能力已定义，待验证" : "等待能力建设";
+        metrics.appendChild(independentMetric);
+        metrics.appendChild(contractMetric);
+        metrics.appendChild(maturity);
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "capability-domain-open";
+        button.textContent = "查看详情";
+        button.setAttribute("aria-label", "查看“" + domain.name + "”详情");
+        button.addEventListener("click", function () { openDomain(domain, button); });
+        domainCard.appendChild(order);
+        domainCard.appendChild(domainCopy);
+        domainCard.appendChild(metrics);
+        domainCard.appendChild(button);
+        list.appendChild(domainCard);
       });
-      if (!library.capabilities.length) {
+      if (!library.domains.length) {
         var empty = document.createElement("p");
         empty.className = "capability-library-empty";
-        empty.textContent = "尚无能力定义。";
+        empty.textContent = "尚无 Domain 定义。";
         list.appendChild(empty);
       }
+      if (backButton) backButton.addEventListener("click", function () {
+        setHomeVisible(true);
+        if (lastDomainButton && typeof lastDomainButton.focus === "function") lastDomainButton.focus();
+      });
+      setHomeVisible(true);
     } catch (error) {
       list.textContent = "";
+      if (loadStatus) loadStatus.textContent = "能力域加载失败。";
       if (errorBox) {
         errorBox.textContent = "能力库加载失败：" + String(error && error.message ? error.message : error);
         errorBox.classList.remove("hidden");
@@ -2864,6 +3023,50 @@ function buildPdfTranslationPromptByMode(mode) {
   };
 }
 
+function renderPdfD1Panel() {
+    var button = document.getElementById("btnRunPdfD1");
+    var configureButton = document.getElementById("btnConfigurePdfD1");
+    var status = document.getElementById("pdfD1Status");
+    var panel = document.getElementById("pdfD1Panel");
+    var resultBox = document.getElementById("pdfD1Result");
+    if (!button || !status || !panel || !resultBox) return;
+    var filePath = state.pdfExtract && state.pdfExtract.filePath;
+    button.disabled = !filePath || state.d1Status === "running";
+    if (configureButton) configureButton.disabled = state.d1Status === "running";
+    button.textContent = state.d1Status === "running" ? "D1 识别中…" :
+      state.d1Result ? "重新运行 D1" : "运行 D1 结构识别";
+    panel.setAttribute("data-d1-state", state.d1Status);
+    resultBox.hidden = !state.d1Result;
+    if (state.d1Status === "running") {
+      status.textContent = "D1 正在独立处理当前 PDF；旧翻译流程不会因此改变。";
+    } else if (state.d1Status === "error") {
+      status.textContent = "D1 未完成：" + state.d1Error;
+    } else if (state.d1Result) {
+      var contract = state.d1Result.contract;
+      var summary = contract.summary;
+      var objectCount = contract.objects.length;
+      var unsupported = summary.byType.unsupported_structured_block || 0;
+      status.textContent = "D1 已运行，返回非权威结构候选；未用于当前翻译或导出。";
+      document.getElementById("pdfD1Summary").textContent =
+        summary.pages + " 页 · " + objectCount + " 个结构对象 · " +
+        summary.pending + " 条待归属来源 · " + unsupported + " 个不支持对象";
+      var typeLabels = { title: "标题", author: "作者", abstract: "摘要", heading: "章节标题",
+        body: "正文", caption: "图表说明", figure: "图片", table: "表格", formula: "独立公式",
+        equation_number: "公式编号", reference: "文献", page_number: "页码",
+        running_header: "页眉", front_matter_affiliation_or_contact: "机构/联系信息",
+        unsupported_structured_block: "不支持区域" };
+      document.getElementById("pdfD1Types").textContent = Object.keys(summary.byType)
+        .map(function (type) { return (typeLabels[type] || type) + " " + summary.byType[type]; })
+        .join(" · ");
+      document.getElementById("pdfD1ArtifactId").textContent = contract.artifactId;
+      document.getElementById("pdfD1PdfHash").textContent = state.d1Result.sourcePdfSha256;
+    } else {
+      status.textContent = state.d1RuntimeMessage || (filePath
+        ? "当前仍是旧版提取结果。点击按钮后，才会单独运行 D1。"
+        : "选择 PDF 后可单独运行 D1；上方“提取结果”仍来自旧流程。");
+    }
+  }
+
 function resetPdfDocumentState(fileId) {
     if (state.pdfTranslateAbortController) {
       try { state.pdfTranslateAbortController.abort(); } catch (_err) {}
@@ -2877,6 +3080,10 @@ function resetPdfDocumentState(fileId) {
     state.pdfCurrentFileId = fileId || null;
     state.selectedFile = null;
     state.pdfExtract = null;
+    state.d1TaskSeq += 1;
+    state.d1Result = null;
+    state.d1Status = "idle";
+    state.d1Error = "";
     state.extractedText = "";
     state.segments = [];
     state.semanticStructureArtifact = null;
@@ -2893,6 +3100,7 @@ function resetPdfDocumentState(fileId) {
     state.progress = 0;
     state.activeSegment = null;
     updatePdfExportButton();
+    renderPdfD1Panel();
   }
 
   function buildPdfFileId(result) {
@@ -4029,6 +4237,8 @@ function resetPdfDocumentState(fileId) {
     var pauseBtn = document.getElementById("btnPausePdfTranslation");
     var backBtn = document.getElementById("btnBackPdfModes");
     var openOutputBtn = document.getElementById("btnOpenPdfOutput");
+    var runD1Btn = document.getElementById("btnRunPdfD1");
+    var configureD1Btn = document.getElementById("btnConfigurePdfD1");
     if (!input && !dropZone) return;
     setupPdfLanguageControls();
     renderPdfRecentJobs();
@@ -4048,6 +4258,63 @@ function resetPdfDocumentState(fileId) {
       if (!ipc) return;
       var result = await ipc.invoke("shell:open-path", state.lastPdfOutputPath);
       if (result && !result.ok) window.alert("无法打开文件：" + (result.error || "unknown"));
+    });
+
+    if (configureD1Btn) configureD1Btn.addEventListener("click", async function () {
+      var ipc = getElectronIpc();
+      if (!ipc || state.d1Status === "running") return;
+      var result = await ipc.invoke("pdf:configure-object-first-tools");
+      if (result && result.status === "cancelled") return;
+      if (result && result.ok) {
+        state.d1RuntimeMessage = "D1 运行工具已保存在应用配置中；选择 PDF 后可单独运行。";
+        if (state.d1Status === "error") { state.d1Status = "idle"; state.d1Error = ""; }
+      } else {
+        state.d1Result = null;
+        state.d1Status = "error";
+        state.d1Error = String(result && result.error || result && result.status || "运行工具配置失败");
+      }
+      renderPdfD1Panel();
+    });
+
+    if (runD1Btn) runD1Btn.addEventListener("click", async function () {
+      var ipc = getElectronIpc();
+      var filePath = state.pdfExtract && state.pdfExtract.filePath;
+      if (!ipc || !filePath || state.d1Status === "running") return;
+      var taskId = ++state.d1TaskSeq;
+      state.d1Result = null;
+      state.d1Status = "running";
+      state.d1Error = "";
+      renderPdfD1Panel();
+      try {
+        var result = await ipc.invoke("pdf:object-first-structure", { pdfPath: filePath });
+        if (taskId !== state.d1TaskSeq ||
+            !state.pdfExtract || state.pdfExtract.filePath !== filePath) return;
+        if (!result || result.ok !== true || result.status !== "candidate_pending_runtime_gate") {
+          var failure = result && result.status || "unknown_failure";
+          if (failure === "missing_native_dependencies") throw new Error("未找到 D1 所需的 Python 与 Poppler 运行工具。可在启动应用前配置 LINGOFLOW_OBJECT_FIRST_PYTHON 与 LINGOFLOW_OBJECT_FIRST_PDFTOPPM。");
+          if (failure === "missing_run_root") throw new Error("D1 临时工作目录不可用。");
+          throw new Error(String(result && result.error || failure));
+        }
+        if (!objectFirstContractAuthority) throw new Error("D1 结果校验模块不可用。");
+        objectFirstContractAuthority.validateObjectFirstContract(result.contract);
+        if (!objectFirstCrypto || !result.sourceInventory ||
+            objectFirstCrypto.createHash("sha256").update(JSON.stringify(result.sourceInventory))
+              .digest("hex") !== result.sourceInventorySha256)
+          throw new Error("D1 来源清单校验失败。");
+        if (Object.values(result.contract.sourcePdfSha256ByPage).some(function (sha) {
+          return sha !== result.sourcePdfSha256;
+        }) || Object.values(result.sourceInventory.pages).some(function (page) {
+          return page.sourcePdfSha256 !== result.sourcePdfSha256;
+        })) throw new Error("D1 结果与当前 PDF 身份不一致。");
+        state.d1Result = result;
+        state.d1Status = "success";
+      } catch (error) {
+        if (taskId !== state.d1TaskSeq) return;
+        state.d1Result = null;
+        state.d1Status = "error";
+        state.d1Error = String(error && error.message || error);
+      }
+      renderPdfD1Panel();
     });
 
     async function selectAndExtractFromElectron() {
@@ -4112,6 +4379,7 @@ function resetPdfDocumentState(fileId) {
         debugPdfLog("[pdf] extracted file=", result.fileName, "chars=", state.extractedText.length, "items=", state.textItems.length, "segments=", state.segments.length, "preview=", state.extractedText.slice(0, 500));
         setPdfWorkflowState("extracted", result);
         setPdfPreviewMode("raw");
+        renderPdfD1Panel();
       } catch (err) {
         if (taskId !== state.pdfTaskSeq) return true;
         state.error = String(err && err.message ? err.message : err);
@@ -4130,6 +4398,7 @@ function resetPdfDocumentState(fileId) {
         renderPdfPreview(state.pdfExtract);
         var previewEl = document.getElementById("pdfExtractPreview");
         if (previewEl) previewEl.textContent = "提取失败：" + String(err && err.message ? err.message : err);
+        renderPdfD1Panel();
       }
       return true;
     }

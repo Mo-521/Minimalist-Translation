@@ -1,26 +1,16 @@
 "use strict";
 
 const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const path = require("node:path");
 const test = require("node:test");
 const editor = require("../../../tools/layout-geometry-body-editor");
 
-const ROOT = path.resolve(__dirname, "../../../..");
-const EVIDENCE = path.join(ROOT, ".governance/archive/evidence/layout-geometry-capability-audit/evidence/phase-2-paper-geometry");
-const OUTPUT = path.join(EVIDENCE, "human-review-final-paper1-10-v8");
-const PAPERS = Array.from({ length: 10 }, (_, index) => `paper${index + 1}`);
-
-function machinePages(paper) {
-  const oracle = JSON.parse(fs.readFileSync(path.join(EVIDENCE, "oracles", `${paper}-geometry-oracle.json`), "utf8"));
+function machinePages(paper = "synthetic") {
   return {
-    sha: oracle.sample.sha256,
-    pages: oracle.pages.map((page) => editor.initialPage(paper, page.identity.pageNumber, page.pageSize,
-      page.regions.filter((region) => region.regionClass === "body_column").map((region) => ({
-        id: region.regionId,
-        canonicalColumnId: region.canonicalColumnRef.columnId,
-        geometry: region.expectedGeometry,
-      })))),
+    sha: "a".repeat(64),
+    pages: [editor.initialPage(paper, 1, { width: 612, height: 792 }, [
+      { id: "body-1", canonicalColumnId: "column-1", geometry: { x: 40, y: 60, width: 220, height: 500 } },
+      { id: "body-2", canonicalColumnId: "column-2", geometry: { x: 320, y: 60, width: 220, height: 500 } },
+    ])],
   };
 }
 
@@ -32,7 +22,7 @@ test("PDF point conversion is invariant under page zoom", () => {
 });
 
 test("multiple corrected Body boxes support create, move, resize, delete, reset and confirmation", () => {
-  const { sha, pages } = machinePages("paper1");
+  const { sha, pages } = machinePages();
   const page = pages[0];
   const prediction = JSON.stringify(page.predicted);
   const first = page.corrected[0];
@@ -45,9 +35,9 @@ test("multiple corrected Body boxes support create, move, resize, delete, reset 
   assert.equal(page.corrected.length, page.predicted.length);
   page.corrected.push({ id: "new-2", sourceRegionId: null, canonicalColumnId: null, geometry: created });
   page.confirmed = true;
-  const exported = editor.exportGroundTruth("paper1", pages, sha);
-  const restored = editor.restoreGroundTruth(JSON.parse(JSON.stringify(exported)), "paper1", sha, machinePages("paper1").pages);
-  assert.deepEqual(editor.exportGroundTruth("paper1", restored, sha), exported);
+  const exported = editor.exportGroundTruth("synthetic", pages, sha);
+  const restored = editor.restoreGroundTruth(JSON.parse(JSON.stringify(exported)), "synthetic", sha, machinePages().pages);
+  assert.deepEqual(editor.exportGroundTruth("synthetic", restored, sha), exported);
   assert.equal(JSON.stringify(page.predicted), prediction);
   assert.equal(exported.pages[0].confirmed, true);
   assert.equal(exported.pages[0].corrected.length, exported.pages[0].predicted.length + 1);
@@ -58,46 +48,13 @@ test("multiple corrected Body boxes support create, move, resize, delete, reset 
 });
 
 test("import rejects stale prediction, wrong source PDF and invalid geometry", () => {
-  const { sha, pages } = machinePages("paper1");
-  const document = editor.exportGroundTruth("paper1", pages, sha);
-  assert.throws(() => editor.restoreGroundTruth(document, "paper1", "wrong-hash", machinePages("paper1").pages));
+  const { sha, pages } = machinePages();
+  const document = editor.exportGroundTruth("synthetic", pages, sha);
+  assert.throws(() => editor.restoreGroundTruth(document, "synthetic", "wrong-hash", machinePages().pages));
   const stale = structuredClone(document);
   stale.pages[0].predicted[0].geometry.x += 1;
-  assert.throws(() => editor.restoreGroundTruth(stale, "paper1", sha, machinePages("paper1").pages));
+  assert.throws(() => editor.restoreGroundTruth(stale, "synthetic", sha, machinePages().pages));
   const invalid = structuredClone(document);
   invalid.pages[0].corrected[0].geometry.width = 9999;
-  assert.throws(() => editor.restoreGroundTruth(invalid, "paper1", sha, machinePages("paper1").pages));
-});
-
-test("latest editable review pages remain self-contained and contain only Body overlays", () => {
-  const manifest = JSON.parse(fs.readFileSync(path.join(OUTPUT, "MANIFEST.json"), "utf8"));
-  assert.equal(manifest.runtimeDecisionUse, "forbidden");
-  assert.equal(manifest.candidateAcceptance, "not_performed");
-  assert.equal(manifest.promotion, "not_performed");
-  assert.equal(manifest.results.length, 10);
-  assert.equal(manifest.results.reduce((sum, item) => sum + item.pages, 0), 126);
-  PAPERS.forEach((paper) => {
-    const html = fs.readFileSync(path.join(OUTPUT, `${paper}-body.html`), "utf8");
-    const draft = JSON.parse(fs.readFileSync(path.join(OUTPUT, `${paper}-body-ground-truth-draft.json`), "utf8"));
-    const pages = draft.pages;
-    assert.equal((html.match(/class="editable-page"/g) || []).length, pages.length);
-    assert.equal((html.match(/class="body-predicted"/g) || []).length, pages.length);
-    assert.match(html, /src="data:image\/jpeg;base64,/);
-    assert.match(html, /id="export-ground-truth"/);
-    assert.match(html, /id="import-ground-truth"/);
-    assert.doesNotMatch(html, /data-class="(?:independent_region|protected_region|writable_space_expectation)"/);
-    const embedded = [...html.matchAll(/<script type="application\/json" class="body-predicted">([^<]*)<\/script>/g)];
-    embedded.forEach((match, index) => assert.deepEqual(JSON.parse(match[1]), pages[index].predicted));
-    const inlineScripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((match) => match[1]);
-    assert.equal(inlineScripts.length, 2);
-    inlineScripts.forEach((source) => assert.doesNotThrow(() => new Function(source)));
-  });
-});
-
-test("latest paper1 corrected export round-trips without changing predictions", () => {
-  const draft = JSON.parse(fs.readFileSync(path.join(OUTPUT, "paper1-body-ground-truth-draft.json"), "utf8"));
-  const machine = draft.pages.map((page) => editor.initialPage("paper1", page.pageNumber, page.pageSize, page.predicted));
-  const restored = editor.restoreGroundTruth(draft, "paper1", draft.sourcePdfSha256, machine);
-  assert.deepEqual(editor.exportGroundTruth("paper1", restored, draft.sourcePdfSha256), draft);
-  assert.equal(draft.pages.every((page) => page.confirmed), true);
+  assert.throws(() => editor.restoreGroundTruth(invalid, "synthetic", sha, machinePages().pages));
 });

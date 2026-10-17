@@ -295,6 +295,31 @@ test('paired gutter prose rebuts merged spanning lines, but paired formula fragm
   assert.equal(detect(formula)[0].layout.layoutType, 'single_column');
 });
 
+test('a short second prose column stays separate without requiring balanced item counts', () => {
+  const context = vm.createContext({ Number, Math, String });
+  const items = [];
+  const lines = [];
+  for (let index = 0; index < 40; index += 1) {
+    const y = 80 + index * 12;
+    const left = { x: 54, y, width: 246, height: 10, fontSize: 10, text: 'The left column continues with a full prose line', pageWidth: 612, pageHeight: 792 };
+    items.push(left);
+    lines.push({ bbox: { x: left.x, y, width: left.width, height: 10 }, text: left.text, items: [left], columnEvidenceSide: index < 6 ? 'left' : '' });
+    if (index >= 6) continue;
+    const right = { x: 330, y, width: 228, height: 10, fontSize: 10, text: 'The short right column has independent prose', pageWidth: 612, pageHeight: 792 };
+    items.push(right);
+    lines.push({ bbox: { x: right.x, y, width: right.width, height: 10 }, text: right.text, items: [right], columnEvidenceSide: 'right' });
+  }
+  context.filterHeaderFooterItems = input => input;
+  context.getPageBounds = () => ({ x: 54, y: 80, width: 504, height: 480 });
+  context.mergeTextItemsIntoColumnEvidenceLines = () => lines;
+  context.detectPageLayout = () => ({ layoutType: 'single_column', languageHint: 'en', confidence: 0.78, columnCount: 1 });
+  vm.runInContext(extractFunction(mainSource, 'detectPageColumns'), context);
+  const columns = context.detectPageColumns(items);
+  assert.equal(columns.find(column => column.name === 'left').items.length, 40);
+  assert.equal(columns.find(column => column.name === 'right').items.length, 6);
+  assert.ok(!columns.some(column => column.name === 'single'));
+});
+
 test('translated duplicate formula prefix is removed while translated prose remains', () => {
   const context = vm.createContext({ String, Array, RegExp, Set, Number, Math });
   context.normalizePdfLineBoxes = (segment) => segment.lineBoxes || [];

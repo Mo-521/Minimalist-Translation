@@ -175,6 +175,20 @@
         <div id="pdfExtractPreview" class="pdf-extract-preview">选择 PDF 后，这里会显示提取出的文字预览。</div>
       </section>
 
+      <section id="pdfD1Panel" class="pdf-work-stage pdf-d1-panel" aria-labelledby="pdfD1Title">
+        <div class="pdf-d1-head">
+          <div><span class="pdf-d1-eyebrow">独立结构能力 · 不参与当前翻译</span><h3 id="pdfD1Title">D1 Object-first 结构识别</h3></div>
+          <div class="pdf-d1-actions"><button id="btnConfigurePdfD1" type="button" class="pdf-secondary-action">配置运行工具</button><button id="btnRunPdfD1" type="button" class="pdf-secondary-action" disabled>运行 D1 结构识别</button></div>
+        </div>
+        <p id="pdfD1Status" class="pdf-d1-status" role="status" aria-live="polite">选择 PDF 后可单独运行 D1；上方“提取结果”仍来自旧流程。</p>
+        <div id="pdfD1Result" class="pdf-d1-result" hidden>
+          <p id="pdfD1Summary" class="pdf-d1-summary"></p>
+          <p id="pdfD1Types" class="pdf-d1-types"></p>
+          <dl class="pdf-d1-identities"><div><dt>结果 ID</dt><dd id="pdfD1ArtifactId"></dd></div><div><dt>源 PDF SHA-256</dt><dd id="pdfD1PdfHash"></dd></div></dl>
+          <p class="pdf-d1-note">这是 D1 的非权威候选结果；下方翻译与导出仍使用旧版结构。</p>
+        </div>
+      </section>
+
       <section id="pdfTranslationStage" class="pdf-work-stage pdf-translation-stage" data-work-stage="translate">
         <div class="pdf-progress-copy"><strong id="pdfProgressTitle">准备翻译</strong><span id="pdfProgressSummary">完成提取后即可开始。</span></div>
         <div class="pdf-progress-track" role="progressbar" aria-label="翻译进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="pdfProgressBar"></span></div>
@@ -202,25 +216,40 @@
     <header class="capability-library-header glass-panel">
       <div>
         <h2>能力库</h2>
-        <p>查看能力定义、边界场景和正式回归样本；定义状态不代表能力已验收。</p>
+        <p>按五个稳定能力域查看工程成熟度，再进入单个域检查能力与验收边界。</p>
       </div>
       <span class="capability-library-readonly">只读视图</span>
     </header>
 
     <section class="capability-authority-notice" aria-label="能力库说明">
-      <div><strong>能力库不是第二套权威，只记录验证证据</strong><p>样本和场景只用于复验；单／双栏、语义结构和排版仍由各自唯一 Authority 判断。样本投递暂未开放。</p></div>
-    </section>
-
-    <section class="capability-library-stats" aria-label="能力库摘要">
-      <article><strong id="capabilityLibraryCapabilityCount">待加载</strong><span>能力定义</span><small>项核心能力</small></article>
-      <article><strong id="capabilityLibraryBoundaryCount">待加载</strong><span>覆盖场景</span><small>个典型场景</small></article>
-      <article><strong id="capabilityLibrarySampleCount">待加载</strong><span>回归样本</span><small>份正式样本</small></article>
-      <article><strong id="capabilityLibraryAuthorityCount">待加载</strong><span>权威维度</span><small>个唯一权威维度</small></article>
+      <div><strong>处理链：文档结构与身份 → 栏与区域识别 → 内容落地 → 版面排版 → 导出与最终验证</strong><p>能力域只负责组织；工程事实、证据和回归仍由各独立能力分别拥有。</p></div>
     </section>
 
     <section class="capability-library-catalog glass-panel">
       <div id="capabilityLibraryError" class="capability-library-error hidden" role="alert"></div>
-      <div id="capabilityLibraryList" class="capability-library-list" aria-live="polite"></div>
+      <p id="capabilityLibraryLoadStatus" class="capability-library-load-status" aria-live="polite">正在加载能力域…</p>
+      <div id="capabilityLibraryHome">
+        <div class="capability-library-section-head">
+          <div><h3>能力域总览</h3><p>五个一级能力域按处理顺序排列。</p></div>
+        </div>
+        <div id="capabilityLibraryList" class="capability-library-list"></div>
+      </div>
+      <div id="capabilityDomainDetail" class="capability-domain-detail" hidden>
+        <button id="btnBackCapabilityDomains" type="button" class="capability-domain-back">← 返回能力域总览</button>
+        <header class="capability-domain-detail-head">
+          <div><span id="capabilityDomainOrder" class="capability-domain-order"></span><h3 id="capabilityDomainTitle" tabindex="-1"></h3></div>
+          <p id="capabilityDomainResponsibility"></p>
+          <p id="capabilityDomainMaturity" class="capability-domain-maturity"></p>
+        </header>
+        <section class="capability-detail-section capability-detail-established" aria-labelledby="capabilityEstablishedTitle">
+          <div class="capability-detail-section-head"><div><h4 id="capabilityEstablishedTitle">已建立 Capability</h4><p>独立的开发、证据、回归、晋级与权威单位。</p></div><span id="capabilityEstablishedCount"></span></div>
+          <div id="capabilityEstablishedList" class="capability-established-list"></div>
+        </section>
+        <section class="capability-detail-section capability-detail-contracts" aria-labelledby="capabilityContractsTitle">
+          <div class="capability-detail-section-head"><div><h4 id="capabilityContractsTitle">验收契约</h4><p>保留验收语义，不代表对应能力已经实现。</p></div><span id="capabilityContractsCount"></span></div>
+          <div id="capabilityContractsList" class="capability-contract-list"></div>
+        </section>
+      </div>
       <p class="capability-library-schema-foot"><span id="capabilityLibrarySchemaBadge">加载中</span></p>
     </section>
   </div>
@@ -387,4 +416,3 @@
 <script src="provider-help-content.js"></script>
 <script src="renderer.js"></script>
 </body></html>
-

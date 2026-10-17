@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minimalist-translation.local/schemas/capability-domains-v1.json",
+  "title": "Capability Domain Registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "registryRole", "domains"],
+  "properties": {
+    "schemaVersion": { "const": "capability-domains/v1" },
+    "registryRole": { "const": "organization_and_presentation_only" },
+    "domains": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": { "$ref": "#/$defs/domain" }
+    }
+  },
+  "$defs": {
+    "domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "responsibility", "displayOrder"],
+      "properties": {
+        "id": {
+          "enum": [
+            "document-structure-identity",
+            "column-region-recognition",
+            "content-placement",
+            "layout-composition",
+            "export-validation"
+          ]
+        },
+        "name": { "type": "string", "minLength": 1 },
+        "responsibility": { "type": "string", "minLength": 1 },
+        "displayOrder": { "type": "integer", "minimum": 1, "maximum": 5 }
+      }
+    }
+  }
+}

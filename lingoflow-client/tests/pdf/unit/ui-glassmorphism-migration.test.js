@@ -15,11 +15,20 @@ class Element {
     this.tag = tag;
     this.children = [];
     this.dataset = {};
-    this.textContent = "";
+    this._textContent = "";
     this.classes = new Set();
+    this.hidden = false;
+    this.attributes = {};
+    this.listeners = {};
     this.classList = { add: (v) => this.classes.add(v), remove: (v) => this.classes.delete(v) };
   }
+  set textContent(value) { this._textContent = value; this.children = []; }
+  get textContent() { return this._textContent; }
   appendChild(child) { this.children.push(child); }
+  setAttribute(name, value) { this.attributes[name] = value; }
+  addEventListener(name, listener) { this.listeners[name] = listener; }
+  click() { if (this.listeners.click) this.listeners.click(); }
+  focus() { this.focused = true; }
 }
 
 function pageHarness(loader) {
@@ -91,58 +100,70 @@ test("draft settings switch and dialogs keep accessible real controls", () => {
   assert.match(css, /\.ui-glass-workbench \.provider-new-action \{[^}]*border: 1px dashed/);
 });
 
-test("capability presentation consumes the frozen catalog and confines technical identity to details", () => {
+test("capability presentation shows only five Domains before a separated Domain Detail", () => {
   const library = require(path.join(app, "capability-library")).loadCapabilityLibrary();
   const before = JSON.stringify(library);
   const nodes = pageHarness(() => library);
-  assert.equal(nodes.get("capabilityLibraryCapabilityCount").textContent, String(library.capabilities.length));
-  assert.equal(nodes.get("capabilityLibrarySampleCount").textContent, String(library.samples.length));
-  assert.equal(nodes.get("capabilityLibraryAuthorityCount").textContent, String(new Set(library.capabilities.map(c => c.architectureRecord)).size));
-  const cards = nodes.get("capabilityLibraryList").children;
-  assert.equal(cards.length, library.capabilities.length);
-  const statusLabels = { defined: "已定义", pilot_ready: "待试点", covered: "已建立回归基线", deprecated: "已停用" };
-  cards.forEach((card, i) => {
-    const definition = library.capabilities[i];
-    const head = card.children[0];
-    assert.equal(head.children.length, 2);
-    assert.equal(head.children[0].tag, "h4");
-    const details = card.children[3].children[0];
-    assert.equal(details.tag, "details");
-    assert.ok(details.children[1].textContent.includes(definition.id));
-    assert.ok(details.children[1].textContent.includes(definition.architectureRecord));
-    assert.equal(details.children[2].textContent, definition.decisionAuthority.statement);
-    const status = head.children[1];
-    assert.equal(status.dataset.state, definition.status);
-    const formalSampleCount = definition.regressionSampleIds.filter(sampleId => library.samples.some(sample => sample.id === sampleId)).length;
-    const expectedStatusLabel = definition.status === "pilot_ready" && formalSampleCount
-      ? "已纳入离线回归"
-      : statusLabels[definition.status];
-    assert.equal(status.textContent, expectedStatusLabel);
-    assert.equal(card.children[3].children[1].tag, "span");
-    assert.equal(card.children[3].children[1].textContent, "样本投递尚未开放");
+  const domains = nodes.get("capabilityLibraryList").children;
+  assert.equal(domains.length, 5);
+  assert.deepEqual(domains.map(domain => domain.dataset.domain), library.domains.map(domain => domain.id));
+  domains.forEach((domain) => {
+    assert.equal(domain.children.length, 4);
+    assert.equal(domain.children[3].tag, "button");
+    assert.equal(domain.children[3].textContent, "查看详情");
+    assert.equal(domain.children.some(child => child.tag === "article"), false);
   });
-  const columnIndex = library.capabilities.findIndex((definition) => definition.id === "cap.column-recognition");
-  const columnCard = cards[columnIndex];
-  assert.match(columnCard.children[2].children[0].textContent, /回归基线 10 个样本 \/ 126 页/);
-  const sampleList = columnCard.children[3].children[0].children[10];
+  const columnDomain = domains.find(domain => domain.dataset.domain === "column-region-recognition");
+  assert.deepEqual(columnDomain.children[2].children.map(item => item.textContent), ["独立能力 2", "验收契约 0", "已有工程基线"]);
+  columnDomain.children[3].click();
+  assert.equal(nodes.get("capabilityLibraryHome").hidden, true);
+  assert.equal(nodes.get("capabilityDomainDetail").hidden, false);
+  assert.equal(nodes.get("capabilityDomainTitle").textContent, "栏与区域识别");
+  assert.equal(nodes.get("capabilityEstablishedCount").textContent, "2 项");
+  assert.equal(nodes.get("capabilityContractsCount").textContent, "0 项");
+  const cards = nodes.get("capabilityEstablishedList").children;
+  assert.equal(cards.length, 2);
+  const columnCard = cards.find(card => card.children[0].children[0].children[1].textContent === "cap.column-recognition");
+  const geometryCard = cards.find(card => card.children[0].children[0].children[1].textContent === "cap.layout-geometry");
+  assert.equal(columnCard.children[0].children[0].children[0].textContent, "栏识别");
+  assert.equal(geometryCard.children[0].children[0].children[0].textContent, "版面几何");
+  assert.match(columnCard.children[4].textContent, /正式样本 10 个 \/ 126 页/);
+  assert.match(geometryCard.children[4].textContent, /正式样本 10 个 \/ 126 页/);
+  assert.equal(columnCard.children[0].children[1].children[0].textContent, "阶段 · 已建立回归基线");
+  assert.equal(geometryCard.children[0].children[1].children[0].textContent, "阶段 · 有条件验收");
+  assert.equal(geometryCard.children[0].children[1].children[1].textContent, "验证批次 · B001");
+  const columnDetails = columnCard.children[5];
+  const sampleList = columnDetails.children[14];
   assert.equal(sampleList.children.length, 10);
   assert.match(sampleList.children[0].textContent, /^paper1 · 论文样本1\.pdf · 6 页$/);
   assert.match(sampleList.children[6].textContent, /^paper7 · 论文样本7\.pdf · 11 页$/);
   assert.match(sampleList.children[9].textContent, /^paper10 · 论文样本10\.pdf · 10 页$/);
-  const geometryIndex = library.capabilities.findIndex((definition) => definition.id === "cap.layout-geometry");
-  const geometryCard = cards[geometryIndex];
-  assert.equal(geometryCard.children[0].children[1].dataset.state, "pilot_ready");
-  assert.equal(geometryCard.children[0].children[1].textContent, "已纳入离线回归");
-  assert.match(geometryCard.children[2].children[0].textContent, /回归基线 10 个样本 \/ 126 页/);
-  assert.equal(library.capabilities[geometryIndex].decisionAuthority.owner, "Geometry Authority");
+  assert.match(geometryCard.children[5].children[4].children[0].textContent, /cap\.column-recognition/);
+  assert.equal(library.capabilities.find(item => item.id === "cap.layout-geometry").decisionAuthority.owner, "Geometry Authority");
+  nodes.get("btnBackCapabilityDomains").click();
+  assert.equal(nodes.get("capabilityLibraryHome").hidden, false);
+  const structureDomain = domains.find(domain => domain.dataset.domain === "document-structure-identity");
+  assert.deepEqual(structureDomain.children[2].children.map(item => item.textContent), ["独立能力 1", "验收契约 2", "已有条件验收能力"]);
+  structureDomain.children[3].click();
+  assert.equal(nodes.get("capabilityDomainMaturity").textContent, "1 项独立能力 · 10 份正式回归样本");
+  assert.equal(nodes.get("capabilityEstablishedList").children.length, 1);
+  const structureCard = nodes.get("capabilityEstablishedList").children[0];
+  assert.equal(structureCard.children[0].children[0].children[0].textContent, "文档结构");
+  assert.equal(structureCard.children[0].children[0].children[1].textContent, "cap.document-structure");
+  assert.equal(structureCard.children[0].children[1].children[0].textContent, "阶段 · 有条件验收");
+  assert.equal(structureCard.children[0].children[1].children[1].textContent, "验证批次 · B001");
+  assert.match(structureCard.children[4].textContent, /当前 PDF 翻译仍使用旧结构链/);
+  assert.equal(nodes.get("capabilityContractsList").children.length, 2);
+  assert.equal(nodes.get("capabilityContractsList").children[0].children[0].textContent, "验收契约");
+  assert.match(nodes.get("capabilityContractsList").children[0].children[1].children[2].textContent, /不代表已建立/);
   assert.equal(JSON.stringify(library), before);
   assert.ok(Object.isFrozen(library));
 });
 
 test("empty or invalid catalog remains explicit instead of fabricating successful coverage", () => {
-  const empty = pageHarness(() => ({ capabilities: [], samples: [], schemaVersion: "capability-library-snapshot/v1" }));
-  assert.equal(empty.get("capabilityLibrarySampleCount").textContent, "0");
-  assert.equal(empty.get("capabilityLibraryList").children[0].textContent, "尚无能力定义。");
+  const empty = pageHarness(() => ({ domains: [], capabilities: [], samples: [], schemaVersion: "capability-library-snapshot/v2" }));
+  assert.equal(empty.get("capabilityLibraryList").children[0].textContent, "尚无 Domain 定义。");
+  assert.equal(empty.get("capabilityLibraryLoadStatus").textContent, "能力域已加载，共 0 项。");
   const invalid = pageHarness(() => { throw new Error("schema mismatch"); });
   assert.equal(invalid.get("capabilityLibrarySchemaBadge").textContent, "数据校验失败");
   assert.ok(!invalid.get("capabilityLibraryError").classes.has("hidden"));

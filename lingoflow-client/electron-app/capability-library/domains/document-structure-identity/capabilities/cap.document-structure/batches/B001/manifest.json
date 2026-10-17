@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "capability-validation-batch/v1",
+  "capabilityId": "cap.document-structure",
+  "batchId": "B001",
+  "baseCohort": {"papers": "1-10", "pages": 126, "source": "../../corpus.json"},
+  "supplementalCohort": {"papers": [11, 12], "pages": 29, "historicalTaskLabel": "B001"},
+  "capabilityStatus": "pilot_ready",
+  "runtimeDecisionUse": "forbidden",
+  "summary": "README.md"
+}

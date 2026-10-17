@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "capability-validation-batch/v1",
+  "capabilityId": "cap.column-recognition",
+  "batchId": "B001",
+  "organizationDate": "2026-10-17",
+  "identityNote": "Retrospective capability-local grouping of the first ten papers; not a reclassification of the original pilot and paper8-10 promotion events.",
+  "sourceCorpus": "lingoflow-client/electron-app/capability-library/domains/column-region-recognition/capabilities/cap.column-recognition/corpus.json",
+  "samples": [
+    {"id":"sample.column-pilot.paper1","paper":1,"pages":6,"pdfSha256":"7ba73a901c7bacf14cdff7d9e16480cc451ca3a521977795a3de9c4e67bba0ac"},
+    {"id":"sample.column-pilot.paper2","paper":2,"pages":11,"pdfSha256":"a3caa00f90f1b68a2068bbed07b2b91b6b40b3f65d1c3b22302e21333510e36f"},
+    {"id":"sample.column-pilot.paper3","paper":3,"pages":14,"pdfSha256":"fa33485f517b3c94d2f6e4d4366f3ab14a1e413a738db512e1862f4a0944f5f9"},
+    {"id":"sample.column-pilot.paper4","paper":4,"pages":16,"pdfSha256":"8984769b011698352fba9532e6eed4d81a1683451e888ee85a2caa8042149e8b"},
+    {"id":"sample.column-pilot.paper5","paper":5,"pages":14,"pdfSha256":"c3efd26afb65cafaa9e35525d0c2c182199b330cf101645e84f63901eca8bc48"},
+    {"id":"sample.column-pilot.paper6","paper":6,"pages":18,"pdfSha256":"6f4cb19da2d60bb5eed20cd5d56f0360b2afb552e60a199792cc4be6b752189e"},
+    {"id":"sample.column-pilot.paper7","paper":7,"pages":11,"pdfSha256":"ab244887804a95c4904e5efe5425fa1446d55f54fb2a707424439eb53c0bc1da"},
+    {"id":"sample.column-pilot.paper8","paper":8,"pages":11,"pdfSha256":"12e71bd65faecb793f64043c6812d7a3fd372e7f54ceed390e132839fd2504e4"},
+    {"id":"sample.column-pilot.paper9","paper":9,"pages":15,"pdfSha256":"23cdb5dd51ba39d61b6d3093220cdedeb8c4e6f20c3a64640067a6e6659fb420"},
+    {"id":"sample.column-pilot.paper10","paper":10,"pages":10,"pdfSha256":"bfa5b8767c9cce7eca3d4cda064bec56a03a9e344eb13a87271f8a8784527b63"}
+  ],
+  "evidence": [
+    {"path":"lingoflow-client/electron-app/capability-library/domains/column-region-recognition/capabilities/cap.column-recognition/batches/B001/baseline-summary.json","sha256":"a4559fb9ab8396aa79ac3bddba30d690c29b99c5f1720fb45f269b9aa28d6bb2"}
+  ],
+  "conclusion": "Formal Column corpus contains ten accepted paper identities and the current PageColumnModel baseline passes all 126 pages with zero findings; no mixed-body-flow page was represented. Column's evidence-only catalog status remains covered.",
+  "capabilityStatus": "covered",
+  "runtimeDecisionUse": "forbidden"
+}

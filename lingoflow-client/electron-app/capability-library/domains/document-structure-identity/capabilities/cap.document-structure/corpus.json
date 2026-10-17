@@ -1,0 +1,557 @@
+{
+  "schemaVersion": "capability-corpus/v1",
+  "catalogRole": "regression_only",
+  "runtimeDecisionUse": "forbidden",
+  "samples": [
+    {
+      "id": "sample.document-structure.paper1",
+      "displayName": "Reviewed offline Structure paper1",
+      "source": {
+        "fileName": "论文样本1.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "7ba73a901c7bacf14cdff7d9e16480cc451ca3a521977795a3de9c4e67bba0ac",
+        "bytes": 2284562,
+        "pageCount": 6
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Stage 82 full-paper 3-3-4 human review, batch a; accepted offline candidate only"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.structure.type-classification",
+        "boundary.structure.paragraph-grouping",
+        "boundary.structure.unknown"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.document-structure",
+          "assertionId": "assert.document-structure.type-and-boundary",
+          "oracleType": "manual",
+          "expected": {
+            "reviewedPages": 6,
+            "acceptedCandidateObjects": 103,
+            "candidateSha256": "57af975341cdf7ac8e04662de1a9a937a0a32ceeadc4f675206adf6b72f7bd8a",
+            "disposition": "accepted_with_known_bracket_frame_limitation"
+          },
+          "notes": "Human accepted the full-page offline candidate; exact machine replay is separately hash-checked. This is not an independent exhaustive per-object oracle, runtime classifier validation, or relation truth. Large painted formula delimiters may extend outside frames."
+        }
+      ],
+      "evidenceRefs": [
+        "cap.document-structure/batches/B001/candidate.json",
+        "cap.document-structure/batches/B001/source.json",
+        "cap.document-structure/batches/B001/human-acceptance.json"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-STRUCTURE-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.document-structure.paper2",
+      "displayName": "Reviewed offline Structure paper2",
+      "source": {
+        "fileName": "论文样本2.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "a3caa00f90f1b68a2068bbed07b2b91b6b40b3f65d1c3b22302e21333510e36f",
+        "bytes": 283040,
+        "pageCount": 11
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Stage 82 full-paper 3-3-4 human review, batch a; accepted offline candidate only"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.structure.type-classification",
+        "boundary.structure.paragraph-grouping",
+        "boundary.structure.unknown"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.document-structure",
+          "assertionId": "assert.document-structure.type-and-boundary",
+          "oracleType": "manual",
+          "expected": {
+            "reviewedPages": 11,
+            "acceptedCandidateObjects": 229,
+            "candidateSha256": "57af975341cdf7ac8e04662de1a9a937a0a32ceeadc4f675206adf6b72f7bd8a",
+            "disposition": "accepted_with_known_bracket_frame_limitation"
+          },
+          "notes": "Human accepted the full-page offline candidate; exact machine replay is separately hash-checked. This is not an independent exhaustive per-object oracle, runtime classifier validation, or relation truth. Large painted formula delimiters may extend outside frames."
+        }
+      ],
+      "evidenceRefs": [
+        "cap.document-structure/batches/B001/candidate.json",
+        "cap.document-structure/batches/B001/source.json",
+        "cap.document-structure/batches/B001/human-acceptance.json"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-STRUCTURE-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.document-structure.paper3",
+      "displayName": "Reviewed offline Structure paper3",
+      "source": {
+        "fileName": "论文样本3.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "fa33485f517b3c94d2f6e4d4366f3ab14a1e413a738db512e1862f4a0944f5f9",
+        "bytes": 505955,
+        "pageCount": 14
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Stage 82 full-paper 3-3-4 human review, batch a; accepted offline candidate only"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.structure.type-classification",
+        "boundary.structure.paragraph-grouping",
+        "boundary.structure.unknown"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.document-structure",
+          "assertionId": "assert.document-structure.type-and-boundary",
+          "oracleType": "manual",
+          "expected": {
+            "reviewedPages": 14,
+            "acceptedCandidateObjects": 259,
+            "candidateSha256": "57af975341cdf7ac8e04662de1a9a937a0a32ceeadc4f675206adf6b72f7bd8a",
+            "disposition": "accepted_with_known_bracket_frame_limitation"
+          },
+          "notes": "Human accepted the full-page offline candidate; exact machine replay is separately hash-checked. This is not an independent exhaustive per-object oracle, runtime classifier validation, or relation truth. Large painted formula delimiters may extend outside frames."
+        }
+      ],
+      "evidenceRefs": [
+        "cap.document-structure/batches/B001/candidate.json",
+        "cap.document-structure/batches/B001/source.json",
+        "cap.document-structure/batches/B001/human-acceptance.json"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-STRUCTURE-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.document-structure.paper4",
+      "displayName": "Reviewed offline Structure paper4",
+      "source": {
+        "fileName": "论文样本4.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "8984769b011698352fba9532e6eed4d81a1683451e888ee85a2caa8042149e8b",
+        "bytes": 1356829,
+        "pageCount": 16
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Stage 82 full-paper 3-3-4 human review, batch b; accepted offline candidate only"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.structure.type-classification",
+        "boundary.structure.paragraph-grouping",
+        "boundary.structure.unknown"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.document-structure",
+          "assertionId": "assert.document-structure.type-and-boundary",
+          "oracleType": "manual",
+          "expected": {
+            "reviewedPages": 16,
+            "acceptedCandidateObjects": 179,
+            "candidateSha256": "57af975341cdf7ac8e04662de1a9a937a0a32ceeadc4f675206adf6b72f7bd8a",
+            "disposition": "accepted_with_known_bracket_frame_limitation"
+          },
+          "notes": "Human accepted the full-page offline candidate; exact machine replay is separately hash-checked. This is not an independent exhaustive per-object oracle, runtime classifier validation, or relation truth. Large painted formula delimiters may extend outside frames."
+        }
+      ],
+      "evidenceRefs": [
+        "cap.document-structure/batches/B001/candidate.json",
+        "cap.document-structure/batches/B001/source.json",
+        "cap.document-structure/batches/B001/human-acceptance.json"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-STRUCTURE-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.document-structure.paper5",
+      "displayName": "Reviewed offline Structure paper5",
+      "source": {
+        "fileName": "论文样本5.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "c3efd26afb65cafaa9e35525d0c2c182199b330cf101645e84f63901eca8bc48",
+        "bytes": 1427806,
+        "pageCount": 14
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Stage 82 full-paper 3-3-4 human review, batch b; accepted offline candidate only"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.structure.type-classification",
+        "boundary.structure.paragraph-grouping",
+        "boundary.structure.unknown"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.document-structure",
+          "assertionId": "assert.document-structure.type-and-boundary",
+          "oracleType": "manual",
+          "expected": {
+            "reviewedPages": 14,
+            "acceptedCandidateObjects": 137,
+            "candidateSha256": "57af975341cdf7ac8e04662de1a9a937a0a32ceeadc4f675206adf6b72f7bd8a",
+            "disposition": "accepted_with_known_bracket_frame_limitation"
+          },
+          "notes": "Human accepted the full-page offline candidate; exact machine replay is separately hash-checked. This is not an independent exhaustive per-object oracle, runtime classifier validation, or relation truth. Large painted formula delimiters may extend outside frames."
+        }
+      ],
+      "evidenceRefs": [
+        "cap.document-structure/batches/B001/candidate.json",
+        "cap.document-structure/batches/B001/source.json",
+        "cap.document-structure/batches/B001/human-acceptance.json"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-STRUCTURE-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.document-structure.paper6",
+      "displayName": "Reviewed offline Structure paper6",
+      "source": {
+        "fileName": "论文样本6.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "6f4cb19da2d60bb5eed20cd5d56f0360b2afb552e60a199792cc4be6b752189e",
+        "bytes": 1148938,
+        "pageCount": 18
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Stage 82 full-paper 3-3-4 human review, batch b; accepted offline candidate only"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.structure.type-classification",
+        "boundary.structure.paragraph-grouping",
+        "boundary.structure.unknown"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.document-structure",
+          "assertionId": "assert.document-structure.type-and-boundary",
+          "oracleType": "manual",
+          "expected": {
+            "reviewedPages": 18,
+            "acceptedCandidateObjects": 227,
+            "candidateSha256": "57af975341cdf7ac8e04662de1a9a937a0a32ceeadc4f675206adf6b72f7bd8a",
+            "disposition": "accepted_with_known_bracket_frame_limitation"
+          },
+          "notes": "Human accepted the full-page offline candidate; exact machine replay is separately hash-checked. This is not an independent exhaustive per-object oracle, runtime classifier validation, or relation truth. Large painted formula delimiters may extend outside frames."
+        }
+      ],
+      "evidenceRefs": [
+        "cap.document-structure/batches/B001/candidate.json",
+        "cap.document-structure/batches/B001/source.json",
+        "cap.document-structure/batches/B001/human-acceptance.json"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-STRUCTURE-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.document-structure.paper7",
+      "displayName": "Reviewed offline Structure paper7",
+      "source": {
+        "fileName": "论文样本7.pdf",
+        "mediaType": "application/pdf",
+        "sha256": "ab244887804a95c4904e5efe5425fa1446d55f54fb2a707424439eb53c0bc1da",
+        "bytes": 1741947,
+        "pageCount": 11
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Stage 82 full-paper 3-3-4 human review, batch c; accepted offline candidate only"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.structure.type-classification",
+        "boundary.structure.paragraph-grouping",
+        "boundary.structure.unknown"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.document-structure",
+          "assertionId": "assert.document-structure.type-and-boundary",
+          "oracleType": "manual",
+          "expected": {
+            "reviewedPages": 11,
+            "acceptedCandidateObjects": 301,
+            "candidateSha256": "57af975341cdf7ac8e04662de1a9a937a0a32ceeadc4f675206adf6b72f7bd8a",
+            "disposition": "accepted_with_known_bracket_frame_limitation"
+          },
+          "notes": "Human accepted the full-page offline candidate; exact machine replay is separately hash-checked. This is not an independent exhaustive per-object oracle, runtime classifier validation, or relation truth. Large painted formula delimiters may extend outside frames."
+        }
+      ],
+      "evidenceRefs": [
+        "cap.document-structure/batches/B001/candidate.json",
+        "cap.document-structure/batches/B001/source.json",
+        "cap.document-structure/batches/B001/human-acceptance.json"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-STRUCTURE-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.document-structure.paper8",
+      "displayName": "Reviewed offline Structure paper8",
+      "source": {
+        "fileName": "论文样本8.pdf",
+        "sha256": "12e71bd65faecb793f64043c6812d7a3fd372e7f54ceed390e132839fd2504e4",
+        "bytes": 476899,
+        "pageCount": 11,
+        "mediaType": "application/pdf"
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Stage 82 full-paper 3-3-4 human review, batch c; accepted offline candidate only"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.structure.type-classification",
+        "boundary.structure.paragraph-grouping",
+        "boundary.structure.unknown"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.document-structure",
+          "assertionId": "assert.document-structure.type-and-boundary",
+          "oracleType": "manual",
+          "expected": {
+            "reviewedPages": 11,
+            "acceptedCandidateObjects": 165,
+            "candidateSha256": "57af975341cdf7ac8e04662de1a9a937a0a32ceeadc4f675206adf6b72f7bd8a",
+            "disposition": "accepted_with_known_bracket_frame_limitation"
+          },
+          "notes": "Human accepted the full-page offline candidate; exact machine replay is separately hash-checked. This is not an independent exhaustive per-object oracle, runtime classifier validation, or relation truth. Large painted formula delimiters may extend outside frames."
+        }
+      ],
+      "evidenceRefs": [
+        "cap.document-structure/batches/B001/candidate.json",
+        "cap.document-structure/batches/B001/source.json",
+        "cap.document-structure/batches/B001/human-acceptance.json"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-STRUCTURE-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.document-structure.paper9",
+      "displayName": "Reviewed offline Structure paper9",
+      "source": {
+        "fileName": "论文样本9.pdf",
+        "sha256": "23cdb5dd51ba39d61b6d3093220cdedeb8c4e6f20c3a64640067a6e6659fb420",
+        "bytes": 474547,
+        "pageCount": 15,
+        "mediaType": "application/pdf"
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Stage 82 full-paper 3-3-4 human review, batch c; accepted offline candidate only"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.structure.type-classification",
+        "boundary.structure.paragraph-grouping",
+        "boundary.structure.unknown"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.document-structure",
+          "assertionId": "assert.document-structure.type-and-boundary",
+          "oracleType": "manual",
+          "expected": {
+            "reviewedPages": 15,
+            "acceptedCandidateObjects": 236,
+            "candidateSha256": "57af975341cdf7ac8e04662de1a9a937a0a32ceeadc4f675206adf6b72f7bd8a",
+            "disposition": "accepted_with_known_bracket_frame_limitation"
+          },
+          "notes": "Human accepted the full-page offline candidate; exact machine replay is separately hash-checked. This is not an independent exhaustive per-object oracle, runtime classifier validation, or relation truth. Large painted formula delimiters may extend outside frames."
+        }
+      ],
+      "evidenceRefs": [
+        "cap.document-structure/batches/B001/candidate.json",
+        "cap.document-structure/batches/B001/source.json",
+        "cap.document-structure/batches/B001/human-acceptance.json"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-STRUCTURE-001"
+        ]
+      }
+    },
+    {
+      "id": "sample.document-structure.paper10",
+      "displayName": "Reviewed offline Structure paper10",
+      "source": {
+        "fileName": "论文样本10.pdf",
+        "sha256": "bfa5b8767c9cce7eca3d4cda064bec56a03a9e344eb13a87271f8a8784527b63",
+        "bytes": 864810,
+        "pageCount": 10,
+        "mediaType": "application/pdf"
+      },
+      "provenance": {
+        "kind": "user_provided",
+        "reference": "Stage 82 full-paper 3-3-4 human review, batch c; accepted offline candidate only"
+      },
+      "rights": {
+        "status": "metadata_only",
+        "canStoreMetadata": true,
+        "canStoreBinary": false
+      },
+      "boundaryFeatureIds": [
+        "boundary.structure.type-classification",
+        "boundary.structure.paragraph-grouping",
+        "boundary.structure.unknown"
+      ],
+      "expectedOutcomes": [
+        {
+          "capabilityId": "cap.document-structure",
+          "assertionId": "assert.document-structure.type-and-boundary",
+          "oracleType": "manual",
+          "expected": {
+            "reviewedPages": 10,
+            "acceptedCandidateObjects": 252,
+            "candidateSha256": "57af975341cdf7ac8e04662de1a9a937a0a32ceeadc4f675206adf6b72f7bd8a",
+            "disposition": "accepted_with_known_bracket_frame_limitation"
+          },
+          "notes": "Human accepted the full-page offline candidate; exact machine replay is separately hash-checked. This is not an independent exhaustive per-object oracle, runtime classifier validation, or relation truth. Large painted formula delimiters may extend outside frames."
+        }
+      ],
+      "evidenceRefs": [
+        "cap.document-structure/batches/B001/candidate.json",
+        "cap.document-structure/batches/B001/source.json",
+        "cap.document-structure/batches/B001/human-acceptance.json"
+      ],
+      "storage": {
+        "binaryCommitted": false,
+        "externalSourceRequiredForRun": true
+      },
+      "authorityBoundary": {
+        "catalogRole": "regression_oracle",
+        "runtimeDecisionUse": "forbidden",
+        "finalDecisionsOwnedBy": [
+          "AA-STRUCTURE-001"
+        ]
+      }
+    }
+  ]
+}

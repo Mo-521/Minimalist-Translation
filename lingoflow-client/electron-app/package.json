@@ -1,6 +1,6 @@
 {
   "name": "lingoflow-electron",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "description": "Local-first Electron client for desktop and PDF translation",
   "main": "main.js",
@@ -47,15 +47,27 @@
       "semantic-structure-authority.js",
       "semantic-structure-consumer-authority.js",
       "capability-library/index.js",
-      "capability-library/capability.schema.json",
-      "capability-library/sample-corpus.schema.json",
-      "capability-library/capabilities.json",
-      "capability-library/corpus.json",
-      "capability-library/capabilities/*/capabilities.json",
-      "capability-library/capabilities/*/corpus.json",
+      "capability-library/schemas/domain.schema.json",
+      "capability-library/registry/domains.json",
+      "capability-library/schemas/capability.schema.json",
+      "capability-library/schemas/capability.v1.schema.json",
+      "capability-library/schemas/sample-corpus.schema.json",
+      "capability-library/registry/capabilities.json",
+      "capability-library/shared/corpus.json",
+      "capability-library/domains/*/capabilities/*/capabilities.json",
+      "capability-library/domains/*/capabilities/*/corpus.json",
+      "capability-library/domains/*/capabilities/*/batches/B*/manifest.json",
+      "capability-library/domains/document-structure-identity/capabilities/cap.document-structure/integration/shadow-runtime.cjs",
+      "capability-library/domains/document-structure-identity/capabilities/cap.document-structure/integration/object-first-contract.cjs",
+      "capability-library/domains/document-structure-identity/capabilities/cap.document-structure/offline/*.cjs",
+      "!capability-library/domains/document-structure-identity/capabilities/cap.document-structure/offline/*.test.cjs",
+      "capability-library/domains/document-structure-identity/capabilities/cap.document-structure/offline/pdf-evidence/*.py",
       "package.json",
       "node_modules/**/*",
       "!node_modules/fast-uri/benchmark/**"
+    ],
+    "asarUnpack": [
+      "capability-library/domains/document-structure-identity/capabilities/cap.document-structure/offline/pdf-evidence/*.py"
     ],
     "win": {
       "target": [

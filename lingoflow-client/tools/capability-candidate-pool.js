@@ -2,7 +2,7 @@
 "use strict";
 const fs = require("node:fs");
 const path = require("node:path");
-const workflow = require("../electron-app/capability-library/candidate-pool");
+const workflow = require("../electron-app/capability-library/workflow/candidate-pool");
 const { buildCorpusRecord } = require("./capability-library-intake");
 const { assertNoRuntimeDecisionFields } = require("../electron-app/capability-library");
 async function main(argv = process.argv.slice(2)) {

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "capability-library/v2",
+  "catalogRole": "evidence_and_regression_only",
+  "runtimeDecisionUse": "forbidden",
+  "capabilities": [
+    {
+      "id": "cap.document-structure",
+      "name": "Document Structure",
+      "displayName": "文档结构",
+      "description": "Object-first 文档结构能力已完成 B001 有条件验收，并作为独立结构识别入口接入应用；当前 PDF 翻译与导出仍使用旧结构链。",
+      "recordKind": "independent_capability",
+      "domain": "document-structure-identity",
+      "responsibilities": [
+        "从 PDF 独立生成具有来源追溯的结构对象，并保留对象身份、成员归属和未解决限制。",
+        "维护 B001 验证结论、回归与 AA-STRUCTURE-001 权限边界；不静默接管现有 PDF 翻译消费者。"
+      ],
+      "architectureRecord": "AA-STRUCTURE-001",
+      "relatedArchitectureRecords": ["AA-IDENTITY-001", "AA-ORDER-001", "AA-CAPTION-001", "AA-REFERENCE-001", "AA-COLUMN-001", "AA-GEOMETRY-001"],
+      "decisionAuthority": {
+        "owner": "Semantic Structure Authority Producer",
+        "statement": "唯一 runtime producer 是 electron-app/semantic-structure-authority.js::produceSemanticStructureArtifact；Capability Library 只登记契约和证据，不发布或修补 runtime 结构事实。"
+      },
+      "status": "pilot_ready",
+      "dependencies": {
+        "requires": [],
+        "produces": [
+          {
+            "factId": "fact.structure.canonical-semantic-type",
+            "authority": "AA-STRUCTURE-001",
+            "description": "现有冻结 SemanticStructureArtifact 对每个 segment 发布唯一 canonical semantic type、判定依据与 disposition。"
+          },
+          {
+            "factId": "fact.structure.source-segment-boundary",
+            "authority": "AA-STRUCTURE-001",
+            "description": "现有冻结 artifact 记录 segment 边界、source line ownership、source text hash、页范围与顺序。"
+          }
+        ],
+        "consumed_by": [],
+        "forbidden_to_override": []
+      },
+      "boundaries": [
+        {"id": "boundary.structure.type-classification", "description": "标题、作者、摘要、章节标题、正文、图注、参考文献和公式块类型互不混淆。", "featureTags": ["type", "paper", "scientific-content"]},
+        {"id": "boundary.structure.paragraph-grouping", "description": "source lines 的分组与 split/merge 有可追溯源归属。", "featureTags": ["line", "paragraph", "grouping"]},
+        {"id": "boundary.structure.hierarchy", "description": "章节与段落的父子关系需要独立核验；当前 artifact 尚未发布通用 section tree。", "featureTags": ["section", "hierarchy", "gap"]},
+        {"id": "boundary.structure.caption-object", "description": "图注与 figure/table 的结构关联需要核验；不得用邻近坐标直接宣称关系已成立。", "featureTags": ["caption", "figure", "table", "gap"]},
+        {"id": "boundary.structure.unknown", "description": "未知或暂不支持的结构必须显式记录，不能默认归为正文。", "featureTags": ["unknown", "unsupported", "fail-fast"]}
+      ],
+      "expectedOutcomes": [
+        {"id": "assert.document-structure.single-producer", "assertion": "每个已支持的 canonical semantic type 由唯一冻结 Structure artifact 发布，消费者不得改型。", "evidenceLevel": "artifact"},
+        {"id": "assert.document-structure.type-and-boundary", "assertion": "人工审核的类型和 line/segment 分组与 producer 输出分别比较，明确分类与分组错误。", "evidenceLevel": "real_run"},
+        {"id": "assert.document-structure.relation-status", "assertion": "章节层级、caption→figure/table 关系和不支持结构分别以 confirmed、unknown 或 unsupported 记录，不凭坐标容差推定。", "evidenceLevel": "artifact"}
+      ],
+      "evidenceRequirements": ["unit_contract", "artifact", "real_run", "user_acceptance"],
+      "regressionSampleIds": [
+        "sample.document-structure.paper1", "sample.document-structure.paper2",
+        "sample.document-structure.paper3", "sample.document-structure.paper4",
+        "sample.document-structure.paper5", "sample.document-structure.paper6",
+        "sample.document-structure.paper7", "sample.document-structure.paper8",
+        "sample.document-structure.paper9", "sample.document-structure.paper10"
+      ]
+    }
+  ]
+}

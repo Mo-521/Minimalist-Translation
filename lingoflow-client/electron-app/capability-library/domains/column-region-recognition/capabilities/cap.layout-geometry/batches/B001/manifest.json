@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "capability-validation-batch/v1",
+  "capabilityId": "cap.layout-geometry",
+  "batchId": "B001",
+  "organizationDate": "2026-10-17",
+  "identityNote": "Retrospective capability-local grouping of the first ten papers. Reviewed-v8 and the dated Oracle revisions retain their original identities and are not Batch or algorithm version numbers.",
+  "sourceCorpus": "lingoflow-client/electron-app/capability-library/domains/column-region-recognition/capabilities/cap.layout-geometry/corpus.json",
+  "samples": [
+    {"id":"sample.layout-geometry.paper1","paper":1,"pages":6,"pdfSha256":"7ba73a901c7bacf14cdff7d9e16480cc451ca3a521977795a3de9c4e67bba0ac"},
+    {"id":"sample.layout-geometry.paper2","paper":2,"pages":11,"pdfSha256":"a3caa00f90f1b68a2068bbed07b2b91b6b40b3f65d1c3b22302e21333510e36f"},
+    {"id":"sample.layout-geometry.paper3","paper":3,"pages":14,"pdfSha256":"fa33485f517b3c94d2f6e4d4366f3ab14a1e413a738db512e1862f4a0944f5f9"},
+    {"id":"sample.layout-geometry.paper4","paper":4,"pages":16,"pdfSha256":"8984769b011698352fba9532e6eed4d81a1683451e888ee85a2caa8042149e8b"},
+    {"id":"sample.layout-geometry.paper5","paper":5,"pages":14,"pdfSha256":"c3efd26afb65cafaa9e35525d0c2c182199b330cf101645e84f63901eca8bc48"},
+    {"id":"sample.layout-geometry.paper6","paper":6,"pages":18,"pdfSha256":"6f4cb19da2d60bb5eed20cd5d56f0360b2afb552e60a199792cc4be6b752189e"},
+    {"id":"sample.layout-geometry.paper7","paper":7,"pages":11,"pdfSha256":"ab244887804a95c4904e5efe5425fa1446d55f54fb2a707424439eb53c0bc1da"},
+    {"id":"sample.layout-geometry.paper8","paper":8,"pages":11,"pdfSha256":"12e71bd65faecb793f64043c6812d7a3fd372e7f54ceed390e132839fd2504e4"},
+    {"id":"sample.layout-geometry.paper9","paper":9,"pages":15,"pdfSha256":"23cdb5dd51ba39d61b6d3093220cdedeb8c4e6f20c3a64640067a6e6659fb420"},
+    {"id":"sample.layout-geometry.paper10","paper":10,"pages":10,"pdfSha256":"bfa5b8767c9cce7eca3d4cda064bec56a03a9e344eb13a87271f8a8784527b63"}
+  ],
+  "evidence": [
+    {"path":"lingoflow-client/electron-app/capability-library/domains/column-region-recognition/capabilities/cap.layout-geometry/batches/B001/FREEZE_MANIFEST.json","sha256":"15e9f3545d3aa42681be570924d331a1342f586ec6cd21887eb37ab9287c6b2e"},
+    {"kind":"formal-regression-summary","sha256":"a703786cc80c1e2f163fceb5c552a1a9d47c59e21b21ac31cd32bc2d7dba2d37"}
+  ],
+  "conclusion": "The user-confirmed v8 body/non-body exports cover ten papers and 126 pages; the separately promoted Geometry corpus and Oracle comparison reports zero identity, structural, or tolerance findings. Capability remains pilot_ready and does not gain runtime decision authority.",
+  "capabilityStatus": "pilot_ready",
+  "runtimeDecisionUse": "forbidden"
+}

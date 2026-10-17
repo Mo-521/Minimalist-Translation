@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "capability-domains/v1",
+  "registryRole": "organization_and_presentation_only",
+  "domains": [
+    {
+      "id": "document-structure-identity",
+      "name": "文档结构与身份",
+      "responsibility": "组织结构判定、对象身份与阅读顺序相关的 Capability 和验收契约。",
+      "displayOrder": 1
+    },
+    {
+      "id": "column-region-recognition",
+      "name": "栏与区域识别",
+      "responsibility": "组织栏型、canonical lane、页面区域与几何边界识别能力。",
+      "displayOrder": 2
+    },
+    {
+      "id": "content-placement",
+      "name": "内容落地",
+      "responsibility": "组织翻译结果、遮盖和写回落地过程的验收边界。",
+      "displayOrder": 3
+    },
+    {
+      "id": "layout-composition",
+      "name": "版面排版",
+      "responsibility": "组织版面承载、科研对象保真与视觉排版验收边界。",
+      "displayOrder": 4
+    },
+    {
+      "id": "export-validation",
+      "name": "导出与最终验证",
+      "responsibility": "组织导出状态、终态守恒与最终产物验证边界。",
+      "displayOrder": 5
+    }
+  ]
+}
