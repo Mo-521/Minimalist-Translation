@@ -41,10 +41,10 @@ No legacy aliases remain at the old root paths. Archived governance Tasks may me
 
 ## Current Capability graph
 
-Three independent Capability records exist. `cap.document-structure` is `pilot_ready` after a ten-paper, 126-page Stage 82 offline human review and hash-bound regression snapshot. It still has no Capability-level consumer edge or runtime cutover. Column and Geometry retain their existing independent relationship:
+Three independent Capability records exist. `cap.document-structure` is `pilot_ready` after the first-batch review and regression. It is callable through a separate application action, but its candidates have no Capability-level consumer edge and have not replaced the legacy translation/export path. Column and Geometry retain their existing independent relationship:
 
 ```text
-cap.document-structure (pilot_ready offline evidence; AA-STRUCTURE-001)
+cap.document-structure (pilot_ready; separate non-authoritative app action; AA-STRUCTURE-001)
   produces fact.structure.canonical-semantic-type
            fact.structure.source-segment-boundary
   no established Capability DAG edge yet
@@ -58,7 +58,7 @@ cap.column-recognition
 - `cap.column-recognition` owns Column facts and keeps its own Authority, Evidence, Regression and Promotion history.
 - `cap.layout-geometry` owns reviewed region/geometry facts and keeps its own Authority, Evidence, Regression, Promotion and Oracle contract.
 
-They are not merged. No Structure→Identity→Column edge is declared: Object Identity is not established and the current runtime Column model is prepared before the Structure artifact freezes. The existing Structure runtime producer is documented by `cap.document-structure`; the library remains an evidence catalog and does not participate in live classification.
+They are not merged. No Structure→Identity→Column edge is declared: Object Identity is not established and the current runtime Column model is prepared before the Structure artifact freezes. The D1 implementation under `cap.document-structure` can produce candidates independently when the user invokes it; the registry itself remains an evidence catalog and does not classify live documents or replace the existing translation-chain Structure producer.
 
 `schemas/capability.v1.schema.json` exists only to validate immutable historical Candidate Pool revisions without rewriting their hashes or conclusions. The live loader accepts only `capability-library/v2`.
 
