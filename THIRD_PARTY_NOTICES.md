@@ -1,8 +1,8 @@
 # Third-Party Notices
 
-This document records third-party software, fonts, icons, and static resources in the v1.1.0 release candidate. Minimalist Translation itself is licensed under the **Minimalist Translation Source Available Non-Commercial License 1.0**. Third-party components remain governed by their own licenses. The published v1.0.0 inventory remains available in the v1.0.0 tag and release assets.
+This document records third-party software, fonts, icons, and static resources in the v1.1.1 release candidate. Minimalist Translation itself is licensed under the **Minimalist Translation Source Available Non-Commercial License 1.0**. Third-party components remain governed by their own licenses. Earlier published inventories remain available with their respective release assets.
 
-Inventory date: 2026-10-01. This is a candidate inventory, not a publication claim or legal advice.
+Inventory date: 2026-10-17. This is a candidate inventory, not a publication claim or legal advice.
 
 ## Audit result
 
@@ -13,7 +13,7 @@ Inventory date: 2026-10-01. This is a candidate inventory, not a publication cla
 | Combined npm inventory | Candidate inventory | 377 unique `package@version` pairs. Dual-licensed packages use the permissive option identified below. |
 | Google fonts and Material Symbols | Compatible with notice | Inter, Manrope, Dancing Script: OFL-1.1; Material Symbols: Apache-2.0. No font binary is committed. |
 | Tailwind CSS | Compatible and locally reproducible | Tailwind CSS 3.4.17 plus fixed forms/container-query plugins are lockfile-pinned and compiled into `tailwind.css` before start/package. |
-| Desktop Python backend | Conditionally compatible; excluded from v1.1.0 candidate binary | Six direct packages remain unpinned and `pynput` is LGPL-3.0. The module is retained as experimental source but is not packaged in this candidate. |
+| Desktop Python backend | Conditionally compatible; excluded from v1.1.1 candidate binary | Six direct packages remain unpinned and `pynput` is LGPL-3.0. The module is retained as experimental source but is not packaged in this candidate. |
 | Project inline icons | Compatible | Inline SVGs and generated `MT` tray SVG are project-authored. |
 | OS font fallbacks | Not redistributed | Only font-family names are referenced; the repository contains no copies. |
 | Generated/static evidence | Not distributed | Images under ignored `tmp`, `.tmp`, `build`, and `dist` paths are not product assets. |
@@ -94,7 +94,7 @@ Reference license texts: [MIT](https://spdx.org/licenses/MIT.html), [ISC](https:
 | `deep-translator` | MIT | Compatible; exact version and transitive dependencies unresolved. |
 | `openai` | Apache-2.0 | Compatible; exact version and transitive dependencies unresolved. |
 
-Because there is no Python lockfile, the repository does not contain a complete resolved Python bill of materials. The experimental Desktop module remains excluded from the v1.1.0 candidate binary, installer, and stable-support scope. A future binary that includes it must first lock versions, hashes, and transitive dependencies and satisfy LGPL-3.0 packaging obligations.
+Because there is no Python lockfile, the repository does not contain a complete resolved Python bill of materials. The experimental Desktop module remains excluded from the v1.1.1 candidate binary, installer, and stable-support scope. A future binary that includes it must first lock versions, hashes, and transitive dependencies and satisfy LGPL-3.0 packaging obligations.
 
 ## Fonts, icons, and static resources
 
@@ -113,8 +113,8 @@ No committed product `.ttf`, `.otf`, `.woff`, `.woff2`, `.eot`, `.ico`, `.png`, 
 
 ## Release obligations and open gates
 
-1. Keep the experimental Desktop module out of the v1.1.0 installer and binary release assets. Python locking and LGPL packaging become mandatory only before a future release includes that module.
+1. Keep the experimental Desktop module out of the v1.1.1 installer and binary release assets. Python locking and LGPL packaging become mandatory only before a future release includes that module.
 2. Preserve third-party copyright and license files in final binary packages and release archives.
 3. Re-run this inventory after any lockfile, dependency, font, icon, static-resource, packaging, or release-scope change.
 
-The v1.1.0 candidate ASAR currently contains 35 npm package identities; the dependency's standalone benchmark fixture is excluded from packaging. The candidate archive includes its actual component inventory, Electron/Chromium notices, per-component license evidence and file checksums, and is bound to the matching installer SHA-256. For `@pdf-lib/fontkit@1.1.1`, the actual package supplies an MIT declaration, author/contributor metadata and a README linking generic MIT terms, but no standalone package-specific LICENSE/NOTICE file. The project owner reviewed and accepted this evidence for the v1.1.0 candidate on 2026-10-01; the absent file remains a provenance limitation, not a fabricated notice or an unresolved release blocker. The project's own license does not replace third-party terms. The published v1.0.0 license archive and its hash remain unchanged in the v1.0.0 Release.
+The v1.1.1 candidate ASAR contains 35 npm package identities; the dependency's standalone benchmark fixture is excluded from packaging. The release archive must include its actual component inventory, Electron/Chromium notices, per-component license evidence and file checksums, and be bound to the matching installer SHA-256. For `@pdf-lib/fontkit@1.1.1`, the actual package supplies an MIT declaration, author/contributor metadata and a README linking generic MIT terms, but no standalone package-specific LICENSE/NOTICE file. The project owner accepted this exact-package evidence for the v1.1.0 candidate on 2026-10-01; the absent file remains a provenance limitation, not a fabricated notice. The project's own license does not replace third-party terms.

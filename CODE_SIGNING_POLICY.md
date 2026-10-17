@@ -1,5 +1,15 @@
 # Code Signing Policy
 
+## v1.1.1 decision
+
+v1.1.1 uses an unsigned Windows installer. Windows may show **Unknown publisher** or a SmartScreen warning; neither a download link nor a matching checksum establishes a code-signing publisher. Obtain the installer and its third-party license archive from the official [v1.1.1 GitHub Release](https://github.com/Mo-521/Minimalist-Translation/releases/tag/v1.1.1).
+
+Installer: `Minimalist-Translation-Setup-1.1.1.exe` — 132,766,433 bytes; SHA-256 `D6A068C2DBDAAA2DD7111A7C512475206719FA70EB66A49DB044CE34DAD7F421`. Its expected Authenticode status is `NotSigned`.
+
+Third-party license archive: `Minimalist-Translation-1.1.1-Third-Party-Licenses.zip` — 2,736,921 bytes; SHA-256 `FE829598EF4D4F5D7CE1EB245B07D2BCE14DF65A0FF88F3AD05044361F58622A`.
+
+Verify the downloaded files with `Get-FileHash -Algorithm SHA256` before running the installer. If either hash differs from its release value, do not run or trust that file.
+
 ## v1.1.0 decision
 
 v1.1.0 will continue the **unsigned Windows distribution** model at the user's explicit direction on 2026-10-01. The installer will not carry an Authenticode publisher signature or trusted timestamp. Windows may identify its publisher as **Unknown publisher** and Microsoft Defender SmartScreen may warn or block a first run. Such prompts do not by themselves prove that the file is malicious, and an unsigned file must not be represented as verified merely because it downloaded from a familiar site.
